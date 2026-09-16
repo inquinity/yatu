@@ -51,6 +51,29 @@ adhoc_sign() {  # $1 = .app bundle, $2 = app entitlements
   codesign --force --sign - --entitlements "$ent" "$app"
 }
 
+# Mark every bundle (app, extensions, helper) as a local fork build so it can
+# be told apart from the upstream/Homebrew release. Custom keys are used
+# because CFBundleVersion must stay numeric. Must run before signing.
+BUILD_SOURCE="inquinity"
+BUILD_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+if [[ "$BUILD_COMMIT" != "unknown" ]] && ! git diff --quiet HEAD --; then
+  BUILD_COMMIT="$BUILD_COMMIT-dirty"
+fi
+BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+set_plist_string() {  # $1 = Info.plist, $2 = key, $3 = value
+  /usr/libexec/PlistBuddy -c "Delete :$2" "$1" 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Add :$2 string $3" "$1"
+}
+
+stamp_build_info() {  # $1 = .app bundle
+  find "$1" -path "*/Contents/Info.plist" -print0 | while IFS= read -r -d '' plist; do
+    set_plist_string "$plist" OITBuildSource "$BUILD_SOURCE"
+    set_plist_string "$plist" OITBuildCommit "$BUILD_COMMIT"
+    set_plist_string "$plist" OITBuildDate "$BUILD_DATE"
+  done
+}
+
 rm -rf "$EXPORT_DIR"
 mkdir -p "$EXPORT_DIR"
 
@@ -80,6 +103,9 @@ for pair in "${TARGETS[@]}"; do
       echo "!! $HELPER not found in products; Launch-at-Login will be unavailable"
     fi
   fi
+
+  echo "==> Stamping $scheme.app as $BUILD_SOURCE@$BUILD_COMMIT"
+  stamp_build_info "$app"
 
   echo "==> Ad-hoc signing $scheme.app"
   adhoc_sign "$app" "$ent"
