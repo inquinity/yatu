@@ -31,11 +31,11 @@ print_colored() {
 UPSTREAM_TEAM_ID="C8VX3ZLX5U"
 FINDER_EXTENSION_ID="wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExtension"
 
-# app name:homebrew cask token
+# app name:official cask token:fork (inquinity/tap) cask token
 APPS=(
-    "OpenInTerminal:openinterminal"
-    "OpenInTerminal-Lite:openinterminal-lite"
-    "OpenInEditor-Lite:openineditor-lite"
+    "OpenInTerminal:openinterminal:"
+    "OpenInTerminal-Lite:openinterminal-lite:openinterminal-lite-inquinity"
+    "OpenInEditor-Lite:openineditor-lite:"
 )
 SEARCH_DIRS=("/Applications" "$HOME/Applications")
 
@@ -83,27 +83,42 @@ print_bundle_source() {  # $1 = bundle path
     esac
 }
 
-report_brew_state() {  # $1 = cask token, $2 = source classification
-    local cask_token="$1" source="$2" brew_version
+cask_version() {  # $1 = cask token; prints the installed version, or nothing
+    [[ -n "$1" ]] || return 0
+    brew list --cask --versions "$1" 2>/dev/null | awk '{print $2}' || true
+}
+
+# $1 = official cask token, $2 = fork cask token (may be empty),
+# $3 = source classification (fork / upstream / unknown / none)
+report_brew_state() {
+    local official_token="$1" fork_token="$2" source="$3" official_version fork_version
     if ! command -v brew >/dev/null 2>&1; then
         return
     fi
-    brew_version="$(brew list --cask --versions "$cask_token" 2>/dev/null | awk '{print $2}' || true)"
-    if [[ -z "$brew_version" ]]; then
-        printf '  brew:     %s not installed\n' "$cask_token"
+    official_version="$(cask_version "$official_token")"
+    fork_version="$(cask_version "$fork_token")"
+    if [[ -z "$official_version" && -z "$fork_version" ]]; then
+        printf '  brew:     not installed via brew\n'
         return
     fi
-    printf '  brew:     %s %s\n' "$cask_token" "$brew_version"
+    if [[ -n "$fork_version" ]]; then
+        printf '  brew:     %s %s (inquinity/tap)\n' "$fork_token" "$fork_version"
+    fi
+    if [[ -n "$official_version" ]]; then
+        printf '  brew:     %s %s\n' "$official_token" "$official_version"
+    fi
     if [[ "$source" == "none" ]]; then
-        print_colored "$COLOR_RED" "  warning:  brew thinks $cask_token is installed, but the app is missing"
-    elif [[ "$source" != "upstream" ]]; then
-        print_colored "$COLOR_RED" "  warning:  brew thinks $cask_token is installed, but the app is not the upstream build;
+        print_colored "$COLOR_RED" "  warning:  brew lists this app as installed, but the app is missing"
+    elif [[ -n "$official_version" && "$source" != "upstream" ]]; then
+        print_colored "$COLOR_RED" "  warning:  brew thinks $official_token is installed, but the app is not the upstream build;
             'brew upgrade/reinstall' will overwrite it"
+    elif [[ -n "$fork_version" && "$source" != "fork" ]]; then
+        print_colored "$COLOR_RED" "  warning:  brew thinks $fork_token is installed, but the app is not a fork build"
     fi
 }
 
-report_app() {  # $1 = app name, $2 = cask token
-    local app_name="$1" cask_token="$2" search_dir app_path found_app=0 source
+report_app() {  # $1 = app name, $2 = official cask token, $3 = fork cask token
+    local app_name="$1" official_token="$2" fork_token="$3" search_dir app_path found_app=0 source
     print_colored "$COLOR_CYAN" "$app_name"
     for search_dir in "${SEARCH_DIRS[@]}"; do
         app_path="$search_dir/$app_name.app"
@@ -114,23 +129,27 @@ report_app() {  # $1 = app name, $2 = cask token
         printf '  version:  %s (%s)\n' "$(read_plist_key "$app_path" CFBundleShortVersionString)" "$(read_plist_key "$app_path" CFBundleVersion)"
         printf '  team:     %s\n' "$(read_team_id "$app_path")"
         print_bundle_source "$app_path"
-        report_brew_state "$cask_token" "$source"
+        report_brew_state "$official_token" "$fork_token" "$source"
     done
     if (( ! found_app )); then
         printf '  not installed\n'
-        report_brew_state "$cask_token" "none"
+        report_brew_state "$official_token" "$fork_token" "none"
     fi
 }
 
 # pluginkit shows which copy of the Finder extension macOS will actually load.
 report_finder_extension() {
-    local extension_path
+    local extension_path found_extension=0
     print_colored "$COLOR_CYAN" "Finder extension ($FINDER_EXTENSION_ID)"
     while IFS= read -r extension_path; do
         [[ -n "$extension_path" ]] || continue
+        found_extension=1
         printf '  path:     %s\n' "$extension_path"
         print_bundle_source "$extension_path"
     done < <(pluginkit -mAvvv -i "$FINDER_EXTENSION_ID" 2>/dev/null | sed -n 's/^[[:space:]]*Path = //p')
+    if (( ! found_extension )); then
+        printf '  not registered\n'
+    fi
 }
 
 case "${1:-}" in
@@ -140,7 +159,8 @@ case "${1:-}" in
 esac
 
 for pair in "${APPS[@]}"; do
-    report_app "${pair%%:*}" "${pair#*:}"
+    IFS=: read -r app_name official_token fork_token <<< "$pair"
+    report_app "$app_name" "$official_token" "$fork_token"
     printf '\n'
 done
 report_finder_extension
