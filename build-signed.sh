@@ -39,6 +39,9 @@
 #   SIGN_ID         signing identity; default: auto-detected Developer ID Application
 #   NOTARY_PROFILE  notarytool keychain profile name; default: OpenInTerminal-notary
 #   SKIP_NOTARIZE   set to 1 to sign only (no notarization/stapling) — for testing
+#   DEPLOYMENT_TARGET  macOS deployment target; default: 12.0 (Xcode 27 minimum)
+#
+# Usage: ./build-signed.sh [scheme ...]   # default: all three apps
 # ---------------------------------------------------------------------------
 set -euo pipefail
 
@@ -52,6 +55,9 @@ HELPER="OpenInTerminalHelper.app"
 
 NOTARY_PROFILE="${NOTARY_PROFILE:-OpenInTerminal-notary}"
 SKIP_NOTARIZE="${SKIP_NOTARIZE:-0}"
+# Xcode 27 rejects deployment targets below macOS 12.0, which the projects
+# still use; override at build time instead of editing the projects.
+DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-12.0}"
 
 # scheme:app-entitlements pairs
 TARGETS=(
@@ -59,6 +65,23 @@ TARGETS=(
   "OpenInTerminal-Lite:OpenInTerminal-Lite/OpenInTerminal-Lite/OpenInTerminal-Lite.entitlements"
   "OpenInEditor-Lite:OpenInEditor-Lite/OpenInEditor-Lite/OpenInEditor-Lite.entitlements"
 )
+
+# Optional scheme arguments restrict the build to those apps.
+if [[ $# -gt 0 ]]; then
+  selected=()
+  for wanted in "$@"; do
+    match=""
+    for pair in "${TARGETS[@]}"; do
+      [[ "${pair%%:*}" == "$wanted" ]] && match="$pair"
+    done
+    if [[ -z "$match" ]]; then
+      echo "!! Unknown scheme '$wanted' (expected OpenInTerminal, OpenInTerminal-Lite or OpenInEditor-Lite)" >&2
+      exit 1
+    fi
+    selected+=("$match")
+  done
+  TARGETS=("${selected[@]}")
+fi
 
 # --- Resolve the signing identity ------------------------------------------
 if [[ -z "${SIGN_ID:-}" ]]; then
@@ -109,6 +132,29 @@ sign() {  # $1 = .app bundle, $2 = app entitlements
   codesign "${common[@]}" --entitlements "$ent" "$app"
 }
 
+# Mark every bundle (app, extensions, helper) as a fork build so it can be
+# told apart from the upstream release. Custom keys are used because
+# CFBundleVersion must stay numeric. Must run before signing.
+BUILD_SOURCE="inquinity"
+BUILD_COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+if [[ "$BUILD_COMMIT" != "unknown" ]] && ! git diff --quiet HEAD --; then
+  BUILD_COMMIT="$BUILD_COMMIT-dirty"
+fi
+BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+set_plist_string() {  # $1 = Info.plist, $2 = key, $3 = value
+  /usr/libexec/PlistBuddy -c "Delete :$2" "$1" 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Add :$2 string $3" "$1"
+}
+
+stamp_build_info() {  # $1 = .app bundle
+  find "$1" -path "*/Contents/Info.plist" -print0 | while IFS= read -r -d '' plist; do
+    set_plist_string "$plist" OITBuildSource "$BUILD_SOURCE"
+    set_plist_string "$plist" OITBuildCommit "$BUILD_COMMIT"
+    set_plist_string "$plist" OITBuildDate "$BUILD_DATE"
+  done
+}
+
 rm -rf "$EXPORT_DIR"
 mkdir -p "$EXPORT_DIR"
 
@@ -123,6 +169,7 @@ for pair in "${TARGETS[@]}"; do
     -derivedDataPath "$DERIVED" \
     -destination 'generic/platform=macOS' \
     CODE_SIGNING_ALLOWED=NO \
+    MACOSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" \
     build >/dev/null
 
   app="$PRODUCTS/$scheme.app"
@@ -138,6 +185,9 @@ for pair in "${TARGETS[@]}"; do
       echo "!! $HELPER not found in products; Launch-at-Login will be unavailable"
     fi
   fi
+
+  echo "==> Stamping $scheme.app as $BUILD_SOURCE@$BUILD_COMMIT"
+  stamp_build_info "$app"
 
   echo "==> Developer-ID signing $scheme.app"
   sign "$app" "$ent"
