@@ -22,6 +22,9 @@ EXPORT_DIR="export"
 PRODUCTS="$DERIVED/Build/Products/$CONFIG"
 EXT_ENT="OpenInTerminalFinderExtension/OpenInTerminalFinderExtension.entitlements"
 HELPER="OpenInTerminalHelper.app"
+# Xcode 27 rejects deployment targets below macOS 12.0, which the projects
+# still use; override at build time instead of editing the projects.
+DEPLOYMENT_TARGET="${DEPLOYMENT_TARGET:-12.0}"
 
 # scheme:app-entitlements pairs
 TARGETS=(
@@ -88,6 +91,7 @@ for pair in "${TARGETS[@]}"; do
     -derivedDataPath "$DERIVED" \
     -destination 'generic/platform=macOS' \
     CODE_SIGNING_ALLOWED=NO \
+    MACOSX_DEPLOYMENT_TARGET="$DEPLOYMENT_TARGET" \
     build >/dev/null
 
   app="$PRODUCTS/$scheme.app"
