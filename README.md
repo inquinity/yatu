@@ -1,3 +1,22 @@
+> ## ⚠️ This is a fork
+>
+> **[inquinity/OpenInTerminal](https://github.com/inquinity/OpenInTerminal)** is a fork of
+> [Ji4n1ng/OpenInTerminal](https://github.com/Ji4n1ng/OpenInTerminal). The README below is
+> upstream's and describes their three apps.
+>
+> This fork ships **one** of them, privately labelled as **Yatu** — a Finder toolbar app that opens a
+> terminal at the folder you are looking at, Developer ID signed by Altman Software Design, LLC and
+> distributed through [`inquinity/homebrew-tap`](https://github.com/inquinity/homebrew-tap). The full
+> OpenInTerminal app, the Finder extension, the login helper and OpenInEditor-Lite are kept here
+> untouched and unsupported.
+>
+> - **[docs/FORK-NOTES.md](docs/FORK-NOTES.md)** — how this repository differs from upstream, and the
+>   branch model used to contribute fixes back.
+> - **[docs/YATU-PLAN.md](docs/YATU-PLAN.md)** — what is being built, and why.
+>
+> Install upstream's original apps from their repository or with
+> `brew install --cask openinterminal-lite`; nothing here replaces them.
+
 <div align="center">
   <img width="80%" src="https://github.com/user-attachments/assets/43667e33-d02d-4a0e-8ca9-fd1cf411b24a"><br/><br/>
   <a href="./README.md">English</a> | <a href="./Resources/README-zh.md">中文</a> | <a href="./Resources/README-tr.md">Türkçe</a> | <a href="./Resources/README-de.md">Deutsch</a>
