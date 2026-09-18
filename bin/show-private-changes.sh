@@ -23,6 +23,7 @@ print_colored() {
 }
 
 REMOTE="${REMOTE:-upstream}"
+# Upstream's default branch is still master; ours is main.
 REMOTE_BRANCH="${REMOTE_BRANCH:-master}"
 
 usage() {

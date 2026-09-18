@@ -17,6 +17,7 @@ Inputs: the security review in `.security-review/` (git-excluded), the Belvedere
 | Functional base | **OpenInTerminal-Lite**, kept as the upstream to merge from |
 | Structure | **Swift package**, built into an app bundle by script — modelled on [sozercan/OpenInCode](https://github.com/sozercan/OpenInCode) |
 | Headline feature | A **settings window** for choosing the terminal, which OITL lacks |
+| Editor variant | Built and tested from day one, **not shipped in 1.0** — see §4.1 |
 | Version line | Ours: `1.0.0` build 1. Release notes say which OpenInTerminal-Lite version it is based on. |
 
 Name screening (2026-09-17): no Homebrew cask or formula, no Mac App Store app, no GitHub
@@ -69,14 +70,18 @@ A single Swift package. No Xcode project, no workspace, no SPM dependencies.
 
 ```
 yatu/                            (repo root, the fork)
-├── Package.swift                executable target "Yatu", no dependencies
-├── Sources/Yatu/
-│   ├── main.swift               entry: ⌥ → settings, else open terminal
+├── Package.swift                library YatuKit + two executables, no dependencies
+├── Sources/YatuKit/             everything below except the entry points
+├── Sources/YatuTerminal/
+│   └── main.swift               entry: ⌥ → settings, else open the terminal
+├── Sources/YatuEditor/
+│   └── main.swift               same, for the editor role (§4.1); built, not shipped in 1.0
+│   (in YatuKit:)
 │   ├── FinderTarget.swift       Finder query; no force-casts; always resolves to a directory
 │   ├── Launcher.swift           NSWorkspace launch; compiled-in argument templates
-│   ├── Settings.swift           allowlisted terminal choice; one-time migration from OITL
+│   ├── Settings.swift           allowlisted app choice, per role; one-time migration from OITL
 │   ├── SettingsWindow.swift     the new GUI (§5)
-│   ├── TerminalCatalog.swift    thin wrapper over upstream's SupportedApps
+│   ├── AppCatalog.swift         thin wrapper over upstream's SupportedApps, filtered by role
 │   └── Log.swift                os.Logger; paths marked .private
 ├── Sources/YatuUpstream/        upstream files compiled UNCHANGED (see below)
 ├── Tests/YatuTests/             path resolution, validation, migration, catalog
@@ -99,12 +104,34 @@ chain can be cut. Upstream fixes to these arrive with a `Sync:` merge for free.
 Either way **no upstream file is edited**; anything else is copied into `Sources/Yatu` with
 provenance in a header comment.
 
+### 4.1 The editor role
+
+Upstream ships two Lite apps — OpenInTerminal-Lite and OpenInEditor-Lite — because a Finder
+toolbar button does exactly one thing. Yatu keeps that shape: **one codebase, two executables**,
+differing only in which role they ask the shared code for.
+
+| | Terminal (ships in 1.0) | Editor (built, not shipped) |
+|---|---|---|
+| Bundle id | `com.altmansoftwaredesign.yatu` | `com.altmansoftwaredesign.yatu.editor` |
+| App name | Yatu | Yatu Edit |
+| Catalog | `SupportedApps` entries whose type is `.terminal` | the `.editor` entries |
+| Target given to the app | the folder (parent folder if a file is selected) | the **selected items themselves**, so the editor opens the file you clicked |
+| Preference key | `terminal` | `editor` |
+
+Why build it now rather than later: the difference is one enum and one path rule, so carrying it
+costs a few lines and a test, while retrofitting it later means reopening `Launcher`, `Settings`
+and the settings window at once. The editor executable is built and unit-tested in CI from M2;
+whether it is ever signed, notarized and put in a cask is a separate decision (M5 ships the
+terminal app only). Upstream's own `OpenInEditor-Lite/` target stays in the tree, untouched, as
+the reference for the behaviour.
+
 **Behavioural rules, each with a unit test:**
 1. The chosen terminal must exist in the catalog; resolution is by bundle id, never by name.
 2. Catalog entries without a bundle id (GitHub Desktop, Fork) are resolved by an explicit
    `/Applications` path or dropped.
-3. A path handed to a terminal is always an existing directory — never a file, a symlink to a
-   file, or an `.app`/`.command` bundle.
+3. A path handed to a **terminal** is always an existing directory — never a file, a symlink to a
+   file, or an `.app`/`.command` bundle. The **editor** role may receive files, since opening a
+   document is the point, but never an `.app` bundle or anything the system would execute.
 4. No Finder window, or a view with no filesystem target → `~/Desktop`, built with
    `URL(fileURLWithPath:)`.
 5. Argument templates are compiled-in constants. Nothing from preferences reaches an argument
@@ -125,7 +152,9 @@ The feature OITL doesn't have, and the main reason this is a product rather than
   - "open a new window" vs "new tab" where the terminal supports both (Terminal.app, iTerm);
   - a **Reveal in Finder** line naming the resolved app bundle, so the user sees exactly what will launch;
   - a footer: version, build, "based on OpenInTerminal-Lite X.Y.Z", and a link to the source.
-- **Implementation:** SwiftUI window, AppKit host. Needs macOS 13 (§8, Q3 default).
+- **Roles:** the same window serves both executables, showing the catalog for the role it was
+  launched in; the title says which. If both apps are installed they share nothing but the code.
+- **Implementation:** SwiftUI window, AppKit host. Needs macOS 13 (§8, Q2 default).
 - **What it must not do:** offer a free-text command or app path. That is finding L1, and the
   allowlist is the fix. If a user needs an unsupported terminal, the answer is a catalog entry
   in a release, not a text field.
@@ -137,9 +166,9 @@ The feature OITL doesn't have, and the main reason this is a product rather than
 - `README.md` rewritten for Yatu with a **Credits** section naming OpenInTerminal and Jianing Wang;
   `CLAUDE.md` gets a **FORK STATUS** block telling agents which upstream text to ignore.
 - Remotes: `origin` (inquinity) and `upstream` (Ji4n1ng, read-only). `git rerere` enabled.
-- Branches: `master` is the product line; `fork/<topic>` short-lived, merged `--no-ff`;
+- Branches: `main` is the product line; `fork/<topic>` short-lived, merged `--no-ff`;
   `contrib/<topic>` cut from `upstream/master`, one fix each, for PRs to upstream.
-- Merge commits: `Fork: <what>` and `Sync: upstream/master @ <sha>`. **Merge, never rebase** `master`.
+- Merge commits: `Fork: <what>` and `Sync: upstream/master @ <sha>`. **Merge, never rebase** `main`.
 - "New files are free. Edits to upstream-maintained files are rent." Every rent-paying edit is
   listed in FORK-NOTES.
 - Public-repo writing: refer to upstream with full URLs or `GH-287`, never a bare `#287` or
@@ -170,7 +199,8 @@ before anything is published.
 - **Verify:** built app shows Yatu's name and icon; `defaults domains` shows only the new domain.
 
 ### M2 — The app (medium: app logic)
-- **M2a** compile-set spike (§4). **M2b** the sources in §4 with their seven rules.
+- **M2a** compile-set spike (§4). **M2b** the sources in §4 with their seven rules, as
+  `YatuKit` plus the two thin executables (§4.1).
 - **M2c** the settings window (§5).
 - **M2d** tests: unit tests for rules 1–6; `bin/attack-matrix.sh` automating the hostile-name and
   canary-app matrix from the dynamic review (scratch only, prefs backed up and restored);
@@ -216,6 +246,10 @@ before anything is published.
 | L1 prefs-driven launch, L2 world-readable path log | Public issue with patch; low severity |
 | Dead AppleScript helpers, `.travis.yml`, stray entitlements | Cleanup PR |
 | GH-287 (icon), GH-288 (Xcode 27) | Already open; the watch task tracks them |
+
+### M6a — Ship the editor app (optional, decided after 1.0)
+Signing, notarization, icon and a cask for Yatu Edit. Nothing in M1–M5 blocks it; the code and
+tests already exist by then.
 
 ### M7 — Optional, after 1.0
 - App Sandbox spike on `fork/sandbox-spike`: `app-sandbox` plus temporary Apple Events exceptions for
