@@ -14,7 +14,9 @@
 >   OpenInTerminal; that is upstream's, not ours.
 > - **We ship one app.** The full `OpenInTerminal/` app, the Finder extension, the login helper and
 >   `OpenInEditor-Lite/` are kept untouched and unsupported. Do not "fix" them here — their findings
->   go upstream (see the contribution track in the fork notes).
+>   go upstream (see the contribution track in the fork notes). Yatu does carry an **editor role**
+>   of its own (`Yatu Edit`, built and tested but not shipped in 1.0 — see §4.1 of the plan); that
+>   is fork-owned code, not upstream's target.
 > - **Build scripts:** use the fork-owned copies in `bin/` (`bin/build-unsigned.sh`,
 >   `bin/build-signed.sh`). The identically named scripts at the repo root are upstream's and are
 >   left alone so merges stay clean. `bin/build-signed.sh` needs the Developer ID for team
@@ -22,7 +24,7 @@
 > - **Upstream's release runbook has been deleted** from `.claude/skills/`. It drove the upstream
 >   maintainer's account, certificate and paths. Releases here go through `bin/` and the `justfile`.
 > - **Two remotes:** `origin` (inquinity) and `upstream` (Ji4n1ng, read-only). Sync with
->   `git merge upstream/master`. **Never rebase `master`** — it is published. `git rerere` is on.
+>   `git merge upstream/master`. **Never rebase `main`** — it is published. `git rerere` is on.
 > - **Merge commits are prefixed** `Fork:` (our change) or `Sync:` (an upstream merge).
 > - **Upstream contributions go on a `contrib/<topic>` branch** cut from `upstream/master`, carrying
 >   only the fix being offered — never our private-label work.

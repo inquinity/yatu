@@ -20,6 +20,7 @@ print_colored() {
 }
 
 REMOTE="${REMOTE:-upstream}"
+# Upstream's default branch is still master; ours is main.
 REMOTE_BRANCH="${REMOTE_BRANCH:-master}"
 UPSTREAM_URL="${UPSTREAM_URL:-https://github.com/Ji4n1ng/OpenInTerminal.git}"
 
@@ -31,7 +32,7 @@ Read-only: nothing is merged and no local branch is changed.
 
 Environment:
   REMOTE          Remote to inspect. Default: upstream
-  REMOTE_BRANCH   Branch to compare against. Default: master
+  REMOTE_BRANCH   Upstream branch to compare against. Default: master
   UPSTREAM_URL    Added as the remote if it is missing."
 }
 

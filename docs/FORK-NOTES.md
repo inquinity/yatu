@@ -18,7 +18,7 @@ are looking at. Everything it does today is upstream's work; see
 
 | Remote | URL | Role |
 |---|---|---|
-| `origin` | `inquinity/OpenInTerminal` (renaming to `inquinity/yatu`) | This fork. Where our `master` lives. |
+| `origin` | `inquinity/OpenInTerminal` (renaming to `inquinity/yatu`) | This fork. Where our `main` lives. |
 | `upstream` | `Ji4n1ng/OpenInTerminal` | The base project. Read-only; never pushed to. |
 
 Upstream moves slowly, so syncs are rare and cheap — but each one still gets a security review of
@@ -30,14 +30,15 @@ told to run.
 | Part | State |
 |---|---|
 | OpenInTerminal-Lite → **Yatu** | The product. Developer ID signed by Altman Software Design, LLC (`45GJWJVQN2`), notarized, distributed as the `yatu` cask in [`inquinity/homebrew-tap`](https://github.com/inquinity/homebrew-tap). |
-| `OpenInTerminal/` (full app), `OpenInTerminalFinderExtension/`, `OpenInTerminalHelper/`, `OpenInEditor-Lite/` | **Kept, unsupported, not built.** They stay untouched so syncs stay trivial. We do not ship them, and their open findings are upstream's (see below). |
+| `OpenInEditor-Lite/` | **Kept as the reference** for Yatu's editor role. Yatu builds an editor executable (`Yatu Edit`) from the same code as the terminal one; whether it is ever shipped is decided after 1.0. Upstream's target itself stays untouched and unbuilt. |
+| `OpenInTerminal/` (full app), `OpenInTerminalFinderExtension/`, `OpenInTerminalHelper/` | **Kept, unsupported, not built.** They stay untouched so syncs stay trivial. We do not ship them, and their open findings are upstream's (see below). |
 | `OpenInTerminalCore/` | Partly used. Yatu compiles a few of its files unchanged; the rest is upstream's. |
 
 ## Branch model
 
 ```
 upstream/master        remote-tracking only; never a local branch we edit
-master       (origin)  our product line: upstream + our changes
+main         (origin)  our product line: upstream + our changes
 fork/<topic>           short-lived; merged with --no-ff, then deleted
 contrib/<topic>        cut from upstream/master; ONE fix each; for PRs to Ji4n1ng
 ```
@@ -55,7 +56,7 @@ git fetch upstream
 git merge upstream/master      # merge, never rebase
 ```
 
-**Merge, never rebase** `master`: it is published, and rebasing means force-pushing over history
+**Merge, never rebase** `main`: it is published, and rebasing means force-pushing over history
 other people hold. `git rerere` is enabled in this clone so each conflict resolution is recorded
 once and replayed on later merges. In a fresh clone:
 
