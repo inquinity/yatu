@@ -23,11 +23,17 @@
 >   `45GJWJVQN2` and `NOTARY_PROFILE=altman-notary`.
 > - **Upstream's release runbook has been deleted** from `.claude/skills/`. It drove the upstream
 >   maintainer's account, certificate and paths. Releases here go through `bin/` and the `justfile`.
-> - **Two remotes:** `origin` (inquinity) and `upstream` (Ji4n1ng, read-only). Sync with
->   `git merge upstream/master`. **Never rebase `main`** — it is published. `git rerere` is on.
+> - **Two repositories of our own.** This one — `inquinity/yatu`, branch `main`, cloned at
+>   `~/dev/projects/yatu` — is the product. Upstream contributions live in a *separate* clone:
+>   `inquinity/OpenInTerminal`, branch `master`, at `~/dev/oss/openinterminal`. **No `contrib/*`
+>   branch is ever cut here**, and no Yatu work ever lands there. Both clones carry a read-only
+>   `upstream` remote (Ji4n1ng, push disabled); sync with `git merge upstream/master`.
+>   **Never rebase `main`** — it is published. `git rerere` is on in both.
 > - **Merge commits are prefixed** `Fork:` (our change) or `Sync:` (an upstream merge).
-> - **Upstream contributions go on a `contrib/<topic>` branch** cut from `upstream/master`, carrying
->   only the fix being offered — never our private-label work.
+> - **Upstream contributions go on a `contrib/<topic>` branch** cut from `upstream/master` **in the
+>   `~/dev/oss/openinterminal` clone**, carrying only the fix being offered — never our
+>   private-label work. [PR GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287) is open
+>   from that repository.
 > - **New files are free; edits to upstream-maintained files are rent.** Prefer adding a file over
 >   editing `OpenInTerminalCore/`, the Xcode projects or the app targets. Every rent-paying edit is
 >   listed in the fork notes.
