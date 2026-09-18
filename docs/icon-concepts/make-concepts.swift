@@ -234,6 +234,42 @@ let concepts: [Concept] = [
         palette.accent.setStroke()
         caret.stroke()
     },
+
+    Concept(
+        slug: "07-violet-aperture",
+        name: "Violet Aperture",
+        note: "Aperture's opening on Descent's violet, inner field held black, caret set low and left.",
+        palette: Palette(backgroundTop: rgb(120, 66, 168), backgroundBottom: rgb(74, 38, 118),
+                         mark: rgb(246, 247, 250), accent: rgb(255, 178, 84))
+    ) { size, palette in
+        let ringInset = size * 0.265
+        let opening = NSRect(x: ringInset, y: ringInset,
+                             width: size - ringInset * 2, height: size - ringInset * 2)
+
+        // Unlike concept 2, the inner field does not inherit the background: it
+        // is held black, so the violet reads as a surround rather than as the
+        // screen the caret sits on.
+        let inner = NSBezierPath(roundedRect: opening, xRadius: size * 0.075, yRadius: size * 0.075)
+        rgb(14, 15, 19).setFill()
+        inner.fill()
+
+        let ring = NSBezierPath(roundedRect: opening, xRadius: size * 0.075, yRadius: size * 0.075)
+        ring.lineWidth = size * 0.070
+        palette.mark.setStroke()
+        ring.stroke()
+
+        // Set low and left, matching concept 1's caret placement rather than
+        // centring it in the opening.
+        let caret = NSBezierPath()
+        caret.lineWidth = size * 0.070
+        caret.lineCapStyle = .round
+        caret.lineJoinStyle = .round
+        caret.move(to: NSPoint(x: size * 0.388, y: size * 0.537))
+        caret.line(to: NSPoint(x: size * 0.518, y: size * 0.452))
+        caret.line(to: NSPoint(x: size * 0.388, y: size * 0.367))
+        palette.accent.setStroke()
+        caret.stroke()
+    },
 ]
 
 // MARK: - Rendering
@@ -289,7 +325,8 @@ for concept in concepts {
 
 // Board 1: the concepts side by side at app-icon scale.
 do {
-    let tile = 200, columns = 3, rows = 2
+    let tile = 200, columns = 3
+    let rows = (concepts.count + columns - 1) / columns
     let gutter = 34, topMargin = 74, captionHeight = 46
     let width = gutter + columns * (tile + gutter)
     let height = topMargin + rows * (tile + captionHeight + gutter)

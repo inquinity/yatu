@@ -50,6 +50,22 @@ single large `>` (Warp), a monochrome glyph-in-a-circle (Ghostty).
 | 4 | **Descent** | Two chevrons aimed into the corner — `cd`, with no folder drawn at all | **No** — smears |
 | 5 | **Block Cursor** | One solid cursor on a baseline; the simplest thing that still says terminal | **Yes**, best of the six |
 | 6 | **Corner Fold** | A folder with its corner turned back, dark terminal underneath | Fold survives, caret does not |
+| 7 | **Violet Aperture** | 2's opening on 4's violet, inner field held black, caret set low and left | Better than 2 — the caret survives |
+
+### Concept 7, requested 2026-09-18
+
+A hybrid: concept 2's opening, concept 4's violet surround, the inner field held black rather than
+inheriting the background, and the caret moved down and left to sit where concept 1's does instead
+of centred in the opening.
+
+It fixes 2's failure. The caret disappeared there because a mid-grey ring sat on a near-identical
+dark field and the amber had nothing to separate from; against pure black inside a violet surround
+it holds down to 18pt. The cost is layers — violet, white ring, black field, amber caret is four
+materials in a 16px box, and at 16pt it resolves to a violet square with a light ring and an amber
+speck. Compare it against 3 and 5 on the second board before settling.
+
+The caret is still concept 2's amber. Descent's mint (`150, 232, 210`) is the other obvious choice
+against that violet and would cost one line to try.
 
 ### Reading the second board
 
