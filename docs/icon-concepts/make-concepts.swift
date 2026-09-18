@@ -23,6 +23,10 @@ struct Palette {
     let backgroundBottom: NSColor
     let mark: NSColor
     let accent: NSColor
+    /// The field a concept holds behind its own mark, where that is not the
+    /// background. Defaults to near-black; single-ink renderings override it.
+    var innerField: NSColor = NSColor(calibratedRed: 14 / 255, green: 15 / 255,
+                                      blue: 19 / 255, alpha: 1)
 }
 
 func rgb(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat) -> NSColor {
@@ -250,7 +254,9 @@ let concepts: [Concept] = [
         // is held black, so the violet reads as a surround rather than as the
         // screen the caret sits on.
         let inner = NSBezierPath(roundedRect: opening, xRadius: size * 0.075, yRadius: size * 0.075)
-        rgb(14, 15, 19).setFill()
+        // Follows the ink: black inside violet, but inverted with everything
+        // else when the board flattens the set.
+        palette.innerField.setFill()
         inner.fill()
 
         let ring = NSBezierPath(roundedRect: opening, xRadius: size * 0.075, yRadius: size * 0.075)
@@ -274,7 +280,16 @@ let concepts: [Concept] = [
 
 // MARK: - Rendering
 
-func render(_ concept: Concept, pixels: Int, monochrome: Bool = false) -> NSBitmapImageRep {
+/// How a concept is inked. The two single-ink modes are the honest test of
+/// whether a mark depends on its colours: a toolbar draws it small and flat,
+/// and on a light toolbar it is dark-on-light, not light-on-dark.
+enum Rendering {
+    case colour
+    case oneInk        // light mark on a dark field
+    case oneInkInverted // dark mark on a light field, as a light toolbar draws it
+}
+
+func render(_ concept: Concept, pixels: Int, rendering: Rendering = .colour) -> NSBitmapImageRep {
     let representation = NSBitmapImageRep(
         bitmapDataPlanes: nil, pixelsWide: pixels, pixelsHigh: pixels,
         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
@@ -285,12 +300,19 @@ func render(_ concept: Concept, pixels: Int, monochrome: Bool = false) -> NSBitm
     NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: representation)
     let size = CGFloat(pixels)
 
-    // The toolbar draws the icon small and flat; rendering each concept in one
-    // ink is the honest test of whether the mark survives that treatment.
-    let palette = monochrome
-        ? Palette(backgroundTop: rgb(70, 74, 82), backgroundBottom: rgb(70, 74, 82),
-                  mark: .white, accent: rgb(150, 154, 162))
-        : concept.palette
+    let palette: Palette
+    switch rendering {
+    case .colour:
+        palette = concept.palette
+    case .oneInk:
+        palette = Palette(backgroundTop: rgb(70, 74, 82), backgroundBottom: rgb(70, 74, 82),
+                          mark: .white, accent: rgb(152, 156, 164),
+                          innerField: rgb(70, 74, 82))
+    case .oneInkInverted:
+        palette = Palette(backgroundTop: rgb(232, 234, 239), backgroundBottom: rgb(232, 234, 239),
+                          mark: rgb(28, 30, 36), accent: rgb(108, 112, 122),
+                          innerField: rgb(232, 234, 239))
+    }
 
     drawBackground(size: size, palette: palette)
     concept.draw(size, palette)
@@ -369,7 +391,12 @@ do {
     let columnWidth = largestSize + 28
     let groupWidth = sizes.count * columnWidth
     let groupGap = 72
-    let width = leftMargin + groupWidth + groupGap + groupWidth + 24
+    let groups: [(title: String, rendering: Rendering)] = [
+        ("in colour", .colour),
+        ("one ink, on dark", .oneInk),
+        ("one ink, inverted", .oneInkInverted),
+    ]
+    let width = leftMargin + groups.count * groupWidth + (groups.count - 1) * groupGap + 24
     let height = topMargin + concepts.count * rowHeight + 34
 
     let sheet = NSBitmapImageRep(
@@ -384,9 +411,11 @@ do {
 
     label("Legibility at Finder-toolbar size", at: NSPoint(x: 30, y: height - 46),
           size: 24, weight: .semibold)
-    label("in colour", at: NSPoint(x: leftMargin, y: height - topMargin + 44), size: 14, weight: .medium)
-    label("flattened to one ink", at: NSPoint(x: leftMargin + groupWidth + groupGap,
-                                              y: height - topMargin + 44), size: 14, weight: .medium)
+    for (group, definition) in groups.enumerated() {
+        label(definition.title,
+              at: NSPoint(x: leftMargin + group * (groupWidth + groupGap),
+                          y: height - topMargin + 44), size: 14, weight: .medium)
+    }
 
     for (index, concept) in concepts.enumerated() {
         let rowBottom = height - topMargin - (index + 1) * rowHeight + 30
@@ -394,13 +423,25 @@ do {
               at: NSPoint(x: 30, y: CGFloat(rowBottom + largestSize / 2) - 8), size: 14)
 
         for (column, pointSize) in sizes.enumerated() {
-            for (group, monochrome) in [(0, false), (1, true)] {
+            for (group, definition) in groups.enumerated() {
                 let offset = leftMargin + group * (groupWidth + groupGap)
                 let x = offset + column * columnWidth
                 // Sit every tile on one baseline so the sizes read as a ramp.
+                let tileRect = NSRect(x: x, y: rowBottom, width: pointSize, height: pointSize)
                 let image = NSImage(size: NSSize(width: pointSize, height: pointSize))
-                image.addRepresentation(render(concept, pixels: pointSize * 2, monochrome: monochrome))
-                image.draw(in: NSRect(x: x, y: rowBottom, width: pointSize, height: pointSize))
+                image.addRepresentation(render(concept, pixels: pointSize * 2,
+                                               rendering: definition.rendering))
+                image.draw(in: tileRect)
+
+                // The inverted tiles are nearly the sheet's own colour, so give
+                // them a hairline to show where each one ends.
+                if definition.rendering == .oneInkInverted {
+                    NSColor(calibratedWhite: 0.80, alpha: 1).setStroke()
+                    let outline = NSBezierPath(rect: tileRect.insetBy(dx: -0.5, dy: -0.5))
+                    outline.lineWidth = 1
+                    outline.stroke()
+                }
+
                 if index == 0 {
                     label("\(pointSize)pt", at: NSPoint(x: x, y: height - topMargin + 18), size: 11,
                           color: NSColor(calibratedWhite: 0.45, alpha: 1))
