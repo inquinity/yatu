@@ -1,0 +1,1 @@
+../../OpenInTerminalCore/ScriptingBridge/Terminal.swift
