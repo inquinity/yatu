@@ -16,10 +16,24 @@ are looking at. Everything it does today is upstream's work; see
 
 ## Relationship to upstream
 
-| Remote | URL | Role |
-|---|---|---|
-| `origin` | `inquinity/OpenInTerminal` (renaming to `inquinity/yatu`) | This fork. Where our `main` lives. |
-| `upstream` | `Ji4n1ng/OpenInTerminal` | The base project. Read-only; never pushed to. |
+The work is split across **two repositories of our own**, because the two jobs pull in opposite
+directions: an upstream contribution must look like upstream, and Yatu must not.
+
+| Repository | Clone | Branch | Role |
+|---|---|---|---|
+| `inquinity/yatu` | `~/dev/projects/yatu` | `main` | **This repository.** The product: upstream plus our private-label work. |
+| `inquinity/OpenInTerminal` | `~/dev/oss/openinterminal` | `master` | Contributions only. `contrib/*` branches and PRs to Ji4n1ng live here. Carries no Yatu work. |
+| `Ji4n1ng/OpenInTerminal` | — | `master` | The base project. A read-only `upstream` remote in both clones, with pushes disabled. |
+
+Both clones share history with upstream, so `git merge upstream/master` works in either.
+
+`inquinity/OpenInTerminal` is **not** a GitHub fork — it was pushed from a clone — which is why
+[PR GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287) shows as cross-repository. It works,
+and GitHub follows renames, so renaming that repository would move the open PR's head under the Yatu
+name. **It keeps its name.** Its `master` also carries six commits made before the split (the
+fork build scripts, the tap-aware checker, fork build marking, both icon fixes, the Xcode 27
+deployment target); they are left in place rather than force-pushed away, and every `contrib/*`
+branch is cut from `upstream/master` regardless, so PR diffs are unaffected.
 
 Upstream moves slowly, so syncs are rare and cheap — but each one still gets a security review of
 the incoming diff (`security-oss-app-reviewer`), because a Finder toolbar app runs whatever it is
@@ -37,16 +51,21 @@ told to run.
 ## Branch model
 
 ```
-upstream/master        remote-tracking only; never a local branch we edit
-main         (origin)  our product line: upstream + our changes
-fork/<topic>           short-lived; merged with --no-ff, then deleted
-contrib/<topic>        cut from upstream/master; ONE fix each; for PRs to Ji4n1ng
+~/dev/projects/yatu            origin = inquinity/yatu
+  main                         our product line: upstream + our changes
+  fork/<topic>                 short-lived; merged with --no-ff, then deleted
+  upstream/master              remote-tracking only; never a local branch we edit
+
+~/dev/oss/openinterminal       origin = inquinity/OpenInTerminal
+  master                       the contribution base
+  contrib/<topic>              cut from upstream/master; ONE fix each; for PRs to Ji4n1ng
 ```
 
 `contrib/*` branches carry only the fix being offered, never our private-label work, so the PR diff
-is exactly what upstream is asked to review. `fix/macos-26-icon-rendering`
+is exactly what upstream is asked to review. They are cut in the `~/dev/oss/openinterminal` clone,
+never here. `fix/macos-26-icon-rendering`
 ([PR GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287)) is effectively the first of these;
-it keeps its name while the PR is open.
+it keeps its name while the PR is open, and now lives only in that clone.
 
 ### Syncing
 

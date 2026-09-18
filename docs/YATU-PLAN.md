@@ -1,6 +1,7 @@
 # Yatu — private-label plan
 
-Status: **draft for review**, 2026-09-18. Nothing here is implemented yet.
+Status: **accepted 2026-09-18**, with one question still open (§8.2, the macOS floor).
+M0 is done; nothing in M1 onward is implemented yet.
 Replaces the earlier `PRIVATE-LABEL-PLAN.md` draft.
 Inputs: the security review in `.security-review/` (git-excluded), the Belvedere fork
 (`~/dev/oss/belvedere`) for fork conventions, and a GitHub survey of comparable apps.
@@ -165,9 +166,11 @@ The feature OITL doesn't have, and the main reason this is a product rather than
   what we change, upstream contribution track, roadmap.
 - `README.md` rewritten for Yatu with a **Credits** section naming OpenInTerminal and Jianing Wang;
   `CLAUDE.md` gets a **FORK STATUS** block telling agents which upstream text to ignore.
-- Remotes: `origin` (inquinity) and `upstream` (Ji4n1ng, read-only). `git rerere` enabled.
+- Two repositories: `inquinity/yatu` (`~/dev/projects/yatu`, `main`) is the product;
+  `inquinity/OpenInTerminal` (`~/dev/oss/openinterminal`, `master`) is the contribution clone.
+  Both carry a read-only `upstream` remote (Ji4n1ng, push disabled). `git rerere` enabled in both.
 - Branches: `main` is the product line; `fork/<topic>` short-lived, merged `--no-ff`;
-  `contrib/<topic>` cut from `upstream/master`, one fix each, for PRs to upstream.
+  `contrib/<topic>` cut from `upstream/master` **in the contribution clone**, one fix each.
 - Merge commits: `Fork: <what>` and `Sync: upstream/master @ <sha>`. **Merge, never rebase** `main`.
 - "New files are free. Edits to upstream-maintained files are rent." Every rent-paying edit is
   listed in FORK-NOTES.
@@ -233,7 +236,12 @@ before anything is published.
 - New cask `yatu`: sha256-pinned, `depends_on macos:`, `uninstall quit:`, `zap` covering the prefs
   plist and Saved Application State, `caveats` for the toolbar button and
   `tccutil reset AppleEvents com.altmansoftwaredesign.yatu`, `livecheck` on our releases.
-- `openinterminal-lite-inquinity` gets `deprecate!` pointing at `yatu`, removed one release later (Q6).
+- `openinterminal-lite-inquinity` is **deleted outright, with no deprecation period** (Q5). Order
+  matters, because it is installed on this Mac: install `yatu`, then
+  `brew uninstall --cask openinterminal-lite-inquinity` on **both** Macs, and only then delete the
+  cask from the tap — removing it while an install still points at it makes `brew update` error
+  on that machine. The tap's `README.md` and the cask's `url`/`homepage` also still name
+  `inquinity/OpenInTerminal`; they move to `inquinity/yatu` in the same change.
 - Update the tap README, `bin/which-yatu.sh`, the daily upstream-watch task, and the project memory.
 - Migrate this Mac, then the second Mac. The icon-cache confusion disappears once the bundle id differs.
 
@@ -258,22 +266,42 @@ tests already exist by then.
 - Optional extras only if wanted: multiple selected folders each in a tab; a Services entry;
   a second cask for an editor variant.
 
-## 8. Open questions (defaults proposed — say "as proposed" to accept all)
+## 8. Questions — answered 2026-09-18 (one still open)
 
-1. **Repo name.** Rename `inquinity/OpenInTerminal` → `inquinity/yatu`? GitHub keeps the fork link and
-   redirects the old URL. *Default: rename at M1.*
-2. **Minimum macOS.** 12.0 (today's floor), or 13.0 (simpler SwiftUI settings window)?
-   *Default: 13.0.*
-3. **The rest of the upstream tree.** Keep `OpenInTerminal/`, the Finder extension, the helper and
-   `OpenInEditor-Lite` in the repo, untouched and unsupported, so syncs stay trivial — or delete them?
-   *Default: keep, documented as unsupported and not built.*
-4. **Signed tags — settled 2026-09-18: yes.** SSH signing is set up (`~/.ssh/git-signing`,
-   ed25519, passphrase in the vault; `commit.gpgsign` and `tag.gpgsign` on;
-   `~/.ssh/allowed_signers` carries both spellings of the author email). So `just release`
-   creates **signed annotated tags**, and `bin/publish-release.sh` uses `gh release create --verify-tag`.
-   Remaining step, outside this plan: upload the public key to GitHub as a *signing* key so commits
-   and tags show Verified.
-5. **Old cask.** Deprecate with a pointer to `yatu` for one release, then delete — or delete at once?
-   *Default: deprecate, then delete.*
-6. **Icon.** Commission a concept board the way Belvedere did (`docs/icon-concepts/`), or go straight to
-   one design? *Default: a small board of 4–6 concepts, you pick.*
+1. **Repo layout — settled: two repositories, no rename.** `inquinity/OpenInTerminal` turns out
+   **not** to be a GitHub fork (it was pushed from a clone), and
+   [PR GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287) is open from it
+   cross-repository. GitHub follows renames, so renaming it to `yatu` would have moved that live
+   PR's head repository under the product's name. It therefore keeps its name and becomes the
+   contribution clone at `~/dev/oss/openinterminal` (`master`, six pre-split commits left in
+   place, not force-pushed away). Yatu gets a **new** public repository, `inquinity/yatu`, cloned
+   at `~/dev/projects/yatu` on `main`. See `docs/FORK-NOTES.md`.
+
+2. **Minimum macOS — still open.** Xcode 27's `MacOSX27.0.sdk` declares
+   `MinimumDeploymentTarget = 12.0`, so 12.0 is supported and anything below it is not — that is
+   what commit `144cf5b` was about. The choice is ours, not Xcode's. 13.0 buys
+   `.formStyle(.grouped)`, `LabeledContent` and `NavigationStack` for §5's settings window; 12.0
+   costs an afternoon of hand-rolled layout or AppKit and buys back only 2015-era hardware, which
+   can still use upstream's 10.13-target build. Neither version receives Apple security updates as
+   of 2026-09. *Leaning 13.0 unless a Mac in daily use runs 12.*
+
+3. **The rest of the upstream tree — settled: keep.** `OpenInTerminal/`, the Finder extension, the
+   helper and `OpenInEditor-Lite` stay in the repository, documented as unsupported and not built,
+   so syncs stay trivial.
+
+4. **Signed tags — settled: yes.** SSH signing is set up (`~/.ssh/git-signing`, ed25519, passphrase
+   in the vault; `commit.gpgsign` and `tag.gpgsign` on). `~/.ssh/allowed_signers` carries **two
+   principal lines for the same address in different capitalizations** —
+   `robert@AltmanSoftwareDesign.com` (what `user.email` is set to, and what every commit here
+   carries) and the all-lowercase `robert@altmansoftwaredesign.com` — both mapped to the same key,
+   because git matches the signer principal as a case-sensitive literal and would otherwise report
+   "no principal matched" on our own commits. GitHub matches addresses case-insensitively, so this
+   affects local `--show-signature` only. So `just release` creates **signed annotated tags**, and
+   `bin/publish-release.sh` uses `gh release create --verify-tag`.
+   Remaining step, outside this plan: upload the public key to GitHub as a **signing** key
+   (`gh ssh-key add ~/.ssh/git-signing.pub --type signing`) so commits and tags show Verified.
+
+5. **Old cask — settled: delete outright, no deprecation period.** Sequencing in M5.
+
+6. **Icon — settled: a concept board** of 4–6 concepts in `docs/icon-concepts/`, one chosen from it,
+   the way Belvedere did.
