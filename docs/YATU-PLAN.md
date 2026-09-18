@@ -240,8 +240,11 @@ before anything is published.
   matters, because it is installed on this Mac: install `yatu`, then
   `brew uninstall --cask openinterminal-lite-inquinity` on **both** Macs, and only then delete the
   cask from the tap — removing it while an install still points at it makes `brew update` error
-  on that machine. The tap's `README.md` and the cask's `url`/`homepage` also still name
-  `inquinity/OpenInTerminal`; they move to `inquinity/yatu` in the same change.
+  on that machine. The old cask's `url`, `homepage` and README row keep naming
+  `inquinity/OpenInTerminal` until that moment and are **not** repointed — the
+  `v1.2.8-inquinity.1` release they resolve to lives in that repository and stays there. The new
+  `yatu` cask is a separate file pointing at `inquinity/yatu` releases; the old row is deleted
+  from the tap README rather than edited.
 - Update the tap README, `bin/which-yatu.sh`, the daily upstream-watch task, and the project memory.
 - Migrate this Mac, then the second Mac. The icon-cache confusion disappears once the bundle id differs.
 
