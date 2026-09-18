@@ -3,6 +3,9 @@
 # Reports whether Ji4n1ng/OpenInTerminal has moved ahead of this fork.
 # Read-only: fetches remote metadata and prints counts, never merges.
 #
+# The full colour palette is declared in every fork-owned script by convention, so
+# the set is identical everywhere; not every script uses every colour.
+# shellcheck disable=SC2034
 set -euo pipefail
 
 # Define color codes for terminal output

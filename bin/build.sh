@@ -11,6 +11,9 @@
 #
 # Output: .build/app/<App>.app
 #
+# The full colour palette is declared in every fork-owned script by convention, so
+# the set is identical everywhere; not every script uses every colour.
+# shellcheck disable=SC2034
 set -euo pipefail
 
 # Always operate on the repo, not on the caller's directory: every path below
