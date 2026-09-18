@@ -1,7 +1,7 @@
 # Yatu — private-label plan
 
-Status: **accepted 2026-09-18**, with one question still open (§8.2, the macOS floor).
-M0 is done; nothing in M1 onward is implemented yet.
+Status: **accepted 2026-09-18**, all questions in §8 answered.
+M0 is done; M1 is in progress.
 Replaces the earlier `PRIVATE-LABEL-PLAN.md` draft.
 Inputs: the security review in `.security-review/` (git-excluded), the Belvedere fork
 (`~/dev/oss/belvedere`) for fork conventions, and a GitHub survey of comparable apps.
@@ -15,6 +15,7 @@ Inputs: the security review in `.security-review/` (git-excluded), the Belvedere
 | Cask | `yatu` in `inquinity/homebrew-tap` |
 | Preferences domain | `com.altmansoftwaredesign.yatu`, standard domain, no app group |
 | Team | `45GJWJVQN2` (Altman Software Design, LLC), Developer ID + notarized |
+| Minimum macOS | **13.0** (Ventura). Xcode 27's SDK floor is 12.0, so this is our choice, not the toolchain's |
 | Functional base | **OpenInTerminal-Lite**, kept as the upstream to merge from |
 | Structure | **Swift package**, built into an app bundle by script — modelled on [sozercan/OpenInCode](https://github.com/sozercan/OpenInCode) |
 | Headline feature | A **settings window** for choosing the terminal, which OITL lacks |
@@ -155,7 +156,8 @@ The feature OITL doesn't have, and the main reason this is a product rather than
   - a footer: version, build, "based on OpenInTerminal-Lite X.Y.Z", and a link to the source.
 - **Roles:** the same window serves both executables, showing the catalog for the role it was
   launched in; the title says which. If both apps are installed they share nothing but the code.
-- **Implementation:** SwiftUI window, AppKit host. Needs macOS 13 (§8, Q2 default).
+- **Implementation:** SwiftUI window, AppKit host, using `.formStyle(.grouped)` and
+  `LabeledContent` — which is what the macOS 13.0 floor buys (§8.2).
 - **What it must not do:** offer a free-text command or app path. That is finding L1, and the
   allowlist is the fix. If a user needs an unsupported terminal, the answer is a catalog entry
   in a release, not a text field.
@@ -269,7 +271,7 @@ tests already exist by then.
 - Optional extras only if wanted: multiple selected folders each in a tab; a Services entry;
   a second cask for an editor variant.
 
-## 8. Questions — answered 2026-09-18 (one still open)
+## 8. Questions — all answered 2026-09-18
 
 1. **Repo layout — settled: two repositories, no rename.** `inquinity/OpenInTerminal` turns out
    **not** to be a GitHub fork (it was pushed from a clone), and
@@ -280,13 +282,13 @@ tests already exist by then.
    place, not force-pushed away). Yatu gets a **new** public repository, `inquinity/yatu`, cloned
    at `~/dev/projects/yatu` on `main`. See `docs/FORK-NOTES.md`.
 
-2. **Minimum macOS — still open.** Xcode 27's `MacOSX27.0.sdk` declares
-   `MinimumDeploymentTarget = 12.0`, so 12.0 is supported and anything below it is not — that is
-   what commit `144cf5b` was about. The choice is ours, not Xcode's. 13.0 buys
-   `.formStyle(.grouped)`, `LabeledContent` and `NavigationStack` for §5's settings window; 12.0
-   costs an afternoon of hand-rolled layout or AppKit and buys back only 2015-era hardware, which
-   can still use upstream's 10.13-target build. Neither version receives Apple security updates as
-   of 2026-09. *Leaning 13.0 unless a Mac in daily use runs 12.*
+2. **Minimum macOS — settled: 13.0 (Ventura).** Xcode 27's `MacOSX27.0.sdk` declares
+   `MinimumDeploymentTarget = 12.0`, so 12.0 remains available and only 10.x/11.x are refused —
+   that is what commit `144cf5b` was about, and it is unrelated to Xcode 27 itself requiring
+   macOS 26.6 to *run*. The floor was therefore a product choice. 13.0 buys `.formStyle(.grouped)`,
+   `LabeledContent` and `NavigationStack` for §5's settings window; 12.0 would have cost
+   hand-rolled layout or AppKit and bought back only 2015-era hardware, which can still run
+   upstream's 10.13-target build. Neither version receives Apple security updates as of 2026-09.
 
 3. **The rest of the upstream tree — settled: keep.** `OpenInTerminal/`, the Finder extension, the
    helper and `OpenInEditor-Lite` stay in the repository, documented as unsupported and not built,
