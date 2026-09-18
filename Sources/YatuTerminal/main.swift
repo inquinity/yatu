@@ -7,4 +7,4 @@
 
 import YatuKit
 
-Stub.run(role: .terminal)
+Yatu.run(role: .terminal)

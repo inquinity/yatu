@@ -223,12 +223,19 @@ before anything is published.
   resolves to it. Nothing in M1 is outstanding.
 
 ### M2 — The app (medium: app logic)
-- **M2a** compile-set spike (§4). **M2b** the sources in §4 with their seven rules, as
-  `YatuKit` plus the two thin executables (§4.1).
+- **M2a** compile-set spike (§4) — **done 2026-09-18**, outcome recorded in §4.
+- **M2b** the sources in §4 with their seven rules, as `YatuKit` plus the two thin
+  executables (§4.1) — **done 2026-09-18**. `Log` (rule 6), `FinderTarget` (rules 3, 4, and the
+  force-cast-free Finder query that closes L3), `Launcher` (rules 1, 2, 5, 7) and `Settings` (the
+  allowlist that closes L1). The Finder query sits behind a protocol so the policy is testable
+  without a running Finder, and `Settings` takes a store rather than `UserDefaults` directly so the
+  suite creates no preferences domain.
 - **M2c** the settings window (§5).
-- **M2d** tests: unit tests for rules 1–6; `bin/attack-matrix.sh` automating the hostile-name and
-  canary-app matrix from the dynamic review (scratch only, prefs backed up and restored);
-  `docs/MANUAL-TEST-CHECKLIST.md` with EXPECT / FAIL IF lines.
+- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests. Still outstanding:
+  `bin/attack-matrix.sh` automating the hostile-name and canary-app matrix from the dynamic review
+  (scratch only, prefs backed up and restored), and `docs/MANUAL-TEST-CHECKLIST.md` with
+  EXPECT / FAIL IF lines. Rule 7 and rule 6's *absence* of a log file are not unit-testable and
+  belong in the manual checklist.
 - **Review:** independent code review plus a security review of the diff.
 - **Rollback:** the package is additive; delete it. OITL keeps building.
 

@@ -7,4 +7,4 @@
 
 import YatuKit
 
-Stub.run(role: .editor)
+Yatu.run(role: .editor)
