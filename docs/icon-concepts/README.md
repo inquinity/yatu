@@ -1,8 +1,14 @@
 # Yatu icon concepts
 
-A concept round. Nothing here is wired into the app: `Resources/AppIcon.icns` is still the
-placeholder `bin/make-icon.swift` draws, and `bin/build.sh` keeps using it until a concept is
-chosen. Decision belongs to plan §8.6.
+> **Decided 2026-09-18: concept 7, "Violet Aperture."** It now lives in `bin/make-icon.swift`,
+> which draws it into `Resources/AppIcon.icns`. Where a single-ink variant is needed it is the
+> **regular** light-on-dark form (`--monochrome`), not the inverted one.
+>
+> This directory is the record of the round that chose it. `make-concepts.swift` is frozen at that
+> state on purpose — later refinements to the shipping icon happen in `bin/make-icon.swift`, and
+> this board is not expected to track them.
+
+The round, as it stood. Decision belongs to plan §8.6.
 
 Regenerate with `docs/icon-concepts/make-concepts.swift` (or `just icon-concepts`).
 

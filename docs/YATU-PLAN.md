@@ -218,8 +218,9 @@ before anything is published.
 - **Note on L4:** a SwiftPM release build embeds no `/Users/...` paths to begin with — `strings`
   finds none before or after `strip`. The strip step stays as a guard, but the finding is closed
   by the build system, not by us.
-- **Deferred from M1:** the real icon. `bin/make-icon.swift` draws a placeholder; the concept
-  board (§8.6) replaces it.
+- **Icon: done.** `bin/make-icon.swift` draws concept 7 (§8.6) and writes all ten sizes into
+  `Resources/AppIcon.icns`; the built bundle carries a byte-identical copy and `CFBundleIconFile`
+  resolves to it. Nothing in M1 is outstanding.
 
 ### M2 — The app (medium: app logic)
 - **M2a** compile-set spike (§4). **M2b** the sources in §4 with their seven rules, as
@@ -326,5 +327,14 @@ tests already exist by then.
 
 5. **Old cask — settled: delete outright, no deprecation period.** Sequencing in M5.
 
-6. **Icon — settled: a concept board** of 4–6 concepts in `docs/icon-concepts/`, one chosen from it,
-   the way Belvedere did.
+6. **Icon — settled: concept 7, "Violet Aperture."** A board of seven was drawn in
+   `docs/icon-concepts/` and concept 7 chosen on 2026-09-18: a white rounded opening on a violet
+   field, the inner field held black so the violet reads as a surround rather than as the screen,
+   and an amber caret set low and left rather than centred. Where a single-ink variant is ever
+   needed it is the **regular** light-on-dark form (`bin/make-icon.swift --monochrome`); the
+   inverted form is rejected, because the mark is carried by a bright caret on black inside a light
+   ring and inverting collapses all three contrasts at once.
+
+   The concepts were drawn from geometry rather than generated, so the chosen one *is* the
+   production art: `bin/make-icon.swift` draws it and writes a flat `.icns`. Never an Icon Composer
+   bundle — that is what stopped rendering on macOS 26.6.
