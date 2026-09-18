@@ -27,6 +27,10 @@ ver *args:
 icon:
     bin/make-icon.swift Resources/AppIcon.icns
 
+# Re-render the icon concept board for review. Changes nothing the app uses.
+icon-concepts:
+    docs/icon-concepts/make-concepts.swift docs/icon-concepts
+
 # Local ad-hoc build of the UPSTREAM apps into ./export (no Developer ID needed).
 # Yatu is built by `just build`; this is here to keep upstream's tree buildable.
 build-upstream *args:
