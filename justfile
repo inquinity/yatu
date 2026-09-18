@@ -11,8 +11,25 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 default:
     @just --list
 
-# Local ad-hoc build of the upstream apps into ./export (no Developer ID needed).
+# Build Yatu's app bundles into .build/app. Pass `terminal` or `editor` for one role.
 build *args:
+    bin/build.sh {{ args }}
+
+# Run the unit tests.
+test *args:
+    swift test {{ args }}
+
+# Read or bump the version in VERSION. See `bin/ver --help`.
+ver *args:
+    bin/ver {{ args }}
+
+# Regenerate Resources/AppIcon.icns (currently a placeholder; see the plan, 8.6).
+icon:
+    bin/make-icon.swift Resources/AppIcon.icns
+
+# Local ad-hoc build of the UPSTREAM apps into ./export (no Developer ID needed).
+# Yatu is built by `just build`; this is here to keep upstream's tree buildable.
+build-upstream *args:
     bin/build-unsigned.sh {{ args }}
 
 # Developer ID signed + notarized build. Pass a scheme, e.g. `just build-signed OpenInTerminal-Lite`.
@@ -35,7 +52,7 @@ private-changes *args:
 lint:
     #!/usr/bin/env bash
     shopt -s nullglob
-    for script in bin/*.sh; do
+    for script in bin/*.sh bin/ver; do
         bash -n "$script"
         if command -v shellcheck >/dev/null 2>&1; then
             shellcheck -S warning "$script"

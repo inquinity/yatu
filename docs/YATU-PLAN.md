@@ -100,11 +100,18 @@ yatu/                            (repo root, the fork)
 `ScriptingBridge/Terminal.swift`, and `App.swift` only if the spike shows its dependency
 chain can be cut. Upstream fixes to these arrive with a `Sync:` merge for free.
 
-**Spike M2a (½ day), decides the compile set.** `App.swift` reaches `DefaultsManager` →
-`Defaults` → `Log`. If that can't be cut without editing upstream files, Yatu defines its own
-2-field model type and compiles only `SupportedApps.swift` plus the two ScriptingBridge files.
-Either way **no upstream file is edited**; anything else is copied into `Sources/Yatu` with
-provenance in a header comment.
+**Spike M2a — done 2026-09-18. Outcome: the second option.** `App.swift` cannot be compiled:
+its `Openable` extension reaches `FinderManager`, `DefaultsManager`, `ScriptManager`,
+`Constants`, `OITError` and `logw` — the whole framework, including the three components Yatu
+replaces by design (L1, L2, L3). But `SupportedApps.swift` refers to `App` and `AppType` by name,
+so those types must exist in the same module.
+
+The compile set is therefore **`SupportedApps.swift` alone**, symlinked into
+`Sources/YatuUpstream/` and compiled unchanged, beside our own `Model.swift` carrying the
+dependency-free `App`/`AppType` declarations lifted from upstream's file with provenance in the
+header. SwiftPM resolves the symlink, so upstream catalog additions arrive on merge with no diff
+to carry. The two ScriptingBridge files join the target when the launcher needs them in M2b.
+**No upstream file is edited.**
 
 ### 4.1 The editor role
 
@@ -195,13 +202,24 @@ before anything is published.
   becomes `bin/which-yatu.sh`.
 - **Verify:** `bin/show-private-changes.sh --stat` lists only intended files. **Rollback:** revert the merge.
 
-### M1 — Identity (low)
+### M1 — Identity (low) — **done 2026-09-18**
 - `Version.xcconfig`-equivalent in `Resources/Info.plist` + `bin/ver`; team and bundle id in the
   build script; new icon via `bin/make-icon.swift` (flat asset catalog / `.icns`, **no Icon Composer
   bundle** — that is what broke in 26.6); `NSAppleEventsUsageDescription` written for Yatu;
   copyright "© 2026 Altman Software Design, LLC — portions © 2019 Jianing Wang (MIT)";
   MIT license text shipped in the bundle (the license requires it).
-- **Verify:** built app shows Yatu's name and icon; `defaults domains` shows only the new domain.
+- **Verified on this Mac:** `bin/build.sh` produces `Yatu.app` and `Yatu Edit.app`, universal
+  (`x86_64 arm64`), `minos 13.0` in both slices, ad-hoc signed with the single Apple Events
+  entitlement and passing `codesign --verify --strict`. `plutil -p` shows the bundle id, name,
+  `LSUIElement`, the dual copyright and the per-role usage string; `YatuBuildCommit`,
+  `YatuBuildDate` (taken from the commit, not the clock) and `YatuUpstreamVersion` are stamped.
+  Launching it creates **no** preferences domain — `~/Library/Preferences` still holds only
+  `wang.jianing.app.OpenInTerminal-Lite.plist`, which is what M3 migrates from.
+- **Note on L4:** a SwiftPM release build embeds no `/Users/...` paths to begin with — `strings`
+  finds none before or after `strip`. The strip step stays as a guard, but the finding is closed
+  by the build system, not by us.
+- **Deferred from M1:** the real icon. `bin/make-icon.swift` draws a placeholder; the concept
+  board (§8.6) replaces it.
 
 ### M2 — The app (medium: app logic)
 - **M2a** compile-set spike (§4). **M2b** the sources in §4 with their seven rules, as

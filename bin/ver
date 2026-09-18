@@ -1,0 +1,133 @@
+#!/bin/bash
+#
+# Read or bump Yatu's version. The single source of truth is the VERSION file at
+# the repo root: two lines, the marketing version then the build number.
+#
+#   1.0.0     <- CFBundleShortVersionString
+#   1         <- CFBundleVersion
+#
+# bin/build.sh reads these and stamps them into Info.plist. This replaces the
+# Version.xcconfig an Xcode project would carry (docs/YATU-PLAN.md, M1).
+#
+set -euo pipefail
+
+# Always operate on the repo, not on the caller's directory.
+cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Define color codes for terminal output
+COLOR_GREEN="\e[32m"         # Used for success messages and instructions
+COLOR_RED="\e[31m"           # Used for error messages and warnings
+COLOR_YELLOW="\e[33m"        # Used for help text, lists, and informational content
+COLOR_MAGENTA="\e[35m"       # Available for general use
+COLOR_CYAN="\e[36m"          # Available for general use
+COLOR_BLUE="\e[34m"          # Available for general use; does not show on screen well
+COLOR_BRIGHTYELLOW="\e[93m"  # Used for highlighting important actions and status
+COLOR_RESET="\e[0m"          # Used to reset color formatting
+
+# Function to print colored output
+print_colored() {
+    local color=$1
+    local message=$2
+    printf "${color}%s${COLOR_RESET}\n" "$message"
+}
+
+VERSION_FILE="VERSION"
+DRY_RUN=false
+
+usage() {
+    print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [command] [options]
+
+Commands:
+  (none)            Print the version and build, e.g. \"1.0.0 (1)\"
+  short             Print the marketing version only, e.g. \"1.0.0\"
+  build             Print the build number only, e.g. \"1\"
+  set <version>     Set the marketing version and reset the build to 1
+  bump major|minor|patch
+                    Increment that segment and reset the build to 1
+  bump build        Increment the build number, leaving the version alone
+
+Options:
+  -n, --dry-run     Show what would be written without writing it
+  -h, --help        Show this help
+
+The release flow (just release) calls 'set' or 'bump'; builds call 'short' and
+'build'. Nothing here touches git."
+}
+
+die() {
+    print_colored "$COLOR_RED" "error: $1"
+    exit 1
+}
+
+# Read the version file into the two globals the commands operate on.
+read_version() {
+    [[ -f "$VERSION_FILE" ]] || die "$VERSION_FILE not found"
+    current_version="$(sed -n '1p' "$VERSION_FILE" | tr -d '[:space:]')"
+    current_build="$(sed -n '2p' "$VERSION_FILE" | tr -d '[:space:]')"
+
+    [[ "$current_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+        || die "line 1 of $VERSION_FILE is not a MAJOR.MINOR.PATCH version: '$current_version'"
+    [[ "$current_build" =~ ^[0-9]+$ ]] \
+        || die "line 2 of $VERSION_FILE is not a build number: '$current_build'"
+}
+
+# Write the two values back, or describe the write under --dry-run.
+write_version() {
+    local new_version=$1 new_build=$2
+
+    if [[ "$DRY_RUN" == true ]]; then
+        print_colored "$COLOR_BRIGHTYELLOW" \
+            "would write $VERSION_FILE: $current_version ($current_build) -> $new_version ($new_build)"
+        return
+    fi
+
+    printf '%s\n%s\n' "$new_version" "$new_build" > "$VERSION_FILE"
+    print_colored "$COLOR_GREEN" "$VERSION_FILE: $current_version ($current_build) -> $new_version ($new_build)"
+}
+
+# bump <segment>; build numbers reset on any version change, as Apple expects.
+bump_segment() {
+    local segment=$1
+    local major minor patch
+    IFS=. read -r major minor patch <<< "$current_version"
+
+    case "$segment" in
+        major) write_version "$((major + 1)).0.0" 1 ;;
+        minor) write_version "$major.$((minor + 1)).0" 1 ;;
+        patch) write_version "$major.$minor.$((patch + 1))" 1 ;;
+        build) write_version "$current_version" "$((current_build + 1))" ;;
+        *) die "unknown segment '$segment' (expected major, minor, patch or build)" ;;
+    esac
+}
+
+# Collect options first so they may appear before or after the command.
+positional_arguments=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -h|--help)    usage; exit 0 ;;
+        -n|--dry-run) DRY_RUN=true; shift ;;
+        -*)           die "unknown option: $1" ;;
+        *)            positional_arguments+=("$1"); shift ;;
+    esac
+done
+
+read_version
+
+case "${positional_arguments[0]:-}" in
+    "")      printf '%s (%s)\n' "$current_version" "$current_build" ;;
+    short)   printf '%s\n' "$current_version" ;;
+    build)   printf '%s\n' "$current_build" ;;
+    set)
+        new_version="${positional_arguments[1]:-}"
+        [[ -n "$new_version" ]] || die "set requires a version, e.g. 'bin/ver set 1.1.0'"
+        [[ "$new_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
+            || die "'$new_version' is not a MAJOR.MINOR.PATCH version"
+        write_version "$new_version" 1
+        ;;
+    bump)
+        segment="${positional_arguments[1]:-}"
+        [[ -n "$segment" ]] || die "bump requires a segment: major, minor, patch or build"
+        bump_segment "$segment"
+        ;;
+    *) die "unknown command '${positional_arguments[0]}' (try --help)" ;;
+esac
