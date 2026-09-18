@@ -6,7 +6,7 @@ chosen. Decision belongs to plan §8.6.
 
 Regenerate with `docs/icon-concepts/make-concepts.swift` (or `just icon-concepts`).
 
-![Six Yatu icon concepts](concept-board.png)
+![Seven Yatu icon concepts](concept-board.png)
 
 ## These are source art, not exploration renders
 
@@ -28,7 +28,7 @@ This is the constraint that shaped every concept, and the reason for the second 
 3. **Being distinct from what it launches.** Terminal.app, iTerm, Ghostty and Warp all own dark
    rounded squares. So does upstream.
 
-![The same six at toolbar size, in colour and flattened](concept-board-toolbar-size.png)
+![The same seven at toolbar size, in colour, flattened, and inverted](concept-board-toolbar-size.png)
 
 ## What we are moving away from
 
@@ -75,9 +75,19 @@ are still themselves at 16pt, because both reduce to one solid shape against one
 into a smear. **1** and **6** are the strongest at Dock scale and the most generic at toolbar
 scale — the usual trade.
 
-The right-hand half flattens each concept to a single ink. It is not how macOS will draw them, but
-it is a fast test of whether a mark depends on its colours to be read. **5** is unchanged by the
-flattening; **1** and **2** lose the accent that carried their meaning.
+The right-hand two thirds flatten each concept to a single ink — light-on-dark, then inverted to
+dark-on-light. Neither is how macOS draws an app icon in the toolbar (it draws it in full colour);
+they are a fast test of whether a mark depends on its colours to be read, and inverting is the
+harsher of the two because a dark mark on a light field loses mass at small sizes.
+
+What inverting shows: **3** survives it best — the folder just becomes a dark solid. **5** stays
+legible for the same reason. **7 fails it hardest**: its whole construction is a bright caret on a
+black field inside a light ring, so inverting collapses the contrast that carries it, and at 16pt
+almost nothing is left. **1** reads well inverted at large sizes, where the caret becomes a light
+notch cut into a dark folder.
+
+This matters less than it looks, because the toolbar gets the colour icon. It matters if the icon
+is ever wanted as a template image, a monochrome menu-bar glyph, or printed in one colour.
 
 ## Recommendation
 
