@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # Report which build of OpenInTerminal / OpenInTerminal-Lite / OpenInEditor-Lite
+# (and, once it ships, Yatu)
 # is installed: the upstream release (Homebrew / GitHub) or a local fork build
 # produced by build-unsigned.sh. Read-only.
 #
