@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template. bin/build.sh substitutes each placeholder and writes the result to
+  Contents/Info.plist. Upstream's plist used Xcode build-setting substitutions
+  ($(PRODUCT_BUNDLE_IDENTIFIER) and friends); a SwiftPM build has no build
+  settings, so each value is a literal we own and can test.
+-->
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>@EXECUTABLE@</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+	<key>CFBundleIdentifier</key>
+	<string>@BUNDLE_ID@</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>@APP_NAME@</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>@VERSION@</string>
+	<key>CFBundleVersion</key>
+	<string>@BUILD@</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.developer-tools</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>@MIN_MACOS@</string>
+	<!-- A Finder toolbar app has no Dock presence and no menu bar of its own. -->
+	<key>LSUIElement</key>
+	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>@USAGE_DESCRIPTION@</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>@COPYRIGHT@</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<!-- Stamped by bin/build.sh so a bundle can always be traced to a commit. -->
+	<key>YatuBuildCommit</key>
+	<string>@BUILD_COMMIT@</string>
+	<key>YatuBuildDate</key>
+	<string>@BUILD_DATE@</string>
+	<key>YatuUpstreamVersion</key>
+	<string>@UPSTREAM_VERSION@</string>
+</dict>
+</plist>

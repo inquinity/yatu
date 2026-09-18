@@ -109,7 +109,8 @@ bin/show-private-changes.sh --commits   # commit log
 Upstream owns `OpenInTerminalCore/`, the Xcode projects and the app targets. Every line we change
 there is a line that can conflict on sync, so:
 
-- Fork code lives in new files and directories: `Sources/Yatu/`, `bin/`, `docs/`, `justfile`.
+- Fork code lives in new files and directories: `Package.swift`, `Sources/`, `Tests/`,
+  `Resources/`, `bin/`, `docs/`, `justfile`, `VERSION`.
 - Upstream files we still want are **compiled unchanged**, not edited.
 - Where behaviour must differ, we write our own file rather than patching theirs.
 - Fork-owned copies of upstream scripts live in `bin/` (`build-unsigned.sh`, `build-signed.sh`), so

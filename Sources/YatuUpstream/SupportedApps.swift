@@ -1,0 +1,1 @@
+../../OpenInTerminalCore/SupportedApps.swift
