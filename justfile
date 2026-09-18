@@ -51,7 +51,11 @@ private-changes *args:
 # Shell-check every fork-owned script (requires shellcheck).
 lint:
     #!/usr/bin/env bash
+    set -euo pipefail
     shopt -s nullglob
+    if ! command -v shellcheck >/dev/null 2>&1; then
+        echo "shellcheck not installed (brew install shellcheck); running bash -n only" >&2
+    fi
     for script in bin/*.sh bin/ver; do
         bash -n "$script"
         if command -v shellcheck >/dev/null 2>&1; then
