@@ -56,30 +56,36 @@ public enum FinderTarget {
         return resolved
     }
 
-    /// Rule 3, editor role: files are the point, but never an application
-    /// bundle and never something the system would execute.
+    /// Rule 3, editor role: files are the point, including executable ones.
+    ///
+    /// Relaxed 2026-09-18. The earlier form also dropped anything with the
+    /// execute bit, which refused `chmod +x` scripts — one of the commonest
+    /// reasons to reach for the editor in the first place. The execution risk
+    /// in finding F1 belongs to the *terminal* role, which is the first
+    /// sentence of rule 3 and is unchanged: an editor is opened **with** the
+    /// file, by `NSWorkspace.open(_:withApplicationAt:)`, which hands it to
+    /// that application rather than asking the system what to do with it. A
+    /// `.command` opened this way is edited, not run.
+    ///
+    /// `.app` bundles are still dropped: they are directories, an editor has
+    /// nothing useful to do with one, and it is the shape we do not want.
     public static func editableItems(from urls: [URL],
                                      fileManager: FileManager = .default) -> [URL] {
         urls.compactMap { url in
             let resolved = URL(fileURLWithPath: url.path).resolvingSymlinksInPath()
-
-            var isDirectory: ObjCBool = false
-            guard fileManager.fileExists(atPath: resolved.path, isDirectory: &isDirectory) else {
-                return nil
-            }
+            guard fileManager.fileExists(atPath: resolved.path) else { return nil }
             if isApplicationBundle(resolved) { return nil }
-            // An executable file handed to an "editor" is the shape of finding
-            // F1: whatever opens it may run it instead.
-            if !isDirectory.boolValue, fileManager.isExecutableFile(atPath: resolved.path) {
-                return nil
-            }
             return resolved
         }
     }
 
-    /// Bundles macOS will launch rather than browse.
+    /// Bundles macOS launches rather than browses.
+    ///
+    /// Only `.app`. A `.command` is a plain file, so the terminal rule already
+    /// resolves it to its parent by the not-a-directory branch above, and the
+    /// editor is allowed to open one.
     static func isApplicationBundle(_ url: URL) -> Bool {
-        ["app", "command"].contains(url.pathExtension.lowercased())
+        url.pathExtension.lowercased() == "app"
     }
 
     /// What this role should be given, or the Desktop if Finder offers nothing.
