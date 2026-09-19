@@ -140,7 +140,13 @@ the reference for the behaviour.
    `/Applications` path or dropped.
 3. A path handed to a **terminal** is always an existing directory — never a file, a symlink to a
    file, or an `.app`/`.command` bundle. The **editor** role may receive files, since opening a
-   document is the point, but never an `.app` bundle or anything the system would execute.
+   document is the point, **including executable ones**; `.app` bundles are still dropped.
+   *(Relaxed 2026-09-18. The rule previously refused anything with the execute bit, which blocked
+   `chmod +x` scripts — one of the commonest reasons to open an editor. The execution risk in
+   finding F1 is the terminal role's, and that is this rule's first sentence, unchanged. An editor
+   is opened **with** the file via `NSWorkspace.open(_:withApplicationAt:)`, which hands it to that
+   application rather than asking the system what to do with it, so a `.command` is edited, not
+   run.)*
 4. No Finder window, or a view with no filesystem target → `~/Desktop`, built with
    `URL(fileURLWithPath:)`.
 5. Argument templates are compiled-in constants. Nothing from preferences reaches an argument

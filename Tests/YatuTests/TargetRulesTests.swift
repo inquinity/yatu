@@ -92,12 +92,27 @@ final class TargetRulesTests: XCTestCase {
         XCTAssertEqual(FinderTarget.editableItems(from: [file]).count, 1)
     }
 
-    func testEditorDropsApplicationBundlesAndExecutables() throws {
+    func testEditorDropsApplicationBundles() throws {
         let bundle = try makeDirectory("Calculator.app")
-        let script = try makeFile("run.sh", executable: true)
         let plain = try makeFile("plain.txt")
-        let kept = FinderTarget.editableItems(from: [bundle, script, plain])
+        let kept = FinderTarget.editableItems(from: [bundle, plain])
         XCTAssertEqual(kept.map(\.lastPathComponent), ["plain.txt"])
+    }
+
+    /// Relaxed 2026-09-18: an editor is opened *with* the file, so it is edited
+    /// rather than run, and refusing executables blocked ordinary scripts.
+    func testEditorKeepsExecutableScripts() throws {
+        let script = try makeFile("run.sh", executable: true)
+        let command = try makeFile("deploy.command", executable: true)
+        let kept = FinderTarget.editableItems(from: [script, command])
+        XCTAssertEqual(kept.map(\.lastPathComponent), ["run.sh", "deploy.command"])
+    }
+
+    /// The terminal rule is unchanged: an executable is still never a target.
+    func testTerminalStillRefusesExecutablesAsTargets() throws {
+        let script = try makeFile("run.sh", executable: true)
+        XCTAssertEqual(FinderTarget.directory(for: script)?.path,
+                       sandbox.resolvingSymlinksInPath().path)
     }
 
     // MARK: - Rule 4: nothing usable means the Desktop
