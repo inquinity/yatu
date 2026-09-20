@@ -164,7 +164,15 @@ The feature OITL doesn't have, and the main reason this is a product rather than
 - **Contents:**
   - the terminal list, installed apps first with their real icons, the rest dimmed (the existing picker already does this);
   - the current choice, with an obvious way to change it;
-  - "open a new window" vs "new tab" where the terminal supports both (Terminal.app, iTerm);
+  - ~~"open a new window" vs "new tab" where the terminal supports both~~ — **dropped 2026-09-19.**
+    There are only two ways to do it. Upstream's is
+    `tell application "System Events" to keystroke "t" using command down`, which needs a second
+    TCC grant (System Events / Accessibility) on top of Apple Events to Finder and the terminal —
+    a permission prompt for a preference. The other is Terminal's `doScript`, which means building
+    a shell command string from a folder path: the exact injection shape this fork exists to avoid,
+    and the one upstream already had to fix twice. Meanwhile every terminal has its own
+    "new windows/tabs open with" preference, which `open` already honours, so the setting belongs
+    to the terminal and not to Yatu. Revisit only if a terminal offers a non-shell way to ask.
   - a **Reveal in Finder** line naming the resolved app bundle, so the user sees exactly what will launch;
   - a footer: version, build, "based on OpenInTerminal-Lite X.Y.Z", and a link to the source.
 - **Roles:** the same window serves both executables, showing the catalog for the role it was
@@ -236,7 +244,12 @@ before anything is published.
   allowlist that closes L1). The Finder query sits behind a protocol so the policy is testable
   without a running Finder, and `Settings` takes a store rather than `UserDefaults` directly so the
   suite creates no preferences domain.
-- **M2c** the settings window (§5).
+- **M2c** the settings window (§5) — **done 2026-09-19.** SwiftUI in an AppKit host, reached by
+  ⌥-clicking the toolbar button, by `--settings`, or by there being no valid choice yet. Installed
+  apps first with their real icons, the rest dimmed and unselectable; the resolved bundle path is
+  shown with Reveal in Finder; the version, the upstream version it is based on, and a source link
+  are pinned below the scrolling catalog. Every row is a catalog case, so there is nowhere to type
+  a path. The window/tab control in §5 was dropped, with the reasoning recorded there.
 - **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests. Still outstanding:
   `bin/attack-matrix.sh` automating the hostile-name and canary-app matrix from the dynamic review
   (scratch only, prefs backed up and restored), and `docs/MANUAL-TEST-CHECKLIST.md` with
