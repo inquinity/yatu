@@ -20,29 +20,28 @@ public enum Yatu {
         }
 
         if arguments.contains("--identity") {
+            let stored = Settings().chosenApp(for: role)
             print("role:       \(role.rawValue)")
             print("name:       \(role.displayName)")
             print("bundle id:  \(role.bundleIdentifier)")
             print("catalog:    \(Catalog.apps(for: role).count) apps")
+            print("chosen:     \(stored?.name ?? "(none)")")
             exit(0)
         }
 
         let settings = Settings()
 
-        // The settings window arrives in M2c; until then an explicit request for
-        // it says so rather than silently doing nothing.
-        if arguments.contains("--settings") {
-            FileHandle.standardError.write(Data("the settings window is not built yet (M2c)\n".utf8))
-            exit(1)
-        }
+        // §5: a Finder toolbar app has no menu bar, so ⌥-clicking the button is
+        // the discoverable way in. --settings is the same door, for scripting
+        // and for the cask's caveat.
+        let wantsSettings = arguments.contains("--settings")
+            || NSEvent.modifierFlags.contains(.option)
 
-        guard let app = settings.chosenApp(for: role) else {
-            // First run, or a stored choice that is no longer valid. The picker
-            // is part of the settings window, so for now say what is missing
-            // rather than guessing an application on the user's behalf.
-            FileHandle.standardError.write(Data(
-                "No \(role.rawValue) chosen yet. Choose one with the settings window (M2c).\n".utf8))
-            exit(1)
+        guard let app = settings.chosenApp(for: role), !wantsSettings else {
+            // First run, an invalidated choice, or an explicit request: all
+            // three mean "show the picker" rather than guessing on the user's
+            // behalf. This call does not return.
+            SettingsWindow.run(role: role, settings: settings)
         }
 
         let targets = FinderTarget.resolve(for: role, using: FinderScriptingQuery())
