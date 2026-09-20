@@ -41,7 +41,7 @@ usage() {
     print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [command] [options]
 
 Commands:
-  (none)            Print the version and build, e.g. \"1.0.0 (1)\"
+  (none)            Print the version and build, e.g. \"1.0.0 build 1\"
   short             Print the marketing version only, e.g. \"1.0.0\"
   build             Print the build number only, e.g. \"1\"
   set <version>     Set the marketing version and reset the build to 1
@@ -80,12 +80,12 @@ write_version() {
 
     if [[ "$DRY_RUN" == true ]]; then
         print_colored "$COLOR_BRIGHTYELLOW" \
-            "would write $VERSION_FILE: $current_version ($current_build) -> $new_version ($new_build)"
+            "would write $VERSION_FILE: $current_version build $current_build -> $new_version build $new_build"
         return
     fi
 
     printf '%s\n%s\n' "$new_version" "$new_build" > "$VERSION_FILE"
-    print_colored "$COLOR_GREEN" "$VERSION_FILE: $current_version ($current_build) -> $new_version ($new_build)"
+    print_colored "$COLOR_GREEN" "$VERSION_FILE: $current_version build $current_build -> $new_version build $new_build"
 }
 
 # bump <segment>; build numbers reset on any version change, as Apple expects.
@@ -117,7 +117,7 @@ done
 read_version
 
 case "${positional_arguments[0]:-}" in
-    "")      printf '%s (%s)\n' "$current_version" "$current_build" ;;
+    "")      printf '%s build %s\n' "$current_version" "$current_build" ;;
     short)   printf '%s\n' "$current_version" ;;
     build)   printf '%s\n' "$current_build" ;;
     set)

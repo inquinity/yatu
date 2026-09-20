@@ -126,13 +126,11 @@ struct SettingsView: View {
 
     private var footer: some View {
         HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(model.role.displayName) \(Version.short) (\(Version.build))")
-                if let upstream = Version.upstreamVersion {
-                    Text("Based on OpenInTerminal-Lite \(upstream)")
-                        .foregroundStyle(.secondary)
-                }
-            }
+            // The upstream version this is based on is a credit, and credits
+            // belong in the README's acknowledgements and the release notes --
+            // not in a settings window opened to change a terminal. It is still
+            // stamped into Info.plist as YatuUpstreamVersion.
+            Text("\(model.role.displayName) \(Version.short) build \(Version.build)")
             Spacer()
             Link("Source", destination: URL(string: "https://github.com/inquinity/yatu")!)
         }
