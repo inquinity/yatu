@@ -14,6 +14,14 @@
 >   branch model used to contribute fixes back.
 > - **[docs/YATU-PLAN.md](docs/YATU-PLAN.md)** — what is being built, and why.
 >
+> ### Credits
+>
+> Yatu is built on **OpenInTerminal-Lite 1.2.8** by
+> [Jianing Wang](https://github.com/Ji4n1ng), MIT licensed, and would not exist without it. The
+> app catalog it uses — every terminal and editor, with their bundle identifiers — is upstream's
+> work, compiled unchanged. Each release records the upstream version it is based on, and every
+> build stamps it into `Info.plist` as `YatuUpstreamVersion`.
+>
 > Install upstream's original apps from their repository or with
 > `brew install --cask openinterminal-lite`; nothing here replaces them.
 

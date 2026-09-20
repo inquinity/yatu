@@ -174,7 +174,10 @@ The feature OITL doesn't have, and the main reason this is a product rather than
     "new windows/tabs open with" preference, which `open` already honours, so the setting belongs
     to the terminal and not to Yatu. Revisit only if a terminal offers a non-shell way to ask.
   - a **Reveal in Finder** line naming the resolved app bundle, so the user sees exactly what will launch;
-  - a footer: version, build, "based on OpenInTerminal-Lite X.Y.Z", and a link to the source.
+  - a footer: the version and build, written `1.0.0 build 1` — a build number should say that is
+    what it is. **Not** "based on OpenInTerminal-Lite X.Y.Z": that is a credit, and credits belong
+    in the README's acknowledgements and in the release notes, not in a window opened to change a
+    terminal. It stays in `Info.plist` as `YatuUpstreamVersion`.
 - **Roles:** the same window serves both executables, showing the catalog for the role it was
   launched in; the title says which. If both apps are installed they share nothing but the code.
 - **Implementation:** SwiftUI window, AppKit host, using `.formStyle(.grouped)` and

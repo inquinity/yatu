@@ -15,7 +15,7 @@ public enum Yatu {
         let arguments = Array(CommandLine.arguments.dropFirst())
 
         if arguments.contains("--version") {
-            print("\(role.displayName) \(Version.short) (\(Version.build))")
+            print("\(role.displayName) \(Version.short) build \(Version.build)")
             exit(0)
         }
 
