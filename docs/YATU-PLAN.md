@@ -367,3 +367,12 @@ tests already exist by then.
    The concepts were drawn from geometry rather than generated, so the chosen one *is* the
    production art: `bin/make-icon.swift` draws it and writes a flat `.icns`. Never an Icon Composer
    bundle — that is what stopped rendering on macOS 26.6.
+
+   **The `.icns` is not one drawing at ten sizes.** A Finder toolbar is a row of monochrome
+   glyphs, and the single colour button in it is the one that looks wrong; upstream avoided this
+   by being monochrome at every size, which is not a trade worth making for the Dock. So 16pt and
+   32pt carry the single-ink art and 128pt and up carry the colour art. macOS chooses by size, so
+   the same bundle reads as a glyph where it sits among glyphs and as an app icon where it sits
+   among app icons. Verified by measuring the saturation of what `NSImage` serves at each size:
+   flat ~0.09 from 16pt to 64pt, ~0.40 from 128pt up. It also repairs what the concept board
+   showed at 16pt, where the colour mark was a violet square with an amber speck in it.

@@ -13,27 +13,58 @@
 //  Finder toolbar on macOS 26.6 (upstream GH-283, our fix GH-287), and shipping
 //  one again would reintroduce the bug this fork exists to avoid.
 //
-//  --monochrome draws the single-ink variant of record: a light mark on a dark
-//  field. The inverted form (dark on light) was rejected — the mark is carried
-//  by a bright caret on black inside a light ring, and inverting collapses all
-//  three contrasts at once. See docs/icon-concepts/README.md.
+//  The .icns is deliberately NOT one drawing at ten sizes. A Finder toolbar is
+//  a row of monochrome glyphs, and the one colour button in it is the one that
+//  looks wrong — upstream avoided this by making its icon monochrome at every
+//  size, which is not a trade we want for the Dock. So:
 //
-//  Usage: bin/make-icon.swift [output.icns] [--monochrome]
+//    16pt and 32pt   single ink   — what the Finder toolbar and list views draw
+//    128pt and up    colour       — what the Dock, Get Info and Quick Look draw
+//
+//  macOS picks the representation by size, so the same bundle reads as a glyph
+//  where it sits among glyphs and as an app icon where it sits among app icons.
+//  It also fixes what the concept board showed at 16pt: the colour mark there
+//  was a violet square with an amber speck in it.
+//
+//  --monochrome forces every size to single ink, --colour forces every size to
+//  colour, for inspecting either set on its own.
+//
+//  Usage: bin/make-icon.swift [output.icns] [--monochrome|--colour]
 //
 
 import AppKit
 import Foundation
 
+/// Which ink a given point size is drawn in.
+enum InkPolicy {
+    /// Single ink up to and including 32pt, colour above it.
+    case bySize
+    case alwaysMonochrome
+    case alwaysColour
+
+    func isMonochrome(atPointSize pointSize: Int) -> Bool {
+        switch self {
+        case .bySize: return pointSize <= 32
+        case .alwaysMonochrome: return true
+        case .alwaysColour: return false
+        }
+    }
+}
+
 var outputPath = "Resources/AppIcon.icns"
-var monochrome = false
+var inkPolicy = InkPolicy.bySize
 
 for argument in CommandLine.arguments.dropFirst() {
-    if argument == "--monochrome" {
-        monochrome = true
-    } else if argument.hasPrefix("-") {
-        FileHandle.standardError.write(Data("unknown option: \(argument)\n".utf8))
-        exit(2)
-    } else {
+    switch argument {
+    case "--monochrome":
+        inkPolicy = .alwaysMonochrome
+    case "--colour", "--color":
+        inkPolicy = .alwaysColour
+    default:
+        if argument.hasPrefix("-") {
+            FileHandle.standardError.write(Data("unknown option: \(argument)\n".utf8))
+            exit(2)
+        }
         outputPath = argument
     }
 }
@@ -50,15 +81,17 @@ struct Palette {
     let caret: NSColor
 }
 
-let palette = monochrome
-    ? Palette(backgroundTop: rgb(70, 74, 82), backgroundBottom: rgb(70, 74, 82),
-              ring: .white, innerField: rgb(70, 74, 82), caret: rgb(152, 156, 164))
-    : Palette(backgroundTop: rgb(120, 66, 168), backgroundBottom: rgb(74, 38, 118),
-              ring: rgb(246, 247, 250), innerField: rgb(14, 15, 19), caret: rgb(255, 178, 84))
+let monochromePalette = Palette(
+    backgroundTop: rgb(70, 74, 82), backgroundBottom: rgb(70, 74, 82),
+    ring: .white, innerField: rgb(70, 74, 82), caret: rgb(152, 156, 164))
+
+let colourPalette = Palette(
+    backgroundTop: rgb(120, 66, 168), backgroundBottom: rgb(74, 38, 118),
+    ring: rgb(246, 247, 250), innerField: rgb(14, 15, 19), caret: rgb(255, 178, 84))
 
 /// Concept 7 at an arbitrary edge length. Every measurement is a fraction of the
 /// icon, so the 16pt and 1024pt renderings are the same drawing.
-func drawIcon(size: CGFloat) -> NSImage {
+func drawIcon(size: CGFloat, palette: Palette) -> NSImage {
     let image = NSImage(size: NSSize(width: size, height: size))
     image.lockFocus()
     defer { image.unlockFocus() }
@@ -129,11 +162,14 @@ try FileManager.default.createDirectory(at: iconsetURL, withIntermediateDirector
 defer { try? FileManager.default.removeItem(at: iconsetURL) }
 
 // The set iconutil expects: each point size at 1x and 2x.
+var monochromeSizes: [Int] = []
 for pointSize in [16, 32, 128, 256, 512] {
+    let palette = inkPolicy.isMonochrome(atPointSize: pointSize) ? monochromePalette : colourPalette
+    if inkPolicy.isMonochrome(atPointSize: pointSize) { monochromeSizes.append(pointSize) }
     for scale in [1, 2] {
         let pixels = pointSize * scale
         let suffix = scale == 1 ? "" : "@2x"
-        try writePNG(drawIcon(size: CGFloat(pixels)), pixels: pixels,
+        try writePNG(drawIcon(size: CGFloat(pixels), palette: palette), pixels: pixels,
                      to: iconsetURL.appendingPathComponent("icon_\(pointSize)x\(pointSize)\(suffix).png"))
     }
 }
@@ -153,4 +189,13 @@ guard iconutil.terminationStatus == 0 else {
     exit(1)
 }
 
-print("wrote \(outputPath) — concept 7, Violet Aperture\(monochrome ? " (single ink)" : "")")
+let inkDescription: String
+switch inkPolicy {
+case .bySize:
+    inkDescription = "single ink at \(monochromeSizes.map(String.init).joined(separator: "/"))pt, colour above"
+case .alwaysMonochrome:
+    inkDescription = "single ink at every size"
+case .alwaysColour:
+    inkDescription = "colour at every size"
+}
+print("wrote \(outputPath) — concept 7, Violet Aperture; \(inkDescription)")
