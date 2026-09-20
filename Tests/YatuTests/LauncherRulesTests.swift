@@ -132,3 +132,42 @@ final class SettingsRulesTests: XCTestCase {
         XCTAssertNil(settings.chosenApp(for: .terminal))
     }
 }
+
+/// The window's model, exercised without a window: clicking a row must persist
+/// through the same allowlist the launcher reads back.
+final class SettingsViewModelTests: XCTestCase {
+
+    func testChoosingPersistsThroughTheAllowlist() {
+        let store = MemoryStore()
+        let model = SettingsViewModel(role: .terminal, settings: Settings(store: store))
+        XCTAssertNil(model.chosen)
+
+        model.choose(.iTerm)
+
+        XCTAssertEqual(model.chosen, .iTerm)
+        XCTAssertEqual(Settings(store: store).chosenApp(for: .terminal), .iTerm)
+    }
+
+    /// The window can only offer catalog entries, so this should be impossible
+    /// from the UI — but the model must refuse it anyway.
+    func testChoosingAcrossRolesIsRefusedAndLeavesTheChoiceAlone() {
+        let store = MemoryStore()
+        let settings = Settings(store: store)
+        settings.setChosenApp(.iTerm, for: .terminal)
+
+        let model = SettingsViewModel(role: .terminal, settings: settings)
+        model.choose(.xcode)
+
+        XCTAssertEqual(model.chosen, .iTerm)
+        XCTAssertEqual(Settings(store: store).chosenApp(for: .terminal), .iTerm)
+    }
+
+    func testEveryRowIsACatalogEntryForItsRole() {
+        let model = SettingsViewModel(role: .terminal, settings: Settings(store: MemoryStore()))
+        let offered = (model.installed + model.missing).map(\.app)
+        XCTAssertEqual(Set(offered), Set(Catalog.apps(for: .terminal)))
+        for app in offered {
+            XCTAssertEqual(app.type, Role.terminal.appType)
+        }
+    }
+}
