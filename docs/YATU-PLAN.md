@@ -368,11 +368,20 @@ tests already exist by then.
    production art: `bin/make-icon.swift` draws it and writes a flat `.icns`. Never an Icon Composer
    bundle — that is what stopped rendering on macOS 26.6.
 
-   **The `.icns` is not one drawing at ten sizes.** A Finder toolbar is a row of monochrome
-   glyphs, and the single colour button in it is the one that looks wrong; upstream avoided this
-   by being monochrome at every size, which is not a trade worth making for the Dock. So 16pt and
-   32pt carry the single-ink art and 128pt and up carry the colour art. macOS chooses by size, so
-   the same bundle reads as a glyph where it sits among glyphs and as an app icon where it sits
-   among app icons. Verified by measuring the saturation of what `NSImage` serves at each size:
-   flat ~0.09 from 16pt to 64pt, ~0.40 from 128pt up. It also repairs what the concept board
-   showed at 16pt, where the colour mark was a violet square with an amber speck in it.
+   **The `.icns` is not one drawing at ten sizes.** A Finder toolbar is a row of outline glyphs,
+   and a colour tile dropped into that row is the one thing that looks wrong. A *grey* tile is no
+   better — it is still a filled block among outlines — so the small representations are a true
+   **template glyph**: the aperture and caret in one ink on transparent, at a larger optical scale
+   because there is no tile to sit inside. Upstream solved the same problem by being a glyph at
+   every size, which is right for the toolbar and wrong for the Dock; macOS picks a representation
+   by size, so one bundle can be both.
+
+   16pt and 32pt carry the glyph, 128pt and up carry the colour tile. Verified from the built
+   bundle: the small representations are 20–27% opaque with zero saturation, the large ones 64%
+   opaque and ~80% saturated. It also repairs what the concept board showed at 16pt, where the
+   colour mark collapsed to a violet square with an amber speck.
+
+   **The glyph cannot adapt to a dark toolbar.** macOS does not tint an app icon the way it tints
+   a real template image, so the ink is one mid grey chosen to stay legible on both. If that
+   proves too weak in dark mode, the fallback is the single-ink tile (`--monochrome`), which is
+   self-contained and survives either — at the cost of being a block in a row of outlines.

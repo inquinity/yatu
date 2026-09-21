@@ -8,45 +8,56 @@
 //  field held black so the violet reads as a surround rather than as the screen,
 //  and an amber caret set low and left rather than centred in the opening.
 //
+//  The .icns is deliberately NOT one drawing at ten sizes:
+//
+//    16pt and 32pt   a template glyph, one ink on transparent — what the Finder
+//                    toolbar and list views draw
+//    128pt and up    the colour tile — what the Dock, Get Info and Quick Look draw
+//
+//  A Finder toolbar is a row of outline glyphs, and both a colour tile and a
+//  grey one read as a block dropped into that row; only a glyph belongs there.
+//  Upstream solved this by being a glyph at every size, which is the right
+//  answer for the toolbar and the wrong one for the Dock. macOS picks a
+//  representation by size, so one bundle can be both.
+//
+//  The glyph cannot adapt to a dark toolbar — macOS does not tint an app icon
+//  the way it tints a real template image — so its ink is a mid grey chosen to
+//  stay legible against both light and dark toolbars.
+//
 //  Deliberately a flat .icns, written from PNGs via iconutil. There is NO
 //  Icon Composer (.icon) bundle: that is exactly what stopped rendering in the
-//  Finder toolbar on macOS 26.6 (upstream GH-283, our fix GH-287), and shipping
-//  one again would reintroduce the bug this fork exists to avoid.
+//  Finder toolbar on macOS 26.6 (upstream GH-283, our fix GH-287).
 //
-//  The .icns is deliberately NOT one drawing at ten sizes. A Finder toolbar is
-//  a row of monochrome glyphs, and the one colour button in it is the one that
-//  looks wrong — upstream avoided this by making its icon monochrome at every
-//  size, which is not a trade we want for the Dock. So:
-//
-//    16pt and 32pt   single ink   — what the Finder toolbar and list views draw
-//    128pt and up    colour       — what the Dock, Get Info and Quick Look draw
-//
-//  macOS picks the representation by size, so the same bundle reads as a glyph
-//  where it sits among glyphs and as an app icon where it sits among app icons.
-//  It also fixes what the concept board showed at 16pt: the colour mark there
-//  was a violet square with an amber speck in it.
-//
-//  --monochrome forces every size to single ink, --colour forces every size to
-//  colour, for inspecting either set on its own.
-//
-//  Usage: bin/make-icon.swift [output.icns] [--monochrome|--colour]
+//  Usage: bin/make-icon.swift [output.icns] [--glyph|--monochrome|--colour]
 //
 
 import AppKit
 import Foundation
 
-/// Which ink a given point size is drawn in.
-enum InkPolicy {
-    /// Single ink up to and including 32pt, colour above it.
-    case bySize
-    case alwaysMonochrome
-    case alwaysColour
+func rgb(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat) -> NSColor {
+    NSColor(calibratedRed: r / 255, green: g / 255, blue: b / 255, alpha: 1)
+}
 
-    func isMonochrome(atPointSize pointSize: Int) -> Bool {
+/// How one representation is drawn.
+enum Ink {
+    /// The violet tile. The app icon proper.
+    case colour
+    /// One ink on transparent. Belongs in a toolbar.
+    case glyph
+    /// The tile in a single ink. Kept for a one-colour context that still
+    /// wants a tile — printing, or a flattened asset.
+    case monochromeTile
+}
+
+enum InkPolicy {
+    /// Glyph up to and including 32pt, colour above it. The shipping policy.
+    case bySize
+    case always(Ink)
+
+    func ink(atPointSize pointSize: Int) -> Ink {
         switch self {
-        case .bySize: return pointSize <= 32
-        case .alwaysMonochrome: return true
-        case .alwaysColour: return false
+        case .bySize: return pointSize <= 32 ? .glyph : .colour
+        case .always(let ink): return ink
         }
     }
 }
@@ -56,10 +67,12 @@ var inkPolicy = InkPolicy.bySize
 
 for argument in CommandLine.arguments.dropFirst() {
     switch argument {
+    case "--glyph":
+        inkPolicy = .always(.glyph)
     case "--monochrome":
-        inkPolicy = .alwaysMonochrome
+        inkPolicy = .always(.monochromeTile)
     case "--colour", "--color":
-        inkPolicy = .alwaysColour
+        inkPolicy = .always(.colour)
     default:
         if argument.hasPrefix("-") {
             FileHandle.standardError.write(Data("unknown option: \(argument)\n".utf8))
@@ -69,11 +82,9 @@ for argument in CommandLine.arguments.dropFirst() {
     }
 }
 
-func rgb(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat) -> NSColor {
-    NSColor(calibratedRed: r / 255, green: g / 255, blue: b / 255, alpha: 1)
-}
+// MARK: - Drawing
 
-struct Palette {
+struct TilePalette {
     let backgroundTop: NSColor
     let backgroundBottom: NSColor
     let ring: NSColor
@@ -81,22 +92,20 @@ struct Palette {
     let caret: NSColor
 }
 
-let monochromePalette = Palette(
-    backgroundTop: rgb(70, 74, 82), backgroundBottom: rgb(70, 74, 82),
-    ring: .white, innerField: rgb(70, 74, 82), caret: rgb(152, 156, 164))
-
-let colourPalette = Palette(
+let colourPalette = TilePalette(
     backgroundTop: rgb(120, 66, 168), backgroundBottom: rgb(74, 38, 118),
     ring: rgb(246, 247, 250), innerField: rgb(14, 15, 19), caret: rgb(255, 178, 84))
 
-/// Concept 7 at an arbitrary edge length. Every measurement is a fraction of the
-/// icon, so the 16pt and 1024pt renderings are the same drawing.
-func drawIcon(size: CGFloat, palette: Palette) -> NSImage {
-    let image = NSImage(size: NSSize(width: size, height: size))
-    image.lockFocus()
-    defer { image.unlockFocus() }
+let monochromePalette = TilePalette(
+    backgroundTop: rgb(70, 74, 82), backgroundBottom: rgb(70, 74, 82),
+    ring: .white, innerField: rgb(70, 74, 82), caret: rgb(152, 156, 164))
 
-    // The macOS app-icon shape.
+/// Mid grey: an app icon is not tinted by the system, so one value has to work
+/// on a light toolbar and a dark one.
+let glyphInk = rgb(94, 98, 106)
+
+/// The tile: a macOS app-icon shape carrying the mark.
+func drawTile(size: CGFloat, palette: TilePalette) {
     let inset = size * 0.085
     let body = NSBezierPath(
         roundedRect: NSRect(x: inset, y: inset, width: size - inset * 2, height: size - inset * 2),
@@ -129,7 +138,40 @@ func drawIcon(size: CGFloat, palette: Palette) -> NSImage {
     caret.line(to: NSPoint(x: size * 0.388, y: size * 0.367))
     palette.caret.setStroke()
     caret.stroke()
+}
 
+/// The glyph: the same aperture and caret, one ink, no tile, drawn at a larger
+/// optical scale because there is no tile to sit inside.
+func drawGlyph(size: CGFloat) {
+    let inset = size * 0.14
+    let opening = NSRect(x: inset, y: inset, width: size - inset * 2, height: size - inset * 2)
+
+    let ring = NSBezierPath(roundedRect: opening, xRadius: size * 0.16, yRadius: size * 0.16)
+    ring.lineWidth = size * 0.085
+    glyphInk.setStroke()
+    ring.stroke()
+
+    let caret = NSBezierPath()
+    caret.lineWidth = size * 0.085
+    caret.lineCapStyle = .round
+    caret.lineJoinStyle = .round
+    caret.move(to: NSPoint(x: size * 0.375, y: size * 0.590))
+    caret.line(to: NSPoint(x: size * 0.545, y: size * 0.470))
+    caret.line(to: NSPoint(x: size * 0.375, y: size * 0.350))
+    glyphInk.setStroke()
+    caret.stroke()
+}
+
+func drawIcon(size: CGFloat, ink: Ink) -> NSImage {
+    let image = NSImage(size: NSSize(width: size, height: size))
+    image.lockFocus()
+    defer { image.unlockFocus() }
+
+    switch ink {
+    case .colour:         drawTile(size: size, palette: colourPalette)
+    case .monochromeTile: drawTile(size: size, palette: monochromePalette)
+    case .glyph:          drawGlyph(size: size)
+    }
     return image
 }
 
@@ -161,15 +203,14 @@ let iconsetURL = URL(fileURLWithPath: NSTemporaryDirectory())
 try FileManager.default.createDirectory(at: iconsetURL, withIntermediateDirectories: true)
 defer { try? FileManager.default.removeItem(at: iconsetURL) }
 
-// The set iconutil expects: each point size at 1x and 2x.
-var monochromeSizes: [Int] = []
+var glyphSizes: [Int] = []
 for pointSize in [16, 32, 128, 256, 512] {
-    let palette = inkPolicy.isMonochrome(atPointSize: pointSize) ? monochromePalette : colourPalette
-    if inkPolicy.isMonochrome(atPointSize: pointSize) { monochromeSizes.append(pointSize) }
+    let ink = inkPolicy.ink(atPointSize: pointSize)
+    if case .glyph = ink { glyphSizes.append(pointSize) }
     for scale in [1, 2] {
         let pixels = pointSize * scale
         let suffix = scale == 1 ? "" : "@2x"
-        try writePNG(drawIcon(size: CGFloat(pixels), palette: palette), pixels: pixels,
+        try writePNG(drawIcon(size: CGFloat(pixels), ink: ink), pixels: pixels,
                      to: iconsetURL.appendingPathComponent("icon_\(pointSize)x\(pointSize)\(suffix).png"))
     }
 }
@@ -189,13 +230,15 @@ guard iconutil.terminationStatus == 0 else {
     exit(1)
 }
 
-let inkDescription: String
+let description: String
 switch inkPolicy {
 case .bySize:
-    inkDescription = "single ink at \(monochromeSizes.map(String.init).joined(separator: "/"))pt, colour above"
-case .alwaysMonochrome:
-    inkDescription = "single ink at every size"
-case .alwaysColour:
-    inkDescription = "colour at every size"
+    description = "glyph at \(glyphSizes.map(String.init).joined(separator: "/"))pt, colour above"
+case .always(.glyph):
+    description = "glyph at every size"
+case .always(.monochromeTile):
+    description = "single-ink tile at every size"
+case .always(.colour):
+    description = "colour at every size"
 }
-print("wrote \(outputPath) — concept 7, Violet Aperture; \(inkDescription)")
+print("wrote \(outputPath) — concept 7, Violet Aperture; \(description)")
