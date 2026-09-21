@@ -394,11 +394,18 @@ tests already exist by then.
    caret collapsed into two grey dots; the floor keeps it a caret. This was found by looking at the
    real pixels, not by reasoning.
 
-   **The glyph cannot adapt to a dark toolbar.** macOS does not tint an app icon the way it tints a
-   real template image, so the ink is one mid grey. On macOS 26 the toolbar appears to draw a light
-   grey plate behind neutral app icons, which would set the contrast regardless of the toolbar; that
-   is inferred from a screenshot, not confirmed in dark mode. If the glyph proves too weak, the
-   fallback is the single-ink tile.
+   **The glyph cannot be tinted by the system, and does not need to be.** macOS does not tint an
+   app icon the way it tints a real template image, so the ink is one mid grey. Observed on macOS
+   26.6 in light and dark appearance, with the Finder window active and inactive (screenshots,
+   2026-09-21, one Mac): the toolbar draws a light grey plate behind neutral app icons, and it stays
+   light in dark mode, so the glyph is legible against it in both. When the window is inactive the
+   toolbar dims: the neutral icons drop to a mid-grey plate with lower contrast but keep their shape,
+   while OpenInTerminal's blue tile goes to dark grey and its bolt to a faint circle.
+
+   That is a second reason colour cannot carry identity in a Finder toolbar: it is removed whenever
+   the window loses focus. Differentiation has to come from silhouette, which is why the mark is a
+   folder. If the glyph ever proves too weak, the fallback is the single-ink tile (`--monochrome`).
+   Still unchecked: the 16px list-view representation on a 1x display, and an end-to-end launch.
 
    **Precedent, for the record.** No Finder toolbar app found uses a saturated colour tile in its
    toolbar art except the full OpenInTerminal app, whose blue tile is the outlier in its own row.
