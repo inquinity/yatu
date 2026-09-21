@@ -235,7 +235,7 @@ before anything is published.
 - **Note on L4:** a SwiftPM release build embeds no `/Users/...` paths to begin with — `strings`
   finds none before or after `strip`. The strip step stays as a guard, but the finding is closed
   by the build system, not by us.
-- **Icon: done.** `bin/make-icon.swift` draws concept 7 (§8.6) and writes all ten sizes into
+- **Icon: done.** `bin/make-icon.swift` draws the folder-and-caret mark (§8.6) and writes all ten sizes into
   `Resources/AppIcon.icns`; the built bundle carries a byte-identical copy and `CFBundleIconFile`
   resolves to it. Nothing in M1 is outstanding.
 
@@ -356,32 +356,51 @@ tests already exist by then.
 
 5. **Old cask — settled: delete outright, no deprecation period.** Sequencing in M5.
 
-6. **Icon — settled: concept 7, "Violet Aperture."** A board of seven was drawn in
-   `docs/icon-concepts/` and concept 7 chosen on 2026-09-18: a white rounded opening on a violet
-   field, the inner field held black so the violet reads as a surround rather than as the screen,
-   and an amber caret set low and left rather than centred. Where a single-ink variant is ever
-   needed it is the **regular** light-on-dark form (`bin/make-icon.swift --monochrome`); the
-   inverted form is rejected, because the mark is carried by a bright caret on black inside a light
-   ring and inverting collapses all three contrasts at once.
+6. **Icon — settled: a folder with a prompt caret, "Violet Folder."** A board of seven concepts
+   was drawn in `docs/icon-concepts/`; concept 7 (an aperture) was chosen on 2026-09-18 and then
+   **replaced on 2026-09-21**, for a reason the board could not show. Set beside the real toolbar
+   art of OpenInTerminal, OpenInTerminal-Lite and Go2Shell, the aperture-with-caret was the same
+   silhouette as all three — every neighbour is a terminal-window motif with a prompt in it — and
+   the colour that distinguished it does not survive at toolbar size. A folder is the one shape none
+   of them use, and it says what Yatu does: open a terminal *at a folder*.
 
-   The concepts were drawn from geometry rather than generated, so the chosen one *is* the
-   production art: `bin/make-icon.swift` draws it and writes a flat `.icns`. Never an Icon Composer
-   bundle — that is what stopped rendering on macOS 26.6.
+   The mark keeps concept 7's palette and construction. The tile is a violet field, a white folder
+   outline filled black, and an amber caret set low and left; the toolbar glyph is the same folder
+   and caret in one grey ink with nothing behind it. Where a single-ink tile is ever needed it is
+   the regular light-on-dark form (`bin/make-icon.swift --monochrome`); the inverted form is
+   rejected, because the mark is carried by a bright caret on black and inverting collapses all of
+   its contrasts at once.
+
+   The concepts were drawn from geometry rather than generated, so `bin/make-icon.swift` *is* the
+   production art and writes a flat `.icns`. Never an Icon Composer bundle — that is what stopped
+   rendering on macOS 26.6. `docs/icon-concepts/make-concepts.swift` stays frozen as the record of
+   the round.
 
    **The `.icns` is not one drawing at ten sizes.** A Finder toolbar is a row of outline glyphs,
-   and a colour tile dropped into that row is the one thing that looks wrong. A *grey* tile is no
-   better — it is still a filled block among outlines — so the small representations are a true
-   **template glyph**: the aperture and caret in one ink on transparent, at a larger optical scale
-   because there is no tile to sit inside. Upstream solved the same problem by being a glyph at
-   every size, which is right for the toolbar and wrong for the Dock; macOS picks a representation
-   by size, so one bundle can be both.
+   and a colour tile dropped into that row looks wrong. A *grey* tile is no better — it is still a
+   filled block among outlines — so the small representations are a true **template glyph**: one
+   ink on transparent, at full canvas because there is no tile to sit inside. Upstream solved the
+   same problem by being a glyph at every size, which is right for the toolbar and wrong for the
+   Dock; macOS picks a representation by size, so one bundle can be both. 16pt and 32pt carry the
+   glyph, 128pt and up the colour tile. Verified from the built bundle by measuring what `NSImage`
+   serves per pixel size: glyph through 64px, colour from 96px.
 
-   16pt and 32pt carry the glyph, 128pt and up carry the colour tile. Verified from the built
-   bundle: the small representations are 20–27% opaque with zero saturation, the large ones 64%
-   opaque and ~80% saturated. It also repairs what the concept board showed at 16pt, where the
-   colour mark collapsed to a violet square with an amber speck.
+   **macOS picks by size alone.** It never says whether the caller is the toolbar or a list row, so
+   the toolbar and Finder's smaller views are the same request. Anything that is monochrome in the
+   toolbar is monochrome in list view and small icon view too; colour appears in the Dock, Get
+   Info and Quick Look.
 
-   **The glyph cannot adapt to a dark toolbar.** macOS does not tint an app icon the way it tints
-   a real template image, so the ink is one mid grey chosen to stay legible on both. If that
-   proves too weak in dark mode, the fallback is the single-ink tile (`--monochrome`), which is
-   self-contained and survives either — at the cost of being a block in a row of outlines.
+   **The glyph has a stroke floor** of 1.8px. At 16px a proportional stroke is ~1.2px and the
+   caret collapsed into two grey dots; the floor keeps it a caret. This was found by looking at the
+   real pixels, not by reasoning.
+
+   **The glyph cannot adapt to a dark toolbar.** macOS does not tint an app icon the way it tints a
+   real template image, so the ink is one mid grey. On macOS 26 the toolbar appears to draw a light
+   grey plate behind neutral app icons, which would set the contrast regardless of the toolbar; that
+   is inferred from a screenshot, not confirmed in dark mode. If the glyph proves too weak, the
+   fallback is the single-ink tile.
+
+   **Precedent, for the record.** No Finder toolbar app found uses a saturated colour tile in its
+   toolbar art except the full OpenInTerminal app, whose blue tile is the outlier in its own row.
+   Go2Shell ships neutral toolbar-only art distinct from its app icon; OpenInTerminal-Lite is a grey
+   outline glyph at every size. Sample of three, local only; no web survey was done.

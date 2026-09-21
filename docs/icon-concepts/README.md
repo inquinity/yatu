@@ -1,12 +1,14 @@
 # Yatu icon concepts
 
-> **Decided 2026-09-18: concept 7, "Violet Aperture."** It now lives in `bin/make-icon.swift`,
-> which draws it into `Resources/AppIcon.icns`. Where a single-ink variant is needed it is the
-> **regular** light-on-dark form (`--monochrome`), not the inverted one.
+> **Decided 2026-09-18: concept 7. Superseded 2026-09-21: a folder with a prompt caret.**
+> Concept 7's aperture turned out to be the same silhouette as every terminal app already in a
+> Finder toolbar (OpenInTerminal, OpenInTerminal-Lite, Go2Shell — all a terminal window with a
+> prompt), so the shipping mark keeps concept 7's palette and construction but replaces the
+> aperture with a folder. See plan §8.6 for the reasoning and the size split.
 >
-> This directory is the record of the round that chose it. `make-concepts.swift` is frozen at that
-> state on purpose — later refinements to the shipping icon happen in `bin/make-icon.swift`, and
-> this board is not expected to track them.
+> This directory is the record of the round that chose concept 7. `make-concepts.swift` is frozen
+> at that state on purpose — the shipping icon is drawn by `bin/make-icon.swift`, and this board is
+> not expected to track it. Concept 1 (Folder Prompt) is the nearest relative of what shipped.
 
 The round, as it stood. Decision belongs to plan §8.6.
 

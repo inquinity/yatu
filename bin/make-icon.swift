@@ -3,10 +3,11 @@
 //  make-icon.swift
 //  Generate Yatu's AppIcon.icns.
 //
-//  The mark is concept 7, "Violet Aperture", chosen 2026-09-18 from the board in
-//  docs/icon-concepts/: a white rounded opening on a violet field, the inner
-//  field held black so the violet reads as a surround rather than as the screen,
-//  and an amber caret set low and left rather than centred in the opening.
+//  The mark is a folder with a prompt caret inside it: Yatu opens a terminal *at
+//  a folder*, and nothing else in a Finder toolbar is a folder. Every neighbour
+//  (OpenInTerminal, OpenInTerminal-Lite, Go2Shell) is a terminal-window motif
+//  with a prompt in it, and an aperture-with-caret was the same silhouette.
+//  Chosen 2026-09-21; it replaces concept 7's aperture, and keeps its palette.
 //
 //  The .icns is deliberately NOT one drawing at ten sizes:
 //
@@ -14,15 +15,16 @@
 //                    toolbar and list views draw
 //    128pt and up    the colour tile — what the Dock, Get Info and Quick Look draw
 //
-//  A Finder toolbar is a row of outline glyphs, and both a colour tile and a
-//  grey one read as a block dropped into that row; only a glyph belongs there.
-//  Upstream solved this by being a glyph at every size, which is the right
-//  answer for the toolbar and the wrong one for the Dock. macOS picks a
-//  representation by size, so one bundle can be both.
+//  Both are the same drawing. The tile is the glyph's folder in white, filled
+//  black, with an amber caret, on a violet field; the glyph is that folder in
+//  one grey ink with nothing behind it.
 //
-//  The glyph cannot adapt to a dark toolbar — macOS does not tint an app icon
-//  the way it tints a real template image — so its ink is a mid grey chosen to
-//  stay legible against both light and dark toolbars.
+//  A Finder toolbar is a row of outline glyphs, and a colour tile in it looks
+//  wrong. Upstream's icon is monochrome at every size, which is right for the
+//  toolbar and wrong for the Dock. macOS picks a representation by size, so one
+//  bundle can be both. The glyph cannot adapt to a dark toolbar — macOS does not
+//  tint an app icon the way it tints a real template image — so its ink is a mid
+//  grey chosen to stay legible on both.
 //
 //  Deliberately a flat .icns, written from PNGs via iconutil. There is NO
 //  Icon Composer (.icon) bundle: that is exactly what stopped rendering in the
@@ -82,27 +84,95 @@ for argument in CommandLine.arguments.dropFirst() {
     }
 }
 
-// MARK: - Drawing
+// MARK: - Palettes
 
 struct TilePalette {
     let backgroundTop: NSColor
     let backgroundBottom: NSColor
-    let ring: NSColor
-    let innerField: NSColor
+    /// The folder's outline.
+    let outline: NSColor
+    /// What the folder is filled with.
+    let inside: NSColor
     let caret: NSColor
 }
 
 let colourPalette = TilePalette(
     backgroundTop: rgb(120, 66, 168), backgroundBottom: rgb(74, 38, 118),
-    ring: rgb(246, 247, 250), innerField: rgb(14, 15, 19), caret: rgb(255, 178, 84))
+    outline: rgb(246, 247, 250), inside: rgb(14, 15, 19), caret: rgb(255, 178, 84))
 
 let monochromePalette = TilePalette(
     backgroundTop: rgb(70, 74, 82), backgroundBottom: rgb(70, 74, 82),
-    ring: .white, innerField: rgb(70, 74, 82), caret: rgb(152, 156, 164))
+    outline: .white, inside: rgb(70, 74, 82), caret: rgb(152, 156, 164))
 
 /// Mid grey: an app icon is not tinted by the system, so one value has to work
 /// on a light toolbar and a dark one.
 let glyphInk = rgb(94, 98, 106)
+
+// MARK: - The mark
+
+/// A folder outline on a `z` x `z` canvas: body, and a raised tab at the left.
+func folderOutline(_ z: CGFloat) -> NSBezierPath {
+    let left = z * 0.12, right = z * 0.88
+    let bottom = z * 0.20, bodyTop = z * 0.70, tabTop = z * 0.80
+    let radius = z * 0.07
+
+    let path = NSBezierPath()
+    path.move(to: NSPoint(x: left, y: bottom + radius))
+    path.appendArc(withCenter: NSPoint(x: left + radius, y: bottom + radius),
+                   radius: radius, startAngle: 180, endAngle: 270)
+    path.line(to: NSPoint(x: right - radius, y: bottom))
+    path.appendArc(withCenter: NSPoint(x: right - radius, y: bottom + radius),
+                   radius: radius, startAngle: 270, endAngle: 360)
+    path.line(to: NSPoint(x: right, y: bodyTop - radius))
+    path.appendArc(withCenter: NSPoint(x: right - radius, y: bodyTop - radius),
+                   radius: radius, startAngle: 0, endAngle: 90)
+    path.line(to: NSPoint(x: z * 0.52, y: bodyTop))
+    path.line(to: NSPoint(x: z * 0.45, y: tabTop))
+    path.line(to: NSPoint(x: left + radius, y: tabTop))
+    path.appendArc(withCenter: NSPoint(x: left + radius, y: tabTop - radius),
+                   radius: radius, startAngle: 90, endAngle: 180)
+    path.close()
+    return path
+}
+
+/// The folder and its caret, scaled about the canvas centre by `scale`.
+///
+/// The caret is set low and left in the folder's body, not centred in it. The
+/// stroke width is given in canvas units, so a caller that scales the mark down
+/// must pass a proportionally heavier line to keep the same optical weight.
+func drawFolderMark(z: CGFloat, scale: CGFloat, lineWidth: CGFloat,
+                    outline: NSColor, inside: NSColor?, caret: NSColor) {
+    NSGraphicsContext.current?.saveGraphicsState()
+    defer { NSGraphicsContext.current?.restoreGraphicsState() }
+
+    let centre = z * 0.5
+    let transform = NSAffineTransform()
+    transform.translateX(by: centre, yBy: centre)
+    transform.scale(by: scale)
+    transform.translateX(by: -centre, yBy: -centre)
+    transform.concat()
+
+    let folder = folderOutline(z)
+    if let inside {
+        inside.setFill()
+        folder.fill()
+    }
+    folder.lineWidth = lineWidth
+    folder.lineJoinStyle = .round
+    folder.lineCapStyle = .round
+    outline.setStroke()
+    folder.stroke()
+
+    let mark = NSBezierPath()
+    mark.lineWidth = lineWidth
+    mark.lineCapStyle = .round
+    mark.lineJoinStyle = .round
+    mark.move(to: NSPoint(x: z * 0.36, y: z * 0.575))
+    mark.line(to: NSPoint(x: z * 0.49, y: z * 0.465))
+    mark.line(to: NSPoint(x: z * 0.36, y: z * 0.355))
+    caret.setStroke()
+    mark.stroke()
+}
 
 /// The tile: a macOS app-icon shape carrying the mark.
 func drawTile(size: CGFloat, palette: TilePalette) {
@@ -115,51 +185,21 @@ func drawTile(size: CGFloat, palette: TilePalette) {
     body.lineWidth = max(1, size * 0.005)
     body.stroke()
 
-    let ringInset = size * 0.265
-    let opening = NSRect(x: ringInset, y: ringInset,
-                         width: size - ringInset * 2, height: size - ringInset * 2)
-
-    let inner = NSBezierPath(roundedRect: opening, xRadius: size * 0.075, yRadius: size * 0.075)
-    palette.innerField.setFill()
-    inner.fill()
-
-    let ring = NSBezierPath(roundedRect: opening, xRadius: size * 0.075, yRadius: size * 0.075)
-    ring.lineWidth = size * 0.070
-    palette.ring.setStroke()
-    ring.stroke()
-
-    // Set low and left rather than centred in the opening.
-    let caret = NSBezierPath()
-    caret.lineWidth = size * 0.070
-    caret.lineCapStyle = .round
-    caret.lineJoinStyle = .round
-    caret.move(to: NSPoint(x: size * 0.388, y: size * 0.537))
-    caret.line(to: NSPoint(x: size * 0.518, y: size * 0.452))
-    caret.line(to: NSPoint(x: size * 0.388, y: size * 0.367))
-    palette.caret.setStroke()
-    caret.stroke()
+    // Scaled to sit inside the tile with margin; the line is heavier in canvas
+    // units so its optical weight on the tile is ~0.06 of the icon.
+    let scale: CGFloat = 0.66
+    drawFolderMark(z: size, scale: scale, lineWidth: size * 0.06 / scale,
+                   outline: palette.outline, inside: palette.inside, caret: palette.caret)
 }
 
-/// The glyph: the same aperture and caret, one ink, no tile, drawn at a larger
-/// optical scale because there is no tile to sit inside.
+/// The glyph: the same folder and caret, one ink, no tile, at full canvas
+/// because there is no tile to sit inside.
 func drawGlyph(size: CGFloat) {
-    let inset = size * 0.14
-    let opening = NSRect(x: inset, y: inset, width: size - inset * 2, height: size - inset * 2)
-
-    let ring = NSBezierPath(roundedRect: opening, xRadius: size * 0.16, yRadius: size * 0.16)
-    ring.lineWidth = size * 0.085
-    glyphInk.setStroke()
-    ring.stroke()
-
-    let caret = NSBezierPath()
-    caret.lineWidth = size * 0.085
-    caret.lineCapStyle = .round
-    caret.lineJoinStyle = .round
-    caret.move(to: NSPoint(x: size * 0.375, y: size * 0.590))
-    caret.line(to: NSPoint(x: size * 0.545, y: size * 0.470))
-    caret.line(to: NSPoint(x: size * 0.375, y: size * 0.350))
-    glyphInk.setStroke()
-    caret.stroke()
+    // A proportional stroke is ~1.2px at 16px, where the caret is only a few
+    // pixels tall and disappears into two grey dots. A floor keeps it a caret.
+    let lineWidth = max(size * 0.075, 1.8)
+    drawFolderMark(z: size, scale: 1, lineWidth: lineWidth,
+                   outline: glyphInk, inside: nil, caret: glyphInk)
 }
 
 func drawIcon(size: CGFloat, ink: Ink) -> NSImage {
@@ -241,4 +281,4 @@ case .always(.monochromeTile):
 case .always(.colour):
     description = "colour at every size"
 }
-print("wrote \(outputPath) — concept 7, Violet Aperture; \(description)")
+print("wrote \(outputPath) — folder and caret; \(description)")
