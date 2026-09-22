@@ -405,6 +405,53 @@ must match what the Objective-C runtime sees, so it needs `@objc(Name)` or a mod
   plus a monochrome toolbar glyph becomes possible — the combination that sections 2.3–2.5b show is
   impossible with an app icon alone.
 
+### 6.6 Prototype results (2026-09-22)
+
+A throwaway host app with an embedded Finder Sync extension was built, ad-hoc signed, installed and
+driven by the user on macOS 27.0. Everything below is observed.
+
+**It works, and it can be built the way Yatu builds.**
+
+- A hand-assembled `.appex` — compiled with `swiftc`, `CFBundlePackageType = XPC!`, an `NSExtension`
+  dictionary naming an `@objc` principal class, ad-hoc signed with `com.apple.security.app-sandbox`
+  — **registers with `pluginkit` and runs**. No Xcode project is needed.
+- The item **appears in Finder's customisation palette** with its name, beside BetterZip.
+- In the toolbar it is drawn as a **pill-shaped control matching Finder's own buttons**, not as a
+  tile among app icons.
+- It is **unaffected by the icon styles**: with the Dark style selected, every app icon in the row
+  became a black tile while the extension's item stayed a light pill with a dark glyph. This is the
+  behaviour §2.5b shows an app icon cannot have.
+- The whole chain runs: click → `targetedURL()` → the extension opens a URL → the containing app
+  receives the path intact. The extension executes nothing.
+
+**Costs and constraints found by building it:**
+
+1. **A toolbar click asks for a menu, not an action.** The only entry point is
+   `menu(for: .toolbarItemMenu)`, and the system draws a **disclosure chevron** beside the glyph.
+   Acting inside that callback and returning a menu works, but v1 returned an empty `NSMenu` and an
+   empty menu visibly flashed. The Swift signature is optional, so `nil` can be returned instead.
+   **A one-click item like Yatu's today may not be reachable; a menu-shaped interaction is inherent.**
+2. **`targetedURL()` is nil unless the folder is inside `directoryURLs`.** Watching only the home
+   folder returned nothing everywhere else. A general tool must watch `/`.
+3. **`NSWorkspace.OpenConfiguration.arguments` did not arrive.** The app launched with no
+   arguments. A **URL scheme worked** (BetterZip's approach), and a sandboxed extension is
+   permitted to open one. Keka's `launchApplicationAtURL:` is the other known-good route.
+4. **A URL scheme is a public entry point.** Any application or web page can invoke
+   `yatu://open?path=…`. Yatu's existing rules already constrain what a path may be (rule 3), but
+   this is a new surface that needs its own review.
+5. **`os.Logger` output from the sandboxed extension never reached the unified log**, under either
+   its subsystem or its process name, which made debugging blind. The host app writing to a file
+   was the workable channel. Worth knowing before building the real thing.
+6. **`NSImage`'s lazy drawing handler is unreliable here.** The glyph rendered initially, then
+   disappeared after a reload leaving a bare chevron. Drawing into an `NSBitmapImageRep` instead is
+   deterministic.
+
+**What it would mean for Yatu.** The toolbar item would stop being the app icon, so the app icon
+would no longer have to survive at toolbar size — a colour app icon for the Dock and Finder plus a
+system-tinted monochrome toolbar glyph becomes possible, which §§2.3–2.5b show is unreachable
+otherwise. Against that: a second signed and notarised bundle, an extension the user must enable, a
+new public entry point, the sandbox, and an interaction shaped like a menu rather than a button.
+
 ## 5. Sources
 
 Apple:
