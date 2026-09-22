@@ -160,6 +160,34 @@ although `assetutil --info` shows the compiled Icon Composer catalogs contain
 behaviour can only be checked by looking at a real Finder toolbar.** Any test that uses this API to
 claim otherwise is wrong.
 
+### 2.5a Dark appearance does not select an icon's dark variant
+
+Observed on 27.0, 2026-09-22, with `/Applications/Yatu-Composer.app` (an Icon Composer icon whose
+light and dark variants have deliberately different fills) in the toolbar of an **active** window.
+Pixel colours sampled from the user's screenshots:
+
+| Screenshot | Tile fill, top → bottom |
+|---|---|
+| Light appearance | (99, 67, 144) → (79, 53, 123) |
+| Dark appearance | (99, 67, 143) → (79, 53, 122) |
+| *Authored light fill* | *(120, 66, 168) → (74, 38, 118)* |
+| *Authored dark fill* | *(78, 43, 112) → (38, 20, 60)* |
+
+The tile is the same in both appearances and matches the **light** variant, slightly lightened by
+the system's glass treatment. **Switching the system to dark appearance did not make the toolbar
+use the icon's dark variant.**
+
+Inferred, from the HIG's "people can choose whether their … app icons are default, dark, clear, or
+tinted": the icon variant follows the user's separate **icon style** setting (System Settings ›
+Appearance), not light/dark appearance. No icon-style key is set in the global preferences domain
+on this Mac, consistent with the default style — but the key's name was not confirmed. Not yet
+tested: the toolbar with the icon style set to Dark, Clear and Tinted.
+
+Also observed in the same screenshots, **inactive** windows: the Icon Composer tile is desaturated
+like every other icon — mid grey in light appearance, near black in dark — and has no plate. In
+dark appearance it is the icon that sits closest to the toolbar's own colour; the `.icns`-only
+icons keep a lighter grey plate and stand out from it.
+
 ### 2.6 Active versus inactive Finder windows
 
 Observed by the user on 26.6.2, dark appearance:
