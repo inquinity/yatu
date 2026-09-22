@@ -120,7 +120,7 @@ there is a line that can conflict on sync, so:
 
 | Upstream file | Change | Why |
 |---|---|---|
-| `OpenInTerminal.xcodeproj/project.pbxproj`, `OpenInTerminal-Lite/…/project.pbxproj` | `AppIcon.icon` removed from the Resources phase | The macOS 26.6 icon bug; offered upstream as [PR GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287) |
+| `OpenInTerminal.xcodeproj/project.pbxproj`, `OpenInTerminal-Lite/…/project.pbxproj` | `AppIcon.icon` removed from the Resources phase | The macOS 26.6 inactive-window icon bug ([GH-283](https://github.com/Ji4n1ng/OpenInTerminal/issues/283)); offered upstream as [PR GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287). The cause was duplicate icon sources, not Icon Composer itself — see [FINDER-TOOLBAR-ICONS.md](FINDER-TOOLBAR-ICONS.md) §4 |
 
 Everything else we have added is a new file. Deletions of upstream-only automation
 (`.travis.yml`, `.github/FUNDING.yml`, `.claude/skills/release/`, the unused

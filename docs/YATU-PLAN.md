@@ -372,9 +372,13 @@ tests already exist by then.
    its contrasts at once.
 
    The concepts were drawn from geometry rather than generated, so `bin/make-icon.swift` *is* the
-   production art and writes a flat `.icns`. Never an Icon Composer bundle — that is what stopped
-   rendering on macOS 26.6. `docs/icon-concepts/make-concepts.swift` stays frozen as the record of
-   the round.
+   production art and writes a flat `.icns`. `docs/icon-concepts/make-concepts.swift` stays frozen as
+   the record of the round.
+
+   **Correction, 2026-09-22.** This section used to say Icon Composer "stopped rendering on macOS
+   26.6". That is not supported: the GH-283 fix removed *duplicate* icon sources, not the format,
+   and Icon Composer is Apple's documented implementation. The implementation choice is reopened;
+   the facts are in [docs/FINDER-TOOLBAR-ICONS.md](FINDER-TOOLBAR-ICONS.md).
 
    **The `.icns` is not one drawing at ten sizes.** A Finder toolbar is a row of outline glyphs,
    and a colour tile dropped into that row looks wrong. A *grey* tile is no better — it is still a
