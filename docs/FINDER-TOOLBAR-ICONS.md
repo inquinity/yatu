@@ -309,6 +309,8 @@ Third party:
 - [Ji4n1ng/OpenInTerminal GH-283](https://github.com/Ji4n1ng/OpenInTerminal/issues/283)
 
 Local tools used: `assetutil --info`, `actool`, `iconutil`, `lsregister`, `NSWorkspace` rendering
-scripts. The throwaway test apps are `/Applications/IconSizeProbe.app`,
-`/Applications/IconTest-Legacy.app` and `/Applications/Yatu-Composer.app`
-(bundle ids `com.altmansoftwaredesign.icontest.*`).
+scripts. The throwaway test apps — `IconSizeProbe.app` (one colour and label per `.icns` slot),
+`IconTest-Legacy.app` and `Yatu-Composer.app`, bundle ids `com.altmansoftwaredesign.icontest.*` —
+were installed in `/Applications` for these measurements and **removed on 2026-09-22**. To repeat
+a measurement, rebuild the probe: ten solid-colour PNGs, each labelled with its slot name, packed
+with `iconutil` into an `.icns`-only app bundle.
