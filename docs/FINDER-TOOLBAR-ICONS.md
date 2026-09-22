@@ -116,9 +116,18 @@ Rule, **inferred** from that: the smallest slot at least as large as the request
 toolbar asks in points with a 2× backing store and may select differently. Both displays on this
 Mac are 2× (built-in Liquid Retina XDR; external 5K drawn as 2560×1440), so every screenshot here
 is a Retina observation, and the 1× case — a non-Retina external display — cannot be tested on
-this Mac. The probe app exists to
-answer that: in the toolbar, its label names the slot directly. Pending the user's screenshots of
-the probe in the toolbar (active and inactive), list view, icon view and column view.
+this Mac.
+
+**Answered for the toolbar — observed, 27.0, 2026-09-22.** With the probe in the Finder toolbar on
+a 2× display, the button shows **`32@2`: the toolbar draws from the `icon_32x32@2x` slot (64 px)**.
+Same slot in light and dark appearance, active and inactive windows. The button is drawn at about
+26 pt (≈52 px), and 64 px is the smallest slot at least that large, consistent with the rule above.
+Full-bleed artwork at that slot is masked to the rounded icon shape, with no plate.
+
+Still unanswered: which slot Finder's own views use (list, icon, column). By the rule, list view at
+16 pt on 2× asks for 32 px and icon view at 64 pt asks for 128 px, so neither would share the
+toolbar's slot — but that is inferred, not observed. Anything Finder draws between roughly 17 and
+32 pt on a 2× display would share it.
 
 ### 2.4 The system plate behind legacy icons
 
@@ -133,7 +142,10 @@ Observed on 26.6.2 and 27.0 — the plate is a system treatment of an **`.icns`-
 - **Icon Composer icons get no plate at any size.** OpenInTerminal (full) and a hand-built Yatu
   Icon Composer icon both render as their own tile from 16 px to 128 px.
 
-In the toolbar, the plate stays **light in dark appearance** (observed, 26.6.2, active window).
+In the toolbar, the plate stays **light in dark appearance in an active window** (observed on
+26.6.2, and again on 27.0 on 2026-09-22), and turns mid grey when the window is inactive. It does
+not adapt to dark appearance: an `.icns`-only icon has no dark rendition to offer. A dark-mode
+screenshot from 27.0 in which every plate was mid grey turned out to show two inactive windows.
 
 Reported, not reproduced: that 26.6.1 drew legacy icons as-is and 26.6.2 began compositing them onto
 a plate. The source for that was a search-engine summary of project pull requests, and it is not
@@ -167,10 +179,16 @@ Observed by the user on **27.0, light appearance** (screenshot, 2026-09-22), two
   OpenInTerminal-Lite and Yatu fade: lighter glyph, lighter plate, same shape. Finder's own pill
   buttons fade the same way.
 
-Inferred: the inactive state draws Icon Composer icons from a **monochrome rendition** — the
-catalog's `ISAppearanceTintable` group — rather than dimming the colour one. Legacy icons have no
-such rendition and are simply dimmed. The 27.0 screenshot is consistent with this (a recoloured
-tile, not a faded one) but does not prove where the rendition comes from. This build of the full
+Observed on **27.0, light and dark**, with the size probe in the toolbar (screenshots,
+2026-09-22): in an inactive window the probe's **green tile turns grey**. The probe is an
+`.icns`-only icon with no appearance renditions at all, so **the toolbar desaturates every icon in
+an inactive window**, legacy or Icon Composer alike.
+
+That weakens an earlier inference, kept here struck through so the reasoning can be followed:
+~~the inactive state draws Icon Composer icons from a monochrome rendition — the catalog's
+`ISAppearanceTintable` group — rather than dimming the colour one.~~ OpenInTerminal's grey
+inactive tile is explained by the same system desaturation that greys the probe; no special
+rendition is needed to account for it. Whether the tintable rendition plays any part is unknown. This build of the full
 app has the `.icon` in the app target only and renders cleanly when inactive on 27.0; GH-283's
 corruption was reported against builds that carried it in four targets. Not yet observed on 27.0
 in dark appearance.
