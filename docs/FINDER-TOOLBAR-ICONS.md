@@ -314,6 +314,97 @@ four nested copies in one case, two same-named sources in the other — not the 
 **The toolbar on this Mac runs the fork's own builds** of OpenInTerminal and OpenInTerminal-Lite from
 `~/dev/oss/openinterminal/export` at `e94c429`, not upstream releases (2.1).
 
+## 6. The other path: a Finder Sync extension
+
+Investigated 2026-09-22 after noticing that BetterZip's toolbar item appears in Finder's
+customisation palette with a name and does not change with icon style. Everything in sections 1–4
+concerns the **app-icon** path, where Finder draws the icon of an application someone ⌘-dragged in.
+An extension is a different mechanism with different rules.
+
+### 6.1 What it is
+
+Observed. BetterZip, Keka, Beyond Compare, Dropbox, OneDrive and Google Drive all ship a
+**Finder Sync extension** (`.appex`, extension point `com.apple.FinderSync`). The extension
+declares `toolbarItemName`, `toolbarItemToolTip` and `toolbarItemImage`. When that image is a
+**template**, the system tints it exactly like Finder's own symbols. Consequences, all observed:
+
+- it appears in the customisation palette as a named item, not as a dragged-in application;
+- it is unaffected by the Default / Dark / Clear / Tinted icon styles (§2.5b), because those apply
+  to app icons and widgets, not to controls;
+- it matches Finder's own buttons in every appearance, which no app icon can do.
+
+The full OpenInTerminal app already does this: its extension's `toolbarItemImage` comes from an
+asset marked `template-rendering-intent: template` (§2.2).
+
+### 6.2 Sandboxing, and how shipping extensions actually act
+
+Observed from the installed bundles' signed entitlements:
+
+| | App sandbox | App group | Apple Events | How the click acts |
+|---|---|---|---|---|
+| BetterZip extension | **yes** | yes | no | `openURL:` to the host app's `btrzp` URL scheme |
+| Keka extension | **yes** | yes | no | `launchApplicationAtURL:options:configuration:error:` |
+| BetterZip **main app** | **no** | — | — | does the work itself |
+| Keka main app | yes | — | — | — |
+
+Two findings follow:
+
+1. **The extension is sandboxed; the containing app need not be.** BetterZip ships exactly that
+   combination, so Yatu's app could stay as it is today.
+2. **Neither extension executes anything or scripts anything.** Both hand the work to their main
+   app and stop. That is the opposite of upstream's design, whose sandboxed path runs an installed
+   AppleScript through `NSUserAppleScriptTask` — the `do shell script` route where the quoting
+   findings live.
+
+So upstream's AppleScript path is **not** required by the platform. An extension that only passes a
+URL to the app avoids finding F1 by construction: the extension executes nothing, and the app
+applies the rules it already has (rule 3 — a terminal is only ever handed an existing directory).
+
+*(A first pass at this table reported none of the extensions as sandboxed. That was wrong: the
+check piped `codesign`'s XML through `plutil` incorrectly and produced empty output, which was read
+as absence. The entitlements above are from `codesign -d --entitlements :-`.)*
+
+### 6.3 Can it be built without Xcode?
+
+Observed, partly. An extension binary compiles and links outside an Xcode project:
+
+```
+xcrun swiftc -target arm64-apple-macos13.0 -framework FinderSync -framework AppKit \
+  -o YatuFinderSync main.swift
+```
+
+with a `FIFinderSync` subclass and `@_silgen_name("NSExtensionMain")` as the entry point — the same
+thing Xcode's template does. The binary links against `FinderSync.framework` correctly.
+
+**Not verified:** that the assembled `.appex` loads and appears in Finder. That needs the bundle
+(`CFBundlePackageType = XPC!`, an `NSExtension` dictionary naming the principal class), signing
+with the sandbox entitlement, and the user enabling it in System Settings. The principal class name
+must match what the Objective-C runtime sees, so it needs `@objc(Name)` or a module-qualified name.
+
+### 6.4 What it would cost Yatu
+
+- **A second bundle**, assembled, signed and notarised as nested code by `bin/build.sh`.
+- **An extra install step:** the user must enable the extension in System Settings. A dragged-in
+  app needs no such step.
+- **A new hand-off surface.** A custom URL scheme is public — any application or web page can
+  invoke it. `NSWorkspace.openApplication` with arguments is narrower. Either way it is a new entry
+  point into Yatu and needs its own review.
+- **Plan changes:** §4's architecture is one package and two executables with no extension, and
+  §1 records "no app group". An extension may need a group; Keka and BetterZip both declare one,
+  though a pure hand-off design might not.
+- **It is the component the fork deliberately excludes.** `CLAUDE.md` says the Finder extension is
+  kept untouched and unsupported, and the security review's only High finding is an extension
+  finding.
+
+### 6.5 What it would buy
+
+- A toolbar item that is correct in all four icon styles and matches Finder's own buttons — the
+  convention §1.1 describes, which the app-icon path cannot reach.
+- **It separates the two problems.** The toolbar would use the extension's template glyph, so the
+  app icon would no longer need to work at toolbar size. A colour app icon for the Dock and Finder
+  plus a monochrome toolbar glyph becomes possible — the combination that sections 2.3–2.5b show is
+  impossible with an app icon alone.
+
 ## 5. Sources
 
 Apple:
