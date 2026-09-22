@@ -113,7 +113,10 @@ using a probe app whose ten `.icns` slots are each a different colour and label
 Rule, **inferred** from that: the smallest slot at least as large as the request.
 
 **Not yet known: what the toolbar actually requests.** These are 1× bitmap contexts. A Retina
-toolbar asks in points with a 2× backing store and may select differently. The probe app exists to
+toolbar asks in points with a 2× backing store and may select differently. Both displays on this
+Mac are 2× (built-in Liquid Retina XDR; external 5K drawn as 2560×1440), so every screenshot here
+is a Retina observation, and the 1× case — a non-Retina external display — cannot be tested on
+this Mac. The probe app exists to
 answer that: in the toolbar, its label names the slot directly. Pending the user's screenshots of
 the probe in the toolbar (active and inactive), list view, icon view and column view.
 
@@ -155,9 +158,22 @@ Observed by the user on 26.6.2, dark appearance:
   with less contrast. OpenInTerminal (full) changes rendering: its tile goes dark grey and its bolt
   becomes a faint circle.
 
+Observed by the user on **27.0, light appearance** (screenshot, 2026-09-22), two Finder windows:
+
+- **Active:** OpenInTerminal (full) is its blue tile; OpenInTerminal-Lite and Yatu are dark glyphs
+  on the light plate.
+- **Inactive:** OpenInTerminal (full) becomes a flat mid-grey tile with its `>` and bolt still
+  legible in white — a clean monochrome rendering, not the corruption GH-283 describes.
+  OpenInTerminal-Lite and Yatu fade: lighter glyph, lighter plate, same shape. Finder's own pill
+  buttons fade the same way.
+
 Inferred: the inactive state draws Icon Composer icons from a **monochrome rendition** — the
 catalog's `ISAppearanceTintable` group — rather than dimming the colour one. Legacy icons have no
-such rendition and are simply dimmed. Not verified; not yet observed on 27.0.
+such rendition and are simply dimmed. The 27.0 screenshot is consistent with this (a recoloured
+tile, not a faded one) but does not prove where the rendition comes from. This build of the full
+app has the `.icon` in the app target only and renders cleanly when inactive on 27.0; GH-283's
+corruption was reported against builds that carried it in four targets. Not yet observed on 27.0
+in dark appearance.
 
 Consequence for design: in a Finder toolbar, **colour is removed whenever the window loses focus**,
 so an icon cannot rely on colour to be recognisable there. Silhouette survives both states.
