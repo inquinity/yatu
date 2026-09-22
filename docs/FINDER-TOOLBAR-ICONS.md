@@ -188,6 +188,32 @@ like every other icon — mid grey in light appearance, near black in dark — a
 dark appearance it is the icon that sits closest to the toolbar's own colour; the `.icns`-only
 icons keep a lighter grey plate and stand out from it.
 
+### 2.5b The four icon styles, observed
+
+The setting is **System Settings › Appearance › "Icon & widget style"**, with four choices —
+**Default, Dark, Clear, Tinted** — confirmed from the strings in
+`/System/Library/ExtensionKit/Extensions/Appearance.appex` on 27.0. It is stored as
+`AppleIconAppearanceTheme` in the global domain (observed value `RegularDark` while the Dark style
+was selected) and applies to every app icon on the system. An app supplies the layers; the user
+picks the style. The same binary also mentions an "automatic" icon theme and a separate tint
+control (Auto / Always / Light / Dark) that were not investigated.
+
+Observed on 27.0 (user screenshots, 2026-09-22) with three hand-built Icon Composer candidates in
+the toolbar — A: light grey tile, dark mark; B: white tile, dark mark; C: dark tile, light mark —
+beside Yatu's `.icns` and OpenInTerminal-Lite:
+
+| Style | What happens |
+|---|---|
+| **Default** | Each icon as authored. A and B glare against a dark toolbar; C sits in it. The `.icns` icons show their light plate in both appearances. |
+| **Dark** | **The authored dark layers are used** — A and B become dark tiles with light marks. Legacy `.icns` icons get a dark plate too, so the plate follows icon style even though it ignores light/dark appearance. |
+| **Clear** | All five converge to near-identical translucent dark tiles. The background is discarded and the mark is rendered as glass, so the tile colour stops mattering and only the silhouette identifies the app. |
+| **Tinted** | The mark is derived from the **foreground layer's luminance**. C's light mark tints to a bright, legible blue; **A's and B's dark marks tint to almost nothing** and are barely visible. The `.icns` icons, whose glyph is mid grey, land in between. |
+
+**Consequence for design, and it is not a matter of taste:** a foreground layer that is *dark on a
+light background* fails the Tinted style. For an icon to work across all four styles the mark must
+be light and the background dark. That, plus Default-style behaviour on a dark toolbar, is why
+Yatu's tile is dark with a light mark.
+
 ### 2.6 Active versus inactive Finder windows
 
 Observed by the user on 26.6.2, dark appearance:
