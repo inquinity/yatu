@@ -26,9 +26,12 @@
 //  tint an app icon the way it tints a real template image — so its ink is a mid
 //  grey chosen to stay legible on both.
 //
-//  Deliberately a flat .icns, written from PNGs via iconutil. There is NO
-//  Icon Composer (.icon) bundle: that is exactly what stopped rendering in the
-//  Finder toolbar on macOS 26.6 (upstream GH-283, our fix GH-287).
+//  A flat .icns, written from PNGs via iconutil — the only format that allows
+//  different artwork by size. It is NOT Apple's documented implementation for
+//  macOS 26 and later, which is an Icon Composer (.icon) document; see
+//  docs/FINDER-TOOLBAR-ICONS.md. (An earlier version of this comment said Icon
+//  Composer "stopped rendering" on 26.6. That was wrong: the GH-283 fix removed
+//  duplicate icon sources, not the format.)
 //
 //  Usage: bin/make-icon.swift [output.icns] [--glyph|--monochrome|--colour]
 //
