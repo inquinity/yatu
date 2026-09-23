@@ -298,6 +298,15 @@ before anything is published.
 - **Rollback:** delete the tag and release; the dry-run default is the guard.
 
 ### M5 — Distribution (high: public)
+
+> **The cask is already scaffolded** at `~/dev/projects/homebrew-tap/Casks/yatu.rb` (commit
+> `d72443c`, unpushed), marked "not yet installable" with `version "0.0.0"` and `sha256 :no_check`.
+> Nothing happens to it until there is a real 1.0.0 to point at. Note when that comes: it was
+> written **before** the extension was adopted (§9), so its `caveats` tell the user to add the
+> toolbar button but not to *enable the extension* first — which is now the step that decides
+> whether the button appears at all — and its `zap` covers the prefs plist and saved state but not
+> the extension's container. Both are listed in §9.3 under M5 changes.
+
 - New cask `yatu`: sha256-pinned, `depends_on macos:`, `uninstall quit:`, `zap` covering the prefs
   plist and Saved Application State, `caveats` for the toolbar button and
   `tccutil reset AppleEvents com.altmansoftwaredesign.yatu`, `livecheck` on our releases.
