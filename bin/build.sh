@@ -68,18 +68,21 @@ OPEN_AFTER_BUILD=false
 requested_roles=()
 
 # role:executable:app name:usage description
+#
+# One row, since 2026-09-23. There used to be a second app, "Yatu Edit", for the
+# editor role. It was retired when the Finder extension took over (plan M6a):
+# the extension's menu carries Send to editor, so the role is reached without a
+# second bundle to sign, notarize, icon and explain. The ROLE concept is alive
+# and well in YatuKit -- this table is only about how many *apps* we build.
 ROLE_DEFINITIONS=(
     "terminal:YatuTerminal:Yatu:Yatu asks Finder which folder you are looking at, so it can open your chosen terminal there."
-    "editor:YatuEditor:Yatu Edit:Yatu Edit asks Finder which items you have selected, so it can open them in your chosen editor."
 )
 
 usage() {
     print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [role ...] [options]
 
 Roles:
-  terminal          Yatu.app (ships in 1.0)
-  editor            Yatu Edit.app (built and tested, not shipped in 1.0)
-  (none)            Build both
+  terminal          Yatu.app -- the only app, and the default
 
 Options:
   -d, --debug       Build the debug configuration instead of release
@@ -255,7 +258,7 @@ assemble_bundle() {
     usage_description="$(role_field "$role" 4)"
     case "$role" in
         terminal) bundle_id="com.altmansoftwaredesign.yatu" ;;
-        editor)   bundle_id="com.altmansoftwaredesign.yatu.editor" ;;
+        *)        die "no bundle id for role '$role'" ;;
     esac
 
     bundle_path="$OUTPUT_DIR/$app_name.app"
@@ -284,11 +287,9 @@ assemble_bundle() {
     write_info_plist "$bundle_path/Contents/Info.plist" \
         "$executable" "$app_name" "$bundle_id" "$usage_description"
 
-    # The Finder toolbar button. Only the terminal app carries it: the editor
-    # role is reached from its menu, not from a second toolbar item.
-    if [[ "$role" == "terminal" ]]; then
-        assemble_extension "$bundle_path" "$bundle_id" "$app_name"
-    fi
+    # The Finder toolbar button. Both roles are reached through it: a click
+    # opens the terminal, and its menu carries Send to editor.
+    assemble_extension "$bundle_path" "$bundle_id" "$app_name"
 
     # Leaf first: the extension is sealed before the bundle that contains it,
     # or the app's signature covers code that changes afterwards.
@@ -308,14 +309,14 @@ while [[ $# -gt 0 ]]; do
         -o|--open)    OPEN_AFTER_BUILD=true; shift ;;
         -n|--dry-run) DRY_RUN=true; shift ;;
         -*)           die "unknown option: $1 (try --help)" ;;
-        terminal|editor) requested_roles+=("$1"); shift ;;
-        *)            die "unknown role '$1' (expected terminal or editor)" ;;
+        terminal)     requested_roles+=("$1"); shift ;;
+        *)            die "unknown role '$1' (expected terminal)" ;;
     esac
 done
 
-# No roles named means both.
+# No role named means all of them, which is currently one.
 if [[ ${#requested_roles[@]} -eq 0 ]]; then
-    requested_roles=(terminal editor)
+    requested_roles=(terminal)
 fi
 
 validate_environment

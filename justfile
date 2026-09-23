@@ -10,7 +10,7 @@ set shell := ["bash", "-eu", "-o", "pipefail", "-c"]
 default:
     @just --list
 
-# Build Yatu's app bundles into dist/. Pass `terminal` or `editor` for one role.
+# Build Yatu.app into dist/.
 build *args:
     bin/build.sh {{ args }}
 

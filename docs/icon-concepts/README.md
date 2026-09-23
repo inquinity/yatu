@@ -112,7 +112,8 @@ mark. Say so and I will add it as concept 7.
 
 ## Not decided here
 
-- **Yatu Edit** needs a sibling mark, not a recolour, if it ever ships (plan M6a).
+- ~~**Yatu Edit** needs a sibling mark, not a recolour, if it ever ships (plan M6a).~~ — moot
+  since 2026-09-23: the editor app was retired and the role is reached from the toolbar menu.
 - The chosen concept still needs a dark-mode check on a light Finder toolbar.
 - ~~No Icon Composer `.icon` bundle, ever~~ — withdrawn 2026-09-22. GH-283 was caused by duplicate
   icon sources, not by the format; see [docs/FINDER-TOOLBAR-ICONS.md](../FINDER-TOOLBAR-ICONS.md).

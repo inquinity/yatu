@@ -21,7 +21,7 @@ just lint                     # shellcheck every script
 just --list                   # every task
 ```
 
-Output is `dist/Yatu.app` and `dist/Yatu Edit.app`. `bin/build.sh` always operates on
+Output is `dist/Yatu.app`. `bin/build.sh` always operates on
 the repository, not on the directory you call it from, and removes its output directory before
 building.
 

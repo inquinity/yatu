@@ -77,8 +77,8 @@ yatu/                            (repo root)
 ├── Sources/YatuKit/             everything below except the entry points
 ├── Sources/YatuTerminal/
 │   └── main.swift               entry: ⌥ → settings, else open the terminal
-├── Sources/YatuEditor/
-│   └── main.swift               same, for the editor role (§4.1); built, not shipped in 1.0
+│   (Sources/YatuEditor was retired 2026-09-23; the editor role is reached from
+│    the Finder button's menu — M6a)
 │   (in YatuKit:)
 │   ├── FinderTarget.swift       Finder query; no force-casts; always resolves to a directory
 │   ├── Launcher.swift           NSWorkspace launch; compiled-in argument templates
@@ -122,7 +122,7 @@ differing only in which role they ask the shared code for.
 | | Terminal (ships in 1.0) | Editor (built, not shipped) |
 |---|---|---|
 | Bundle id | `com.altmansoftwaredesign.yatu` | `com.altmansoftwaredesign.yatu.editor` |
-| App name | Yatu | Yatu Edit |
+| App name | Yatu | Yatu (the same app, in its editor role) |
 | Catalog | `SupportedApps` entries whose type is `.terminal` | the `.editor` entries |
 | Target given to the app | the folder (parent folder if a file is selected) | the **selected items themselves**, so the editor opens the file you clicked |
 | Preference key | `terminal` | `editor` |
@@ -240,7 +240,7 @@ before anything is published.
   bundle** — that is what broke in 26.6); `NSAppleEventsUsageDescription` written for Yatu;
   copyright "© 2026 Altman Software Design, LLC — portions © 2019 Jianing Wang (MIT)";
   MIT license text shipped in the bundle (the license requires it).
-- **Verified on this Mac:** `bin/build.sh` produces `Yatu.app` and `Yatu Edit.app`, universal
+- **Verified on this Mac:** `bin/build.sh` produces `Yatu.app`, universal
   (`x86_64 arm64`), `minos 13.0` in both slices, ad-hoc signed with the single Apple Events
   entitlement and passing `codesign --verify --strict`. `plutil -p` shows the bundle id, name,
   `LSUIElement`, the dual copyright and the per-role usage string; `YatuBuildCommit`,
@@ -336,6 +336,12 @@ before anything is published.
 Superseded by §9. The extension's menu carries a **Send to editor** section, so the editor role is
 reachable without a second bundle to sign, notarize, icon and explain. `YatuKit` keeps the role and
 its tests; `Sources/YatuEditor` is retired.
+
+**Done 2026-09-23.** `Sources/YatuEditor/` and its `Package.swift` product and target are gone, and
+`bin/build.sh` builds one app rather than two. `Role.editor` stays — `Catalog`, `FinderTarget`'s
+editor rules, `MenuModel` and the settings window all use it, and the 60 tests passed untouched.
+`Role.editor.bundleIdentifier` now names a bundle that does not exist; it is kept as the role's
+stable identity and the comment says so.
 
 ### M7 — Optional, after 1.0
 - App Sandbox spike on `fork/sandbox-spike`: `app-sandbox` plus temporary Apple Events exceptions for
