@@ -52,22 +52,28 @@ final class YatuFinderSync: FIFinderSync {
         guard menuKind == .toolbarItemMenu else { return nil }
 
         let controller = FIFinderSyncController.default()
-        // One selected item names a place; several do not, so the container
-        // wins. The same rule the app applies, and the reason it is applied
-        // here too is that only the extension can see the selection.
-        let selection = controller.selectedItemURLs() ?? []
-        let item = selection.count == 1 ? selection[0] : nil
+        // Report the whole selection and decide nothing.
+        //
+        // This used to collapse a multiple selection to nil right here, before
+        // the role was known, on the grounds that a terminal opens at exactly
+        // one place. That is true of the terminal and false of the editor,
+        // which is handed everything you selected -- so "Send to editor" with
+        // three files selected sent the folder instead of the files. The rule
+        // is per-role, it already exists in FinderTarget.resolve, and this is
+        // the wrong side of the boundary to apply it: the extension's whole job
+        // is to report what Finder shows.
+        let selection = Array((controller.selectedItemURLs() ?? []).prefix(HandOff.maximumItems))
         let container = controller.targetedURL()
 
         Log.finder.info(
             "toolbar click: \(selection.count) selected, container \(container == nil ? "none" : "resolved", privacy: .public)")
 
         guard NSEvent.modifierFlags.contains(.option) else {
-            send(.open(role: role, app: nil, item: item, container: container))
+            send(.open(role: role, app: nil, items: selection, container: container))
             return nil          // no menu: one click, one action
         }
 
-        return optionMenu(item: item, container: container)
+        return optionMenu(selection: selection, container: container)
     }
 
     /// What each menu item in the menu currently on screen stands for, indexed
@@ -75,7 +81,7 @@ final class YatuFinderSync: FIFinderSync {
     /// and there is only ever one, so there is nothing to race with.
     private var pending: [Choice] = []
 
-    private func optionMenu(item: URL?, container: URL?) -> NSMenu {
+    private func optionMenu(selection: [URL], container: URL?) -> NSMenu {
         let installed = InstalledApps.shared.current()
         let menu = NSMenu(title: "Yatu")
         menu.autoenablesItems = false
@@ -110,7 +116,7 @@ final class YatuFinderSync: FIFinderSync {
                 menuItem.isEnabled = true
                 menuItem.indentationLevel = 0
                 menuItem.image = descriptor.applicationURL.flatMap { InstalledApps.shared.icon(for: $0) }
-                pending.append(Choice(descriptor: descriptor, item: item, container: container))
+                pending.append(Choice(descriptor: descriptor, selection: selection, container: container))
                 menu.addItem(menuItem)
             }
         }
@@ -120,11 +126,11 @@ final class YatuFinderSync: FIFinderSync {
     /// What a menu item stands for, carried until the user picks it.
     private final class Choice: NSObject {
         let descriptor: MenuModel.Item
-        let item: URL?
+        let selection: [URL]
         let container: URL?
-        init(descriptor: MenuModel.Item, item: URL?, container: URL?) {
+        init(descriptor: MenuModel.Item, selection: [URL], container: URL?) {
             self.descriptor = descriptor
-            self.item = item
+            self.selection = selection
             self.container = container
         }
     }
@@ -141,7 +147,7 @@ final class YatuFinderSync: FIFinderSync {
         }
         let choice = pending[sender.tag]
         guard let request = MenuModel.request(for: choice.descriptor, role: role,
-                                              selection: choice.item, container: choice.container)
+                                              selection: choice.selection, container: choice.container)
         else {
             Log.launch.error("no request for menu item '\(sender.title, privacy: .public)'")
             return

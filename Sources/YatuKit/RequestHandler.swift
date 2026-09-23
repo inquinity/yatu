@@ -29,9 +29,9 @@ public enum RequestHandler {
     /// protocol the app uses for its own queries. The extension resolves
     /// nothing, so the rules run here and only here.
     private struct ReportedContext: FinderQuerying {
-        let item: URL?
+        let items: [URL]
         let container: URL?
-        func selectedItems() -> [URL] { item.map { [$0] } ?? [] }
+        func selectedItems() -> [URL] { items }
         func frontWindowTarget() -> URL? { container }
     }
 
@@ -42,14 +42,17 @@ public enum RequestHandler {
         -> Outcome
     {
         switch request {
-        case let .open(role, requestedApp, item, container):
+        case let .open(role, requestedApp, items, container):
             // An explicitly named app is a one-off; otherwise the stored
             // default. Either way it came through the catalog allowlist.
             guard let app = requestedApp ?? settings.chosenApp(for: role) else {
                 Log.launch.info("hand-off for \(role.rawValue, privacy: .public) with nothing chosen")
                 return .nothingToDo("no \(role.rawValue) chosen yet")
             }
-            let targets = FinderTarget.resolve(for: role, using: ReportedContext(item: item, container: container))
+            // The per-role rule lives in FinderTarget and only there: the
+            // terminal ignores a multiple selection in favour of the container,
+            // the editor takes all of it.
+            let targets = FinderTarget.resolve(for: role, using: ReportedContext(items: items, container: container))
             do {
                 try launch(app, targets)
                 return .launched(app, targets)

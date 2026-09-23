@@ -21,7 +21,7 @@ final class HandOffTests: XCTestCase {
 
     func testOpenRoundTrips() {
         let request = HandOff.Request.open(role: .terminal, app: nil,
-                                           item: URL(fileURLWithPath: "/tmp/a"),
+                                           items: [URL(fileURLWithPath: "/tmp/a")],
                                            container: URL(fileURLWithPath: "/tmp"))
         let url = HandOff.url(for: request)
         XCTAssertNotNil(url)
@@ -40,11 +40,47 @@ final class HandOffTests: XCTestCase {
 
     func testAPathWithSpacesAndPunctuationSurvives() {
         let awkward = URL(fileURLWithPath: "/tmp/a folder; rm -rf ~/with&chars")
-        let url = HandOff.url(for: .open(role: .terminal, app: nil, item: awkward, container: nil))!
-        guard case let .open(_, _, item, _) = HandOff.request(from: url) else {
+        let url = HandOff.url(for: .open(role: .terminal, app: nil, items: [awkward], container: nil))!
+        guard case let .open(_, _, items, _) = HandOff.request(from: url) else {
             return XCTFail("did not parse")
         }
-        XCTAssertEqual(item?.path, awkward.path)
+        XCTAssertEqual(items.map(\.path), [awkward.path])
+    }
+
+    func testSeveralItemsRoundTrip() {
+        // The defect this covers: the contract used to carry one optional URL,
+        // so "Send to editor" with three files selected could not express what
+        // was asked for and silently sent the folder instead.
+        let selected = ["/tmp/one.txt", "/tmp/two.txt", "/tmp/three.txt"]
+            .map { URL(fileURLWithPath: $0) }
+        let request = HandOff.Request.open(role: .editor, app: .vscode,
+                                           items: selected,
+                                           container: URL(fileURLWithPath: "/tmp"))
+        let url = HandOff.url(for: request)!
+        XCTAssertEqual(HandOff.request(from: url), request)
+
+        guard case let .open(_, _, items, _) = HandOff.request(from: url) else {
+            return XCTFail("did not parse")
+        }
+        XCTAssertEqual(items.map(\.path), selected.map(\.path), "order is preserved")
+    }
+
+    func testItemsAtTheCapAreAccepted() {
+        let items = (0..<HandOff.maximumItems).map { URL(fileURLWithPath: "/tmp/\($0)") }
+        let url = HandOff.url(for: .open(role: .editor, app: nil, items: items, container: nil))!
+        guard case let .open(_, _, parsed, _) = HandOff.request(from: url) else {
+            return XCTFail("the cap itself should be accepted")
+        }
+        XCTAssertEqual(parsed.count, HandOff.maximumItems)
+    }
+
+    func testTooManyItemsAreRefusedRatherThanTruncated() {
+        // Refused, not truncated: acting on part of a request is worse than
+        // refusing it, and only a sender that is not the extension can get here.
+        let query = (0...HandOff.maximumItems)
+            .map { "item=/tmp/\($0)" }
+            .joined(separator: "&")
+        XCTAssertNil(parse("yatu://open?role=editor&" + query))
     }
 
     // MARK: - What it refuses
@@ -87,7 +123,7 @@ final class HandOffTests: XCTestCase {
     func testAnAppWithinTheRolesCatalogIsAccepted() {
         XCTAssertEqual(parse("yatu://open?role=terminal&app=iTerm&item=/tmp"),
                        .open(role: .terminal, app: .iTerm,
-                             item: URL(fileURLWithPath: "/tmp"), container: nil))
+                             items: [URL(fileURLWithPath: "/tmp")], container: nil))
     }
 }
 
@@ -116,7 +152,7 @@ final class MenuModelTests: XCTestCase {
         let items = MenuModel.items(for: .terminal,
                                     installedTerminals: terminals, installedEditors: editors)
         for item in items where !item.isEnabled {
-            XCTAssertNil(MenuModel.request(for: item, role: .terminal, selection: nil, container: nil))
+            XCTAssertNil(MenuModel.request(for: item, role: .terminal, selection: [], container: nil))
         }
     }
 
@@ -129,13 +165,13 @@ final class MenuModelTests: XCTestCase {
 
         let terminalItem = items.first { $0.title == "iTerm" }!
         XCTAssertEqual(MenuModel.request(for: terminalItem, role: .terminal,
-                                         selection: folder, container: nil),
+                                         selection: [folder], container: nil),
                        .setDefault(role: .terminal, app: .iTerm))
 
         let editorItem = items.first { $0.title == "Visual Studio Code" }!
         XCTAssertEqual(MenuModel.request(for: editorItem, role: .terminal,
-                                         selection: folder, container: nil),
-                       .open(role: .editor, app: .vscode, item: folder, container: nil))
+                                         selection: [folder], container: nil),
+                       .open(role: .editor, app: .vscode, items: [folder], container: nil))
     }
 
     func testNothingInstalledStillOffersSettings() {

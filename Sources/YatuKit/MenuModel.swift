@@ -89,13 +89,13 @@ public enum MenuModel {
     /// item **opens once** and changes nothing.
     public static func request(for descriptor: Item,
                                role: Role,
-                               selection: URL?,
+                               selection: [URL],
                                container: URL?) -> HandOff.Request? {
         switch descriptor.kind {
         case let .setDefault(app):
             return .setDefault(role: role, app: app)
         case let .sendToEditor(app):
-            return .open(role: .editor, app: app, item: selection, container: container)
+            return .open(role: .editor, app: app, items: selection, container: container)
         case .settings:
             return .settings(role: role)
         case .header, .separator:

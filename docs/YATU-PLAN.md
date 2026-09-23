@@ -142,7 +142,11 @@ the reference for the behaviour.
    file, or an `.app`/`.command` bundle. **One** selected item names that directory; a selection of
    **several** is ignored in favour of the folder being viewed, because a terminal opens at exactly
    one place and choosing the "first" of a set would depend on selection order the user neither
-   chose nor can see. The **editor** role takes all of them, where order does not matter. The **editor** role may receive files, since opening a
+   chose nor can see. The **editor** role takes all of them, where order does not matter.
+   *(The extension did not honour the second half until 2026-09-23: it collapsed a multiple
+   selection to nothing before the role was known, and `HandOff.Request.open` could carry only one
+   path, so "Send to editor" with several files sent the folder. The contract now carries a bounded
+   list and the per-role rule is applied only in `FinderTarget.resolve`, which is where it belongs.)* The **editor** role may receive files, since opening a
    document is the point, **including executable ones**; `.app` bundles are still dropped.
    *(Relaxed 2026-09-18. The rule previously refused anything with the execute bit, which blocked
    `chmod +x` scripts — one of the commonest reasons to open an editor. The execution risk in
