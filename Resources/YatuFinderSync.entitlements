@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The extension is sandboxed; the app is not. That pair is what BetterZip ships
+  and what keeps the extension unable to do anything but report and hand off.
+
+  Note what is NOT here: no Apple Events, because the extension scripts nothing;
+  no application group, because it shares no state with the app (plan §9.1); no
+  network, no file access beyond what Finder hands it.
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
+</dict>
+</plist>
