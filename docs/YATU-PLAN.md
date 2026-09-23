@@ -488,6 +488,42 @@ receives an existing directory, and the target application is still only ever a 
 this converts an app with no entry points into an app with one, and that is what the security review
 is for, not a reassurance here.
 
+### 9.6 Noted for later: the catalog deserves no special reverence
+
+Raised 2026-09-23, not yet decided. The only live inheritance from upstream is
+`SupportedApps.swift` — a list of terminals and editors with their bundle identifiers. It is worth
+remembering what that list is and is not:
+
+- It is **not an authoritative or community-maintained source** the way something like
+  endoflife.date is. It is one maintainer's list, changed 21 times in three years, almost always to
+  add an app someone asked for.
+- It is **partly wrong**: `com.apple.Xcode` has not been Xcode's bundle identifier for years, and
+  `com.sublimetext.3` is two major versions stale. Yatu only survives those because `Launcher`
+  falls back to an explicit `/Applications/<name>.app`.
+- The set of popular terminals and editors **changes slowly**, so maintaining it ourselves is a few
+  edits a year, not a burden.
+
+So when the fork relationship is cut (§9.7 below, after M2e), vendoring upstream's list verbatim is
+one option, but not obviously the right one. Owning the list means fixing the stale identifiers
+instead of papering over them, and dropping entries for apps that no longer exist. Decide then.
+
+### 9.7 Cutting the fork relationship — analysis done 2026-09-23, decision pending
+
+Measured: the product compiles **three** upstream files — `SupportedApps.swift` and the two
+ScriptingBridge interfaces, the latter unchanged since 2019 and regenerable from Apple's `sdef`.
+To get them the repository carries **279 unbuilt files** (the full app, the editor app, the Core
+framework, upstream's Finder extension, the helper, two Xcode projects). Upstream has not moved
+since 2026-07-14, and the bug we reported there (GH-283) is still open.
+
+The reference value of that tree is real — it was read repeatedly while designing §9 — but it is
+duplicated in the `~/dev/oss/openinterminal` clone, which keeps its own `upstream` remote and is
+where contributions are made. Nothing is lost by removing it from the product repository.
+
+**Intended: cut it, after M2e**, so two structural changes do not land at once. The licence and
+attribution obligations do not change: the MIT notice stays, and credit stays in `README.md` and in
+the provenance headers of anything derived. What replaces `git merge upstream/master` is a small
+script that diffs upstream's catalog against ours, so a new terminal is still noticed.
+
 ### 9.5 What stays
 
 - **Dragging the app into the toolbar still works.** Anyone who does not enable the extension keeps
