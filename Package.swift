@@ -4,9 +4,8 @@
 // looking at. See docs/YATU-PLAN.md.
 //
 // There is no Xcode project: `bin/build.sh` turns these products into .app
-// bundles. The upstream tree (OpenInTerminal*/, OpenInTerminalCore/, the
-// .xcodeproj files) is left untouched and is not built by this package —
-// except for the single upstream file compiled unchanged by YatuUpstream.
+// bundles. The three files Yatu compiles from OpenInTerminal are vendored in
+// Sources/YatuUpstream, each with a provenance header; see docs/UPSTREAM.md.
 
 import PackageDescription
 
@@ -24,8 +23,9 @@ let package = Package(
         .library(name: "YatuKit", targets: ["YatuKit"]),
     ],
     targets: [
-        // Upstream's app catalog, compiled unchanged. See the README in that
-        // directory for why our own model types live there too.
+        // OpenInTerminal's app catalog and ScriptingBridge interfaces, compiled
+        // unchanged. See the README in that directory for why our own model
+        // types live there too.
         .target(name: "YatuUpstream", exclude: ["README.md"]),
 
         // Everything Yatu owns.
