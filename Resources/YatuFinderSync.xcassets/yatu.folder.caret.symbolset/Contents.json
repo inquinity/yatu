@@ -1,0 +1,15 @@
+{
+  "info" : {
+    "author" : "yatu",
+    "version" : 1
+  },
+  "symbols" : [
+    {
+      "filename" : "yatu.folder.caret.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "properties" : {
+    "template-rendering-intent" : "template"
+  }
+}
