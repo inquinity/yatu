@@ -460,7 +460,7 @@ wording carries what a checkmark would, since the extension cannot read the curr
 
 ### 9.3 Milestones
 
-- **M2e — the extension.** `Sources/YatuFinderSync/`; hand-off over a `yatu://` URL parsed and
+- **M2e — the extension — done 2026-09-23.** `Sources/YatuFinderSync/`; hand-off over a `yatu://` URL parsed and
   validated in `YatuKit`; a URL handler in the app that applies `FinderTarget`'s rules to the
   reported context; menu construction as a pure function returning item descriptors so it is
   testable without Finder. Carries the prototype's lessons: nothing slow inside `menu(for:)`,
