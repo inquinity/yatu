@@ -120,12 +120,17 @@ report_finder_extension() {
     local record path
     print_colored "$COLOR_CYAN" "Finder extension ($EXTENSION_ID)"
     record="$(pluginkit -mAvvv -i "$EXTENSION_ID" 2>/dev/null || true)"
-    if [[ -z "$record" ]]; then
+    # Not "is the output empty": when nothing matches, pluginkit prints
+    # "  (no matches)", which is not empty and used to be read as a plug-in
+    # with no path. A record is a record only if it names one.
+    path="$(printf '%s\n' "$record" | sed -n 's/^[[:space:]]*Path = //p' | head -n1)"
+    if [[ -z "$path" ]]; then
         printf '  not registered\n'
-        print_colored "$COLOR_YELLOW" "  Launch Yatu once so macOS registers the extension."
+        print_colored "$COLOR_YELLOW" "  Register it without launching the app:
+    pluginkit -a /Applications/Yatu.app/Contents/PlugIns/YatuFinderSync.appex
+  Launching Yatu also registers it, but a plain launch opens a terminal."
         return
     fi
-    path="$(printf '%s\n' "$record" | sed -n 's/^[[:space:]]*Path = //p' | head -n1)"
     printf '  path:     %s\n' "$path"
     if printf '%s\n' "$record" | grep -q '^+'; then
         print_colored "$COLOR_GREEN" "  state:    enabled"
