@@ -44,7 +44,8 @@ What "the current folder" means:
 
 - **Set default terminal program** — every terminal you have installed. Choosing one *sets the
   default*.
-- **Send to editor** — every editor you have installed. Choosing one *opens it now*.
+- **Send to editor** — every editor you have installed. Choosing one *opens it now*, with
+  everything you have selected. Nothing selected gives the editor the folder.
 - **Settings…**
 
 ## Alternative Install: ⌘-drag

@@ -26,13 +26,24 @@ public enum HandOff {
     /// The scheme the app registers and the extension opens.
     public static let scheme = "yatu"
 
+    /// The most selected items one request may carry.
+    ///
+    /// The editor role is handed everything you selected, so this is a list and
+    /// not a single path. It is also a public entry point, so it is a *bounded*
+    /// list: without a cap, anything on the machine could hand the app an
+    /// arbitrarily long URL to parse and an arbitrarily long argument vector to
+    /// launch an application with. Selecting more than this in Finder and
+    /// sending it to an editor is not a real workflow; being handed 100,000
+    /// paths by a web page is a real attack.
+    public static let maximumItems = 64
+
     /// What the extension is asking the app to do.
     public enum Request: Equatable {
         /// Open at whatever these Finder coordinates mean. `app` nil means the
         /// role's stored default — a plain toolbar click. A named app is a
         /// one-off from the menu ("Send to editor → …") and does not change
         /// what is stored.
-        case open(role: Role, app: SupportedApps?, item: URL?, container: URL?)
+        case open(role: Role, app: SupportedApps?, items: [URL], container: URL?)
         /// Make this catalog entry the role's default. The app owns preferences.
         case setDefault(role: Role, app: SupportedApps)
         /// Show the settings window.
@@ -47,11 +58,16 @@ public enum HandOff {
         var items: [URLQueryItem] = []
 
         switch request {
-        case let .open(role, app, item, container):
+        case let .open(role, app, selected, container):
             components.host = "open"
             items.append(URLQueryItem(name: "role", value: role.rawValue))
             if let app { items.append(URLQueryItem(name: "app", value: app.name)) }
-            if let item { items.append(URLQueryItem(name: "item", value: item.path)) }
+            // Repeated `item=` parameters, in selection order. The order is not
+            // meaningful — the rules never pick a "first" — but preserving it
+            // keeps the round trip exact and the tests readable.
+            for item in selected.prefix(maximumItems) {
+                items.append(URLQueryItem(name: "item", value: item.path))
+            }
             if let container { items.append(URLQueryItem(name: "container", value: container.path)) }
         case let .setDefault(role, app):
             components.host = "set-default"
@@ -86,6 +102,9 @@ public enum HandOff {
             else { return nil }
             return found
         }
+        func values(_ name: String) -> [String] {
+            query.filter { $0.name == name }.compactMap(\.value).filter { !$0.isEmpty }
+        }
 
         guard let roleName = value("role"), let role = Role(rawValue: roleName) else { return nil }
 
@@ -93,9 +112,14 @@ public enum HandOff {
         case "open":
             // A path is data, not a promise: it is turned into a file URL here
             // and judged by FinderTarget's rules later.
-            let item = value("item").map { URL(fileURLWithPath: $0) }
+            let paths = values("item")
+            // Too many is refused outright rather than truncated. Truncating
+            // would silently act on part of what was asked for, and the only
+            // sender that can exceed the cap is not the extension.
+            guard paths.count <= maximumItems else { return nil }
+            let selected = paths.map { URL(fileURLWithPath: $0) }
             let container = value("container").map { URL(fileURLWithPath: $0) }
-            guard item != nil || container != nil else { return nil }
+            guard !selected.isEmpty || container != nil else { return nil }
             // An app may be named, but only one from this role's catalog. A URL
             // naming anything else is rejected outright rather than ignored.
             var app: SupportedApps?
@@ -103,7 +127,7 @@ public enum HandOff {
                 guard let allowed = Catalog.app(named: requested, for: role) else { return nil }
                 app = allowed
             }
-            return .open(role: role, app: app, item: item, container: container)
+            return .open(role: role, app: app, items: selected, container: container)
 
         case "set-default":
             guard let name = value("app"), let app = Catalog.app(named: name, for: role)

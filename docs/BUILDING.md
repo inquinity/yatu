@@ -16,7 +16,7 @@ bin/build.sh                  # both bundles, release, universal  (just build)
 bin/build.sh terminal         # Yatu.app only
 bin/build.sh --native --debug # this Mac's architecture, debug configuration
 bin/build.sh --help           # every option
-swift test                    # 60 tests                          (just test)
+swift test                    # 65 tests                          (just test)
 just lint                     # shellcheck every script
 just --list                   # every task
 ```

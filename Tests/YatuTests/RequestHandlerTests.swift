@@ -36,9 +36,37 @@ final class RequestHandlerTests: XCTestCase {
         }
     }
 
+    func testTheEditorIsGivenEverySelectedFile() throws {
+        // The rule (plan §4.1 rule 3): a terminal opens at exactly one place,
+        // so it ignores a multiple selection; an editor is handed all of them,
+        // where order does not matter. This failed for two months because the
+        // extension collapsed the selection before the role was known.
+        let files = try (0..<3).map { index -> URL in
+            let file = sandbox.appendingPathComponent("file\(index).txt")
+            try "contents".write(to: file, atomically: true, encoding: .utf8)
+            return file
+        }
+        _ = handle(.open(role: .editor, app: .vscode, items: files, container: sandbox))
+        XCTAssertEqual(launched.first?.0, .vscode)
+        XCTAssertEqual(launched.first?.1.map(\.lastPathComponent).sorted(),
+                       files.map(\.lastPathComponent).sorted())
+    }
+
+    func testATerminalStillIgnoresAMultipleSelection() throws {
+        let files = try (0..<3).map { index -> URL in
+            let file = sandbox.appendingPathComponent("file\(index).txt")
+            try "contents".write(to: file, atomically: true, encoding: .utf8)
+            return file
+        }
+        settings.setChosenApp(.iTerm, for: .terminal)
+        _ = handle(.open(role: .terminal, app: nil, items: files, container: sandbox))
+        XCTAssertEqual(launched.first?.1.map(\.path), [sandbox.path],
+                       "several selected items mean the folder being viewed, not one of them")
+    }
+
     func testOpenUsesTheStoredDefault() throws {
         settings.setChosenApp(.iTerm, for: .terminal)
-        _ = handle(.open(role: .terminal, app: nil, item: nil, container: sandbox))
+        _ = handle(.open(role: .terminal, app: nil, items: [], container: sandbox))
         XCTAssertEqual(launched.first?.0, .iTerm)
         // Compared as paths: a directory URL may or may not carry a trailing
         // slash depending on how it was resolved, and that is not a difference
@@ -48,7 +76,7 @@ final class RequestHandlerTests: XCTestCase {
     }
 
     func testOpenWithNothingChosenDoesNothing() {
-        guard case .nothingToDo = handle(.open(role: .terminal, app: nil, item: nil, container: sandbox))
+        guard case .nothingToDo = handle(.open(role: .terminal, app: nil, items: [], container: sandbox))
         else { return XCTFail("should not launch") }
         XCTAssertTrue(launched.isEmpty)
     }
@@ -56,7 +84,7 @@ final class RequestHandlerTests: XCTestCase {
     /// A named app is a one-off: it launches, and the stored default is untouched.
     func testANamedAppDoesNotChangeTheDefault() throws {
         settings.setChosenApp(.terminal, for: .terminal)
-        _ = handle(.open(role: .terminal, app: .iTerm, item: nil, container: sandbox))
+        _ = handle(.open(role: .terminal, app: .iTerm, items: [], container: sandbox))
         XCTAssertEqual(launched.first?.0, .iTerm)
         XCTAssertEqual(settings.chosenApp(for: .terminal), .terminal, "the default moved")
     }
@@ -67,7 +95,7 @@ final class RequestHandlerTests: XCTestCase {
         let file = sandbox.appendingPathComponent("notes.txt")
         try Data("x".utf8).write(to: file)
 
-        _ = handle(.open(role: .terminal, app: nil, item: file, container: sandbox))
+        _ = handle(.open(role: .terminal, app: nil, items: [file], container: sandbox))
         XCTAssertEqual(launched.first?.1.map(\.lastPathComponent),
                        [sandbox.resolvingSymlinksInPath().lastPathComponent])
     }
@@ -76,7 +104,7 @@ final class RequestHandlerTests: XCTestCase {
     func testAVanishedPathFallsBack() throws {
         settings.setChosenApp(.iTerm, for: .terminal)
         let gone = sandbox.appendingPathComponent("not-there")
-        _ = handle(.open(role: .terminal, app: nil, item: gone, container: nil))
+        _ = handle(.open(role: .terminal, app: nil, items: [gone], container: nil))
         XCTAssertEqual(launched.first?.1.map(\.path), [FinderTarget.desktop.path])
     }
 
