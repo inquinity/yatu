@@ -12,11 +12,13 @@
 >   bundle id `com.altmansoftwaredesign.yatu`, team `45GJWJVQN2`, distributed as the `yatu` cask in
 >   `inquinity/homebrew-tap`. The name in `README.md` and throughout the upstream tree is still
 >   OpenInTerminal; that is upstream's, not ours.
-> - **We ship one app.** The full `OpenInTerminal/` app, the Finder extension, the login helper and
->   `OpenInEditor-Lite/` are kept untouched and unsupported. Do not "fix" them here — their findings
->   go upstream (see the contribution track in the fork notes). Yatu does carry an **editor role**
->   of its own (`Yatu Edit`, built and tested but not shipped in 1.0 — see §4.1 of the plan); that
->   is fork-owned code, not upstream's target.
+> - **We ship one app, which contains one extension.** Upstream's full `OpenInTerminal/` app, *its*
+>   Finder extension, the login helper and `OpenInEditor-Lite/` are kept untouched and unsupported.
+>   Do not "fix" them here — their findings go upstream (see the contribution track in the fork
+>   notes). Yatu has a **Finder Sync extension of its own** (decided 2026-09-23, §9 of the plan):
+>   fork-owned code, sandboxed, which reports Finder's context and executes nothing. It is not
+>   upstream's extension. Yatu also carries an **editor role** in `YatuKit`, reached from that
+>   extension's menu; there is no separate editor app.
 > - **Build scripts:** use the fork-owned copies in `bin/` (`bin/build-unsigned.sh`,
 >   `bin/build-signed.sh`). The identically named scripts at the repo root are upstream's and are
 >   left alone so merges stay clean. `bin/build-signed.sh` needs the Developer ID for team
