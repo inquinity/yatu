@@ -122,3 +122,8 @@ iOSInjectionProject/
 **/xcshareddata/WorkspaceSettings.xcsettings
 
 # End of https://www.gitignore.io/api/macos,xcode,swift
+
+# SF Symbols templates exported from Apple's app. These are inputs to
+# bin/make-symbol.swift, are Apple's artwork, and are not redistributed here.
+# See docs/BUILDING.md for how to export them.
+SFSymbols/

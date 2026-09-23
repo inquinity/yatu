@@ -485,10 +485,20 @@ wording carries what a checkmark would, since the extension cannot read the curr
   reported context; menu construction as a pure function returning item descriptors so it is
   testable without Finder. Carries the prototype's lessons: nothing slow inside `menu(for:)`,
   resolution and icons cached and persisted, icons rasterised, hand-off off the callback thread.
-- **M1b — icons.** Toolbar: a **custom SF Symbol** of the folder-and-caret, authored as an SVG
-  symbol set and compiled by `actool`, so it inherits system weight and metrics. App icon: **back
-  to colour** — the violet folder tile as an Icon Composer icon. The toolbar constraint was the only
-  reason it went monochrome, and it no longer applies.
+- **M1b — icons. Toolbar half done 2026-09-23.** The toolbar symbol is `yatu.folder.caret`, a
+  custom SF Symbol derived from Apple's exported `folder` template by `bin/make-symbol.swift` and
+  compiled into the extension's own bundle by `actool`, so it carries system metrics and tints with
+  the toolbar. Two variants were built and compared at 16–64pt: the caret **on the folder face**
+  won; the caret **as a corner badge** collapses to a blob below 24pt and borrows
+  `folder.badge.plus`'s "add to folder" grammar. The earlier worry — that interior detail dies at
+  toolbar size, since all 20 system `folder.*` symbols badge at the corner — did not apply, because
+  a chevron is one stroke rather than detail. It is Apple-derived artwork and carries Apple's
+  licence, not ours; see §9.8 and `docs/UPSTREAM.md`.
+  **Still open:** the app icon. The violet tile already ships at 128pt and up — `bin/make-icon.swift`
+  draws glyph ≤32pt and colour above — so "back to colour" was largely already true. What is
+  actually open is the *format*: flat `.icns` with art that varies by size, or an Icon Composer
+  `.icon` document, which cannot vary by size. Now that the extension draws its own symbol, the
+  size split only serves ⌘-drag.
 - **M4 additions.** `bin/build.sh` assembles and signs the `.appex` *before* the app, with its own
   entitlements; `actool` compiles the app icon and the symbol set; Xcode becomes a build
   requirement. Verification asserts the extension is sandboxed and the app is not.
