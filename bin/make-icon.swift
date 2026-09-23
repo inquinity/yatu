@@ -9,22 +9,26 @@
 //  with a prompt in it, and an aperture-with-caret was the same silhouette.
 //  Chosen 2026-09-21; it replaces concept 7's aperture, and keeps its palette.
 //
-//  The .icns is deliberately NOT one drawing at ten sizes:
+//  The tile is a folder in white, filled black, with an amber caret, on a
+//  violet field, at every size.
 //
-//    16pt and 32pt   a template glyph, one ink on transparent — what the Finder
-//                    toolbar and list views draw
-//    128pt and up    the colour tile — what the Dock, Get Info and Quick Look draw
+//  **It used to vary by size** — a one-ink grey glyph at 16 and 32pt, the colour
+//  tile at 128pt and up — because the Finder toolbar drew the app icon, and a
+//  colour tile in a row of outline glyphs looked wrong. That reason died on
+//  2026-09-23, when the Finder Sync extension took over the toolbar button: it
+//  draws its own template symbol (bin/make-symbol.swift) and never asks for the
+//  app icon at all.
 //
-//  Both are the same drawing. The tile is the glyph's folder in white, filled
-//  black, with an amber caret, on a violet field; the glyph is that folder in
-//  one grey ink with nothing behind it.
+//  The split then had no case left to serve and was breaking every case that
+//  remained. Finder's list view, Get Info and Spotlight all draw the 16 or 32pt
+//  representation, so Yatu showed as the only outline glyph in a column of
+//  colour tiles, and all but disappeared against a selected row.
 //
-//  A Finder toolbar is a row of outline glyphs, and a colour tile in it looks
-//  wrong. Upstream's icon is monochrome at every size, which is right for the
-//  toolbar and wrong for the Dock. macOS picks a representation by size, so one
-//  bundle can be both. The glyph cannot adapt to a dark toolbar — macOS does not
-//  tint an app icon the way it tints a real template image — so its ink is a mid
-//  grey chosen to stay legible on both.
+//  The one place the app icon still appears in a toolbar is ⌘-drag, the
+//  documented-but-not-recommended fallback for people who will not enable the
+//  extension. They get a colour tile on a grey plate, which is what README.md
+//  tells them to expect. `--glyph` still draws the old one-ink form if a
+//  monochrome asset is ever wanted.
 //
 //  A flat .icns, written from PNGs via iconutil — the only format that allows
 //  different artwork by size. It is NOT Apple's documented implementation for
@@ -33,7 +37,7 @@
 //  Composer "stopped rendering" on 26.6. That was wrong: the GH-283 fix removed
 //  duplicate icon sources, not the format.)
 //
-//  Usage: bin/make-icon.swift [output.icns] [--glyph|--monochrome|--colour]
+//  Usage: bin/make-icon.swift [output.icns] [--glyph|--monochrome|--colour|--by-size]
 //
 
 import AppKit
@@ -55,7 +59,9 @@ enum Ink {
 }
 
 enum InkPolicy {
-    /// Glyph up to and including 32pt, colour above it. The shipping policy.
+    /// Glyph up to and including 32pt, colour above it. The shipping policy
+    /// until 2026-09-23; kept because it is the only thing that documents what
+    /// the split was, and `--by-size` still reaches it.
     case bySize
     case always(Ink)
 
@@ -68,7 +74,9 @@ enum InkPolicy {
 }
 
 var outputPath = "Resources/AppIcon.icns"
-var inkPolicy = InkPolicy.bySize
+/// Colour at every size: the app icon is no longer drawn in any toolbar except
+/// by ⌘-drag, so it should look like every other application's icon.
+var inkPolicy = InkPolicy.always(.colour)
 
 for argument in CommandLine.arguments.dropFirst() {
     switch argument {
@@ -78,6 +86,8 @@ for argument in CommandLine.arguments.dropFirst() {
         inkPolicy = .always(.monochromeTile)
     case "--colour", "--color":
         inkPolicy = .always(.colour)
+    case "--by-size":
+        inkPolicy = .bySize
     default:
         if argument.hasPrefix("-") {
             FileHandle.standardError.write(Data("unknown option: \(argument)\n".utf8))

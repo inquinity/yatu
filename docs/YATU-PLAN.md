@@ -425,6 +425,19 @@ stable identity and the comment says so.
    toolbar is monochrome in list view and small icon view too; colour appears in the Dock, Get
    Info and Quick Look.
 
+   **Reversed 2026-09-23: colour at every size.** The paragraph above is kept because it is the
+   record of a trade that was correct when it was made and stopped being correct. Its whole premise
+   was that the Finder toolbar draws the app icon. The Finder Sync extension (§9) ended that: the
+   toolbar button draws its own template symbol, `yatu.folder.caret`, and never asks for the app
+   icon. The split then had nothing left to buy — and the cost it had always carried, named two
+   paragraphs down as "anything that is monochrome in the toolbar is monochrome in list view and
+   small icon view too", was all that remained. In Finder's list view Yatu was the only outline
+   glyph in a column of colour tiles, and on a selected row it nearly vanished. `bin/make-icon.swift`
+   now ships `.always(.colour)`; `--by-size` still reaches the old behaviour, and `--glyph` still
+   draws the one-ink form if a monochrome asset is ever wanted. The one place the app icon still
+   lands in a toolbar is ⌘-drag, where a colour tile on a grey plate is exactly what `README.md`
+   says to expect.
+
    **The glyph has a stroke floor** of 1.8px. At 16px a proportional stroke is ~1.2px and the
    caret collapsed into two grey dots; the floor keeps it a caret. This was found by looking at the
    real pixels, not by reasoning.
@@ -500,11 +513,12 @@ wording carries what a checkmark would, since the extension cannot read the curr
   toolbar size, since all 20 system `folder.*` symbols badge at the corner — did not apply, because
   a chevron is one stroke rather than detail. It is Apple-derived artwork and carries Apple's
   licence, not ours; see §9.8 and `docs/UPSTREAM.md`.
-  **Still open:** the app icon. The violet tile already ships at 128pt and up — `bin/make-icon.swift`
-  draws glyph ≤32pt and colour above — so "back to colour" was largely already true. What is
-  actually open is the *format*: flat `.icns` with art that varies by size, or an Icon Composer
-  `.icon` document, which cannot vary by size. Now that the extension draws its own symbol, the
-  size split only serves ⌘-drag.
+  **App icon done 2026-09-23 too.** The violet tile already shipped at 128pt and up; the size split
+  that kept 16 and 32pt monochrome is gone, so every representation is now the colour tile and Yatu
+  looks like an application in list view, Get Info and Spotlight. See §8.6.
+  **Still open:** the *format*. A flat `.icns` can vary art by size and an Icon Composer `.icon`
+  document cannot — but now that nothing needs the art to vary, that difference no longer argues
+  for either. Decide on the merits of the format itself, not on the size split.
 - **M4 additions.** `bin/build.sh` assembles and signs the `.appex` *before* the app, with its own
   entitlements; `actool` compiles the app icon and the symbol set; Xcode becomes a build
   requirement. Verification asserts the extension is sandboxed and the app is not.
