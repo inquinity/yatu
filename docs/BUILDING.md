@@ -61,6 +61,35 @@ A built bundle identifies itself:
 bin/ver --help                                          # read or bump VERSION
 ```
 
+## Regenerating the toolbar symbol
+
+The toolbar button draws `yatu.folder.caret`, a custom SF Symbol committed at
+`Resources/YatuFinderSync.xcassets/`. `bin/build.sh` compiles it with `actool` into the extension's
+own bundle — a sandboxed extension can only read its own — and that happens *before* the extension
+is signed, because signing is leaf-first and anything added afterwards invalidates the seal.
+
+You only need to regenerate it if you are changing the mark:
+
+```bash
+brew install --cask sf-symbols
+```
+
+In SF Symbols: search `folder`, select the plain folder, **File → Export Template**, choose
+**Static**, and save it. Then:
+
+```bash
+bin/make-symbol.swift ~/path/to/folder.svg \
+    Resources/YatuFinderSync.xcassets/yatu.folder.caret.symbolset/yatu.folder.caret.svg
+```
+
+The caret's size and position are environment variables, so trying a different one costs one run —
+`CARET_HEIGHT` (default 0.72 of the folder's interior), `CARET_WIDTH`, `CARET_DX`, `CARET_DY`.
+0.60 is timid at Regular weight and 0.84 merges into the walls at Black.
+
+Apple's exported `folder.svg` is deliberately **not** in the repository: it is Apple's artwork
+unmodified, and `.gitignore` keeps `SFSymbols/` out. The generated symbol is shipped, and carries
+Apple's licence rather than Yatu's — see [UPSTREAM.md](UPSTREAM.md).
+
 ## Signing and notarization
 
 `bin/build.sh` never signs with a real identity, and nothing in this repository produces a
