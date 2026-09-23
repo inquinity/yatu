@@ -50,6 +50,19 @@ public enum Role: String, CaseIterable, Sendable {
         }
     }
 
+    /// The role that owns this kind of application.
+    ///
+    /// The inverse of `appType`, and the reason it exists: a request that names
+    /// an app must name the role whose catalog contains it, or the app's own
+    /// allowlist will reject it on arrival. Deriving the role from the app
+    /// makes that impossible to get wrong, rather than merely unlikely.
+    public init(owning appType: AppType) {
+        switch appType {
+        case .terminal: self = .terminal
+        case .editor:   self = .editor
+        }
+    }
+
     /// The upstream catalog type this role draws from.
     public var appType: AppType {
         switch self {

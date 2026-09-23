@@ -38,6 +38,10 @@ which:
 check-upstream *args:
     bin/check-upstream.sh {{ args }}
 
+# Test the shell in bin/. Stubs its dependencies; changes nothing on this Mac.
+test-scripts:
+    bin/test-scripts.sh
+
 # Shell-check every script (requires shellcheck).
 lint:
     #!/usr/bin/env bash

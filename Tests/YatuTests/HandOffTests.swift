@@ -127,6 +127,85 @@ final class HandOffTests: XCTestCase {
     }
 }
 
+extension HandOffTests {
+
+    // MARK: - Hostile and malformed input
+    //
+    // `yatu://` is reachable by anything on the machine, so the parser is the
+    // boundary. These assert what it does with input the extension would never
+    // send. Policy about *paths* lives in FinderTarget and is tested there;
+    // what matters here is that parsing is total, deterministic and bounded.
+
+    func testPercentEncodedPathsSurvive() {
+        let awkward = URL(fileURLWithPath: "/tmp/100% done/a?b#c&d=e")
+        let url = HandOff.url(for: .open(role: .terminal, app: nil,
+                                         items: [awkward], container: nil))!
+        guard case let .open(_, _, items, _) = HandOff.request(from: url) else {
+            return XCTFail("did not parse")
+        }
+        XCTAssertEqual(items.map(\.path), [awkward.path])
+    }
+
+    func testAnEmptyItemValueIsIgnoredRatherThanBecomingTheRoot() {
+        // An empty path would become file:/// — the whole filesystem — if it
+        // were taken at face value.
+        guard case let .open(_, _, items, container) =
+            parse("yatu://open?role=terminal&item=&container=/tmp") else {
+            return XCTFail("a usable container should still parse")
+        }
+        XCTAssertTrue(items.isEmpty)
+        XCTAssertEqual(container?.path, "/tmp")
+    }
+
+    func testEmptyItemAndNoContainerIsRefused() {
+        XCTAssertNil(parse("yatu://open?role=terminal&item="))
+    }
+
+    func testARepeatedRoleIsDeterministic() {
+        // Duplicate parameters are a classic way to get two readers to disagree.
+        // Only one answer is acceptable; which one matters less than that it is
+        // always the same one.
+        let first = parse("yatu://open?role=terminal&role=editor&item=/tmp")
+        let second = parse("yatu://open?role=terminal&role=editor&item=/tmp")
+        XCTAssertEqual(first, second)
+        if case let .open(role, _, _, _)? = first {
+            XCTAssertEqual(role, .terminal, "the first value should win")
+        }
+    }
+
+    func testAnAbsurdlyLongPathIsHandledWithoutCrashing() {
+        let long = "/tmp/" + String(repeating: "a", count: 200_000)
+        _ = parse("yatu://open?role=terminal&item=" + long)
+    }
+
+    func testManyItemsWellOverTheCapAreRefusedQuickly() {
+        let query = (0..<5_000).map { "item=/tmp/\($0)" }.joined(separator: "&")
+        XCTAssertNil(parse("yatu://open?role=terminal&" + query))
+    }
+
+    func testAnAppNamedForTheWrongRoleIsRefused() {
+        // Emacs is an editor; naming it in a terminal request must not resolve.
+        XCTAssertNil(parse("yatu://open?role=terminal&app=Emacs&container=/tmp"))
+        XCTAssertNil(parse("yatu://set-default?role=terminal&app=Emacs"))
+    }
+
+    func testSettingsIgnoresAnythingElseInTheQuery() {
+        XCTAssertEqual(parse("yatu://settings?role=terminal&app=Emacs&item=/etc/passwd"),
+                       .settings(role: .terminal))
+    }
+
+    func testAnItemThatIsItselfAUrlIsTreatedAsAPath() {
+        // Not dereferenced, not fetched: it becomes a file path and is judged
+        // by FinderTarget like any other.
+        guard case let .open(_, _, items, _) =
+            parse("yatu://open?role=terminal&item=https://example.com/x") else {
+            return XCTFail("should parse")
+        }
+        XCTAssertEqual(items.count, 1)
+        XCTAssertTrue(items[0].isFileURL)
+    }
+}
+
 final class MenuModelTests: XCTestCase {
 
     private let terminals: [(SupportedApps, URL)] = [

@@ -16,7 +16,8 @@ bin/build.sh                  # both bundles, release, universal  (just build)
 bin/build.sh terminal         # Yatu.app only
 bin/build.sh --native --debug # this Mac's architecture, debug configuration
 bin/build.sh --help           # every option
-swift test                    # 65 tests                          (just test)
+swift test                    # 87 tests                          (just test)
+bin/test-scripts.sh           # shell tests                       (just test-scripts)
 just lint                     # shellcheck every script
 just --list                   # every task
 ```
@@ -112,4 +113,8 @@ build is fine for personal use and for working on the code.
 - The Finder extension (`Sources/YatuFinderSync/`) is sandboxed and executes nothing: it reports
   Finder's context and stops. Nothing slow belongs inside `menu(for:)` — that is the click handler,
   and work done there shows up as an empty or reflowing menu.
-- Before opening a pull request: `swift test` and `just lint` both clean.
+- Before opening a pull request: `swift test`, `bin/test-scripts.sh` and `just lint` all clean.
+- **The extension is an executable target, so nothing can import it.** Anything in
+  `Sources/YatuFinderSync/` worth testing belongs in `YatuKit` instead — that is why menu
+  construction lives in `MenuBuilder` rather than in the extension. Two shipped bugs hid in the
+  part that could not be imported.
