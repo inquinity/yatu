@@ -40,6 +40,9 @@ print_colored() {
 OUTPUT_DIR=".build/app"
 PLIST_TEMPLATE="Resources/Info.plist.in"
 ENTITLEMENTS="Resources/Yatu.entitlements"
+EXTENSION_PLIST_TEMPLATE="Resources/Extension-Info.plist.in"
+EXTENSION_ENTITLEMENTS="Resources/YatuFinderSync.entitlements"
+EXTENSION_EXECUTABLE="YatuFinderSync"
 ICON_FILE="Resources/AppIcon.icns"
 LICENSE_FILE="LICENSE"
 COPYRIGHT="© 2026 Altman Software Design, LLC — portions © 2019 Jianing Wang (MIT)"
@@ -91,6 +94,8 @@ validate_environment() {
 
     [[ -f "$PLIST_TEMPLATE" ]] || die "missing $PLIST_TEMPLATE"
     [[ -f "$ENTITLEMENTS" ]] || die "missing $ENTITLEMENTS"
+    [[ -f "$EXTENSION_PLIST_TEMPLATE" ]] || die "missing $EXTENSION_PLIST_TEMPLATE"
+    [[ -f "$EXTENSION_ENTITLEMENTS" ]] || die "missing $EXTENSION_ENTITLEMENTS"
     [[ -f "$LICENSE_FILE" ]] || die "missing $LICENSE_FILE (the MIT licence must ship in the bundle)"
 
     if [[ ! -f "$ICON_FILE" ]]; then
@@ -140,6 +145,7 @@ binary_directory() {
 # copyright and usage strings needs no escaping.
 write_info_plist() {
     local destination=$1 executable=$2 app_name=$3 bundle_id=$4 usage_description=$5
+    local template=${6:-$PLIST_TEMPLATE}
     local version build_number minimum_macos build_commit build_date
 
     version="$(bin/ver short)"
@@ -175,9 +181,40 @@ def replace(match):
     return (os.environ[name]
             .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
 open(sys.argv[2], "w", encoding="utf-8").write(re.sub(r"@([A-Z_]+)@", replace, template))
-' "$PLIST_TEMPLATE" "$destination"
+' "$template" "$destination"
 
     plutil -lint "$destination" >/dev/null || die "generated $destination is not a valid plist"
+}
+
+# Build the .appex inside an already-assembled .app. The extension is
+# sandboxed while the app is not — the pair BetterZip ships, and what keeps the
+# extension able to report and hand off but nothing else.
+assemble_extension() {
+    local bundle_path=$1 app_bundle_id=$2 app_name=$3
+    local extension_path="$bundle_path/Contents/PlugIns/$EXTENSION_EXECUTABLE.appex"
+    local binary_path
+    binary_path="$(binary_directory)/$EXTENSION_EXECUTABLE"
+
+    [[ -f "$binary_path" ]] || die "built extension not found: $binary_path"
+
+    mkdir -p "$extension_path/Contents/MacOS"
+    install -m 755 "$binary_path" "$extension_path/Contents/MacOS/$EXTENSION_EXECUTABLE"
+    strip -x "$extension_path/Contents/MacOS/$EXTENSION_EXECUTABLE"
+
+    write_info_plist "$extension_path/Contents/Info.plist" \
+        "$EXTENSION_EXECUTABLE" "$app_name" "$app_bundle_id.findersync" "" \
+        "$EXTENSION_PLIST_TEMPLATE"
+
+    codesign --force --sign - --entitlements "$EXTENSION_ENTITLEMENTS" "$extension_path" 2>/dev/null \
+        || die "ad-hoc signing failed for $extension_path"
+
+    # The property that matters, asserted rather than assumed: the extension is
+    # sandboxed. If this ever stops being true the extension has become able to
+    # do things this design says it cannot.
+    codesign -d --entitlements :- "$extension_path" 2>/dev/null | grep -q 'app-sandbox' \
+        || die "extension is not sandboxed — refusing to ship it"
+
+    print_colored "$COLOR_YELLOW" "    + $EXTENSION_EXECUTABLE.appex (sandboxed)"
 }
 
 assemble_bundle() {
@@ -218,6 +255,14 @@ assemble_bundle() {
     write_info_plist "$bundle_path/Contents/Info.plist" \
         "$executable" "$app_name" "$bundle_id" "$usage_description"
 
+    # The Finder toolbar button. Only the terminal app carries it: the editor
+    # role is reached from its menu, not from a second toolbar item.
+    if [[ "$role" == "terminal" ]]; then
+        assemble_extension "$bundle_path" "$bundle_id" "$app_name"
+    fi
+
+    # Leaf first: the extension is sealed before the bundle that contains it,
+    # or the app's signature covers code that changes afterwards.
     codesign --force --sign - --entitlements "$ENTITLEMENTS" "$bundle_path" 2>/dev/null \
         || die "ad-hoc signing failed for $bundle_path"
     codesign --verify --strict "$bundle_path" || die "$bundle_path failed verification"

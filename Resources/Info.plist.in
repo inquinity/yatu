@@ -39,6 +39,20 @@
 	<string>@COPYRIGHT@</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<!-- How the Finder extension hands work back to this app. Public: anything
+	     on the machine can invoke it, so HandOff parses it strictly and the
+	     paths it carries go through the same rules as Finder's own answers. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>@BUNDLE_ID@</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>yatu</string>
+			</array>
+		</dict>
+	</array>
 	<!-- Stamped by bin/build.sh so a bundle can always be traced to a commit. -->
 	<key>YatuBuildCommit</key>
 	<string>@BUILD_COMMIT@</string>
