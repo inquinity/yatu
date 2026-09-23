@@ -1,1 +1,174 @@
-../../OpenInTerminalCore/SupportedApps.swift
+//
+//  Vendored from OpenInTerminal by Jianing Wang, MIT licensed.
+//  https://github.com/Ji4n1ng/OpenInTerminal — OpenInTerminalCore/SupportedApps.swift
+//  as of upstream commit 81a6775 (2026-07-13). Copied verbatim below this
+//  header; see LICENSE and docs/UPSTREAM.md.
+//
+//  Do not edit to make Yatu's code work. Behaviour that has to change goes in
+//  Sources/YatuKit/ and calls into this target, never the other way around.
+//  `bin/check-upstream.sh` reports when upstream's copy has moved.
+//
+//
+//  SupportedApps.swift
+//  OpenInTerminalCore
+//
+//  Created by Jianing Wang on 2020/12/5.
+//  Copyright © 2020 Jianing Wang. All rights reserved.
+//
+
+import Foundation
+
+public enum SupportedApps: String, CaseIterable {
+    
+    // MARK: - Terminals
+    case terminal = "Terminal"
+    case iTerm = "iTerm"
+    case hyper = "Hyper"
+    case alacritty = "Alacritty"
+    case kitty = "kitty"
+    case wezterm = "WezTerm"
+    case tabby = "Tabby"
+    case warp = "Warp"
+    case cmux = "cmux"
+    case githubDesktop = "GitHub Desktop"
+    case gitKraken = "GitKraken"
+    case fork = "Fork"
+    case ghostty = "Ghostty"
+    case kaku = "Kaku"
+    
+    // MARK: - Editors
+    case textEdit = "TextEdit"
+    case xcode = "Xcode"
+    case vscode = "Visual Studio Code"
+    case atom = "Atom"
+    case sublime = "Sublime Text"
+    case vscodium = "VSCodium"
+    case bbedit = "BBEdit"
+    case vscodeInsiders = "Visual Studio Code - Insiders"
+    case textMate = "TextMate"
+    case cotEditor = "CotEditor"
+    case macVim = "MacVim"
+    case typora = "Typora"
+    case nova = "Nova"
+    case cursor = "Cursor"
+    case neovim = "Neovim"
+    case zed = "Zed"
+    case emacs = "Emacs"
+    // JetBrains
+    case appCode = "AppCode"
+    case cLion = "CLion"
+    case fleet = "Fleet"
+    case goLand = "GoLand"
+    case intelliJIDEA = "IntelliJ IDEA"
+    case phpStorm = "PhpStorm"
+    case pyCharm = "PyCharm"
+    case rubyMine = "RubyMine"
+    case webStorm = "WebStorm"
+    case androidstudio = "Android Studio"
+    
+    public var name: String {
+        return self.rawValue
+    }
+    
+    public var shortName: String {
+        switch self {
+        case .vscode: return "VSCode"
+        case .sublime: return "Sublime"
+        case .vscodeInsiders: return "VSCodeInsiders"
+        case .intelliJIDEA: return "IntelliJ_IDEA"
+        case .androidstudio: return "Android_Studio"
+        default:
+            return self.rawValue
+        }
+    }
+    
+    public var type: AppType {
+        switch self {
+        case .terminal, .iTerm, .hyper, .alacritty, .kitty, .wezterm, .tabby, .warp, .cmux, .githubDesktop, .fork, .ghostty, .gitKraken, .kaku:
+            return .terminal
+        default:
+            return .editor
+        }
+    }
+    
+    /// Finds a supported app whose name matches the given name, ignoring case.
+    public static func from(name: String) -> SupportedApps? {
+        return SupportedApps.allCases.first {
+            $0.name.caseInsensitiveCompare(name) == .orderedSame
+        }
+    }
+
+    public static func isSupported(_ app: App) -> Bool {
+        return from(name: app.name) != nil
+    }
+
+    public static func `is`(_ app: App, is supported: SupportedApps) -> Bool {
+        return app.name.caseInsensitiveCompare(supported.name) == .orderedSame
+    }
+    
+    public static var terminals: [SupportedApps] {
+        return SupportedApps.allCases.filter {
+            $0.type == .terminal
+        }
+    }
+    
+    public static var editors: [SupportedApps] {
+        return SupportedApps.allCases.filter {
+            $0.type == .editor
+        }
+    }
+    
+    public var bundleId: String {
+        switch self {
+        // Terminals
+        case .terminal: return "com.apple.Terminal"
+        case .iTerm: return "com.googlecode.iterm2"
+        case .hyper: return "co.zeit.hyper"
+        case .alacritty: return "io.alacritty"
+        case .kitty: return "net.kovidgoyal.kitty"
+        case .wezterm: return "com.github.wez.wezterm"
+        case .tabby: return "org.tabby"
+        case .warp: return "dev.warp"
+        case .cmux: return "com.cmuxterm.app"
+        case .githubDesktop: return ""
+        case .gitKraken: return "com.axosoft.gitkraken"
+        case .fork: return ""
+        case .ghostty: return "com.mitchellh.ghostty"
+        case .kaku: return "fun.tw93.kaku"
+        // Editors
+        case .textEdit: return "com.apple.TextEdit"
+        case .xcode: return "com.apple.Xcode"
+        case .vscode: return "com.microsoft.VSCode"
+        case .atom: return "com.github.atom"
+        case .sublime: return "com.sublimetext.3"
+        case .vscodium: return "com.visualstudio.code.oss"
+        case .bbedit: return "com.barebones.bbedit"
+        case .vscodeInsiders: return "com.microsoft.VSCodeInsiders"
+        case .textMate: return "com.macromates.TextMate"
+        case .cotEditor: return ""
+        case .macVim: return "org.vim.MacVim"
+        case .typora: return "abnerworks.Typora"
+        case .nova: return "com.panic.Nova"
+        case .cursor: return "com.todesktop.230313mzl4w4u92"
+        case .appCode: return "com.jetbrains.appcode"
+        case .cLion: return "com.jetbrains.clion"
+        case .fleet: return "com.jetbrains.fleet"
+        case .goLand: return "com.jetbrains.goland"
+        case .intelliJIDEA: return "com.jetbrains.intellij"
+        case .phpStorm: return "com.jetbrains.PhpStorm"
+        case .pyCharm: return "com.jetbrains.pycharm"
+        case .rubyMine: return "com.jetbrains.rubymine"
+        case .webStorm: return "com.jetbrains.webstorm"
+        case .androidstudio: return ""
+        case .neovim: return ""
+        case .zed: return ""
+        case .emacs: return "org.gnu.Emacs"
+        }
+    }
+    
+    public var app: App {
+        var app = App(name: self.name, type: self.type)
+        app.bundleId = self.bundleId
+        return app
+    }
+}
