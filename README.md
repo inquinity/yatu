@@ -1,275 +1,126 @@
-> ## ⚠️ This is a fork
->
-> **[inquinity/OpenInTerminal](https://github.com/inquinity/OpenInTerminal)** is a fork of
-> [Ji4n1ng/OpenInTerminal](https://github.com/Ji4n1ng/OpenInTerminal). The README below is
-> upstream's and describes their three apps.
->
-> This fork ships **one** of them, privately labelled as **Yatu** — a Finder toolbar app that opens a
-> terminal at the folder you are looking at, Developer ID signed by Altman Software Design, LLC and
-> distributed through [`inquinity/homebrew-tap`](https://github.com/inquinity/homebrew-tap). The full
-> OpenInTerminal app, the Finder extension, the login helper and OpenInEditor-Lite are kept here
-> untouched and unsupported.
->
-> - **[docs/FORK-NOTES.md](docs/FORK-NOTES.md)** — how this repository differs from upstream, and the
->   branch model used to contribute fixes back.
-> - **[docs/YATU-PLAN.md](docs/YATU-PLAN.md)** — what is being built, and why.
->
-> ### Credits
->
-> Yatu is built on **OpenInTerminal-Lite 1.2.8** by
-> [Jianing Wang](https://github.com/Ji4n1ng), MIT licensed, and would not exist without it. The
-> app catalog it uses — every terminal and editor, with their bundle identifiers — is upstream's
-> work, compiled unchanged. Each release records the upstream version it is based on, and every
-> build stamps it into `Info.plist` as `YatuUpstreamVersion`.
->
-> Install upstream's original apps from their repository or with
-> `brew install --cask openinterminal-lite`; nothing here replaces them.
+# Yatu
 
-<div align="center">
-  <img width="80%" src="https://github.com/user-attachments/assets/43667e33-d02d-4a0e-8ca9-fd1cf411b24a"><br/><br/>
-  <a href="./README.md">English</a> | <a href="./Resources/README-zh.md">中文</a> | <a href="./Resources/README-tr.md">Türkçe</a> | <a href="./Resources/README-de.md">Deutsch</a>
-</div>
+A Finder toolbar button that opens a terminal at the folder you are looking at.
 
-## How to use 🚀
+One click on the toolbar and your terminal is there, in the right directory. Hold ⌥ for a menu that
+changes which terminal that is, or sends the selection to an editor instead.
 
-| Core Features | OpenInTerminal |
-| --- | --- |
-| Open items (e.g., folders or files) in Terminal or Editor. | ![](https://user-images.githubusercontent.com/11001224/78589385-b797b880-7872-11ea-9062-c11a49461598.gif) | 
-| Open the selected item in your preferred apps (e.g., Github Desktop, Fork). | ![](https://user-images.githubusercontent.com/11001224/104891620-28483580-59ac-11eb-9fb5-3e4dec7863cc.gif) |
+- **macOS 13.0 or later**
+- Developer ID signed by Altman Software Design, LLC
+- No background process, no login item, no menu-bar icon
 
-### More features
+---
 
-| Features | OpenInTerminal | OpenInTerminal-Lite & OpenInEditor-Lite |
-| --- | --- | --- |
-| Support Terminal, [iTerm](https://www.iterm2.com/), [Hyper](https://github.com/zeit/hyper), [Alacritty](https://github.com/jwilm/alacritty), [kitty](https://sw.kovidgoyal.net/kitty/), [Warp](https://www.warp.dev), [WezTerm](https://wezfurlong.org/wezterm/index.html), [Tabby](https://tabby.sh), [Ghostty](https://ghostty.org/), [cmux](https://github.com/manaflow-ai/cmux). | ✅ | ✅ |
-| Support TextEdit, Xcode, [Visual Studio Code](https://code.visualstudio.com/), [VSCode Insiders](https://code.visualstudio.com/insiders/), [Atom](https://atom.io/), [Sublime Text](https://www.sublimetext.com/), [VSCodium](https://github.com/VSCodium/vscodium), [BBEdit](https://www.barebones.com/products/bbedit/), [TextMate](https://macromates.com), [CotEditor](https://coteditor.com/), [MacVim](https://github.com/macvim-dev/macvim), [JetBrains](https://www.jetbrains.com/)(AppCode, CLion, GoLand, IntelliJ IDEA, PhpStorm, PyCharm, RubyMine, WebStorm, Android Studio, Fleet), [Typora](https://typora.io/), [Nova](https://nova.app/), [Cursor](https://cursor.sh/), [notepad--](https://github.com/cxasm/notepad--), [neovim](https://neovim.io/). | ✅ | ✅ |
-| Open in custom apps. (⚠️ Not all apps support.) | ✅ | ✅ |
-| Support English, Chinese, French, Russian, Italian, Spanish, Turkish, German and Korean | ✅ | ✅ |
-| GUI preferences | ✅ | ❌ |
-| Support keyboard shortcuts. | ✅ | ❌ |
+## Install
 
-## OpenInTerminal vs OpenInTerminal-Lite 👀
-
-Wondering which one to choose? If you're all about fancy features and GUI settings, go for `OpenInTerminal`. But if you just want to open your terminal quickly and without fuss, `OpenInTerminal-Lite` is your buddy.
-
-I personally prefer `OpenInTerminal-Lite`. Why? It's a one-click wonder (while the other makes you click twice 😂) and it's more lightweight.
-
-Check **OpenInTerminal-Lite** Docs: [English](./Resources/README-Lite.md) | [中文](./Resources/README-Lite-zh.md) | [Deutsch](./Resources/README-Lite-de.md)
-
-
-## Installation 🖥
-
-> ⚠️ **Important:** Signed builds are no longer provided for **OpenInTerminal**, **OpenInTerminal-Lite**, or **OpenInEditor-Lite**. Before using these apps, please either trust the unsigned binaries or sign them yourself. See the [Configuration](./Resources/README-Config.md) document for how to install and trust unsigned apps.
-
-```
-brew install --cask openinterminal
+```bash
+brew install --cask inquinity/tap/yatu
 ```
 
-Or manually download it from [release](https://github.com/Ji4n1ng/OpenInTerminal/releases).
+Then two one-time steps. Yatu's toolbar button is a Finder extension, and macOS requires you to
+turn extensions on yourself.
 
-## Configuration and FAQ ⚙️
+**1. Enable the extension.** Open **System Settings → General → Login Items & Extensions**, find
+**Yatu** under the Finder extensions, and switch it on.
 
-Please check the [Configuration](./Resources/README-Config.md) document.
+**2. Add the button.** In Finder, choose **View → Customize Toolbar**, then drag **Yatu** into the
+toolbar and click Done.
 
-Note: If you're on macOS 15 and above then you must follow the instructions in this document to make the context menu items appear.
+If Yatu is missing from the customize palette, it is almost always because step 1 has not been
+done — a registered but disabled extension does not appear there. `bin/which-yatu.sh` will tell you
+which state it is in.
 
-## Support ❤️
+## Using it
 
-Open-source projects cannot live long without your help. If you like OpenInTerminal, please consider supporting this project by becoming a sponsor. Your user icon or company logo shows up on the README with a link to your home page.
+**Click** the button to open your default terminal at the current folder.
 
-Become a sponsor through [GitHub Sponsors](https://github.com/sponsors/Ji4n1ng) 💖.
+What "the current folder" means:
 
-| PayPal | AliPay | WeChat Pay |
-| --- | --- | --- |
-| [paypal.me/ji4ning](https://www.paypal.me/ji4ning) | <img src="./Resources/Support-Alipay.jpg" width="50%"> | <img src="./Resources/Support-WeChatPay.jpg" width="50%"> |
+| In Finder | Yatu opens |
+|---|---|
+| A folder is showing, nothing selected | that folder |
+| Exactly one folder selected | the selected folder |
+| Exactly one file selected | the folder containing it |
+| Several items selected | the folder you are looking at — the selection is ignored, because the order you happened to select things should not change where the terminal lands |
+| No Finder window at all | the Desktop |
 
-<!-- ### Backers & Sponsors -->
-<!---->
-<!-- <a href="https://github.com/wcoder"><img src="https://avatars.githubusercontent.com/u/766193?v=4" width="10%" style="border-radius:10px;" /></a> -->
+Symlinks are resolved first, and an application bundle is treated as a file rather than a folder —
+a terminal opened inside an `.app` is never what was meant.
 
+**⌥-click** the button for a menu:
 
-## Changes 🗒
+- **Set default terminal program** — every terminal you have installed. Choosing one *sets the
+  default*; it does not open anything. The next plain click uses it.
+- **Send to editor** — every editor you have installed. Choosing one *opens it now* and changes no
+  default. One selected file is handed to the editor; with nothing selected, or with several things
+  selected, the editor is given the folder instead, which suits the editors that can open one
+  (VS Code, Emacs).
+- **Settings…**
 
-<details><summary>show all</summary><br>
-<p><strong>version 2.3.9</strong></p>
-<ul>
-<li>Security: Fixed an AppleScript/command injection vulnerability that allowed arbitrary command execution via a crafted folder name when opening it in a non-default terminal or an editor. Thanks to Paul Gerste (<a href="https://www.sonarsource.com">Sonar</a>) for the responsible disclosure.</li>
-<li>Added support for Zed, Emacs, Kakoune, GitKraken, and cmux.</li>
-<li>Added an option to limit global keyboard shortcuts to Finder-only shortcuts. (#251, #243)</li>
-<li>Introduced a new default app icon with automatic light/dark mode support.</li>
-<li>Added an option to display the Finder context menu items in a submenu.</li>
-<li>Fixed the Finder extension icon being rendered as a template icon.</li>
-<li>Improved startup responsiveness by fetching installed applications on a background thread.</li>
-<li>Fixed the keyboard shortcut overlapping the "Open in ..." title in the status bar menu.</li>
-</ul>
-<p><strong>version 2.3.8</strong></p>
-<ul>
-<li>Support "open in neovim" for Alacritty, WezTerm, and kitty users.</li>
-<li>Customize open command for kitty users</li>
-<li>Copy path with escaping</li>
-<li>Support fork, notepad--, Ghostty</li>
-<li>Support nix installed applications</li>
-</ul>
-<p><strong>version 2.3.7</strong></p>
-<ul>
-<li>Support Korean</li>
-<li>Support Warp</li>
-<li>Support WezTerm</li>
-<li>Support Tabby</li>
-<li>Support Fleet</li>
-<li>Support Nova</li>
-<li>Support Cursor</li>
-<li>Support Xcode</li>
-<li>For kitty users: open in a signle instance instead of a new one</li>
-</ul>
-<p><strong>version 2.3.6</strong></p>
-<ul>
-<li>Support German</li>
-<li>Search apps installed by JetBrains Toolbox</li>
-<li>Support Android Studio</li>
-</ul>
-<p><strong>version 2.3.5</strong></p>
-<ul>
-<li>Support dragging to reorder custom menu</li>
-<li>Support Turkish</li>
-<li>Support Typora</li>
-</ul>
-<p><strong>version 2.3.4</strong></p>
-<ul>
-<li>Update icons in context menu</li>
-</ul>
-<p><strong>version 2.3.3</strong></p>
-<ul>
-<li>Fix: cannot open path with white space when using shortcut</li>
-</ul>
-<p><strong>version 2.3.2</strong></p>
-<ul>
-<li>Fix: cannot open path with white space</li>
-</ul>
-<p><strong>version 2.3.1</strong></p>
-<ul>
-<li>Fix: cannot open alacritty</li>
-<li>Feat: add quit button in preferences</li>
-</ul>
-<p><strong>version 2.3.0</strong></p>
-<ul>
-<li>Open custom apps. (Not all apps support)</li>
-<li>Show icon in context menu. (For stability, old Mac models are not recommended to display icons)</li>
-</ul>
-<p><strong>version 2.2.3</strong></p>
-<ul>
-<li>Support kitty</li>
-<li>Open multi-selected files in editors</li>
-</ul>
-<p><strong>version 2.2.2</strong></p>
-<ul>
-<li>Support Italian and Spanish</li>
-<li>Fix: does not show Terminal and TextEdit</li>
-</ul>
-<p><strong>version 2.2.1</strong></p>
-<ul>
-<li>Support JetBrains</li>
-<li>Fix: check whether an application exists</li>
-</ul>
-<p><strong>version 2.2.0</strong></p>
-<ul>
-<li>Custom Finder menu options</li>
-<li>Support Russian</li>
-<li>Support PhpStorm</li>
-<li>Fix: doesn't work when opening desktop in terminal</li>
-</ul>
-<p><strong>version 2.1.1</strong></p>
-<ul>
-<li>Signed the application with the developer account. Bundle ID has changed</li>
-<li>Support Finder Extension Standalone Operation Mode</li>
-<li>Support CotEditor and MacVim</li>
-<li>User can hide context menu items</li>
-<li>Finder context menu item's title will change to the current default terminal or editor</li>
-</ul>
-<p><strong>version 2.0.5</strong></p>
-<ul>
-<li>Fix: check application exist bug</li>
-</ul>
-<p><strong>version 2.0.4</strong></p>
-<ul>
-<li>Support TextMate</li>
-<li>Fix: keyboard shortcut bug</li>
-</ul>
-<p><strong>version 2.0.3</strong></p>
-<ul>
-<li>Fix: Finder context menu icon supports dark mode</li>
-</ul>
-<p><strong>version 2.0.2</strong></p>
-<ul>
-<li>Support Visual Studio Code - Insiders</li>
-<li>Support for hiding the status bar icon</li>
-</ul>
-<p><strong>version 2.0.1</strong></p>
-<ul>
-<li>Support BBEdit</li>
-<li>Add icon in Finder context menu</li>
-<li>Fix: check application folder under home directory</li>
-</ul>
-<p><strong>version 0.10.2</strong></p>
-<ul>
-<li>Fix: Finder context menu does not appear on other disks.</li>
-</ul>
-<p><strong>version 0.10.1</strong></p>
-<ul>
-<li>iTerm will not leave `cd xxx` in history.</li>
-<li>You need to click the `window` button or the `tab` button of iTerm again in `Preferences`.</li>
-</ul>
-<p><strong>version 0.10.0</strong></p>
-<ul>
-<li>Support keyboard shortcuts.</li>
-<li>Support VSCodium.</li>
-</ul>
-<p><strong>version 0.9.1</strong></p>
-<ul>
-<li>Support French.</li>
-</ul>
-<p><strong>version 0.9.0</strong></p>
-<ul>
-<li>OpenInTerminal has been released after several weeks of development. If you have suggestions or there are bugs, please feel free to open an issue.</li>
-</ul>
-<p><strong>version 0.4.1</strong></p>
-<ul>
-<li>Support <code>Alacritty</code></li>
-</ul>
-<p><strong>version 0.4.0</strong></p>
-<ul>
-<li>You can set a default to open a new tab or window when using <code>Terminal</code> and <code>Hyper</code>.</li>
-</ul>
-<p><strong>version 0.3.0</strong></p>
-<ul>
-<li>Change name to <code>OpenInTerminal-Lite</code> (<code>OpenInTerminal</code> will come as a more powerful version in the future.)</li>
-<li>Fix a bug that some special characters in the path would crash the program when opening Hyper.</li>
-</ul>
-<p><strong>version 0.2.0</strong></p>
-<ul>
-<li>Add terminal selector</li>
-<li>Cancel running <code>clear</code> command when opening iTerm</li>
-</ul>
-<p><strong>version 0.1.1</strong></p>
-<ul>
-<li>Support <code>Hyper</code></li>
-<li>Give priority to creating a new tab when opening iTerm</li>
-</ul>
-<p><strong>version 0.1.0</strong></p>
-<ul>
-<li>First release</li>
-</ul>
-<br>
-</details>
+The asymmetry is deliberate: the terminal is the thing you use constantly and want one click away,
+so the menu configures it. The editor is occasional, so the menu does it.
 
-## Special Thanks to ❤️
+## Settings
 
-Thanks to all [backers](https://github.com/sponsors/Ji4n1ng) and [contributors](https://github.com/Ji4n1ng/OpenInTerminal/graphs/contributors). Your work makes OpenInTerminal better.
+Reached from the ⌥-click menu, or by holding ⌥ while launching Yatu from `/Applications`.
 
-### Reference projects
+## ⌘-drag: supported, but not recommended
 
-- [jbtule/cdto](https://github.com/jbtule/cdto)
-- [es-kumagai/OpenTerminal](https://github.com/es-kumagai/OpenTerminal)
-- [tingraldi/SwiftScripting](https://github.com/tingraldi/SwiftScripting)
-- [onmyway133/FinderGo](https://github.com/onmyway133/FinderGo)
-- [Caldis/Mos](https://github.com/Caldis/Mos/)
+You can also hold ⌘ and drag `Yatu.app` from `/Applications` onto the Finder toolbar, the way you
+can with any application. This works, and it works **without the extension enabled** — it is the
+fallback if you would rather not turn an extension on.
+
+It is not the recommended route, because you lose things:
+
+- **No ⌥-click menu.** Finder launches the app; there is nothing to hold ⌥ for. You can still reach
+  settings by ⌥-launching Yatu from `/Applications`.
+- **The app icon, on a grey plate.** Finder draws the application's own icon, in colour, rather than
+  a toolbar glyph that matches Finder's own controls.
+- **Slower.** Every click launches the application rather than messaging an extension that is
+  already resident.
+
+Use **View → Customize Toolbar** unless you have a reason not to.
+
+## Uninstall
+
+```bash
+brew uninstall --cask --zap inquinity/tap/yatu
+```
+
+`--zap` also removes Yatu's preferences and the extension's container. Remove the toolbar button
+yourself with **View → Customize Toolbar** if it is still there.
+
+## Building from source
+
+There is no Xcode project; `bin/build.sh` assembles the `.app` from a Swift package.
+
+```bash
+git clone https://github.com/inquinity/yatu.git
+cd yatu
+bin/build.sh                  # or: just build
+swift test                    # 60 tests
+bin/which-yatu.sh             # what is installed, and whether the extension is enabled
+just --list                   # every task
+```
+
+The build produces an ad-hoc signed bundle in `.build/app`. Copy it to `/Applications` and launch it
+once so macOS registers the extension.
+
+Requires Xcode 27 or later. `Yatu.app --version` and `--identity` report what a built bundle is.
+
+## Credits
+
+Yatu **uses code from** [OpenInTerminal](https://github.com/Ji4n1ng/OpenInTerminal) by
+[Jianing Wang](https://github.com/Ji4n1ng), MIT licensed — the catalog of supported terminals and
+editors with their bundle identifiers, and two ScriptingBridge interfaces. Those files are vendored
+in [`Sources/YatuUpstream/`](Sources/YatuUpstream/), each carrying the upstream path and commit it
+came from. Yatu would not exist without that project, and it is worth installing in its own right:
+it does considerably more than this does.
+
+Everything else — the Finder Sync extension, the launch path, the settings, the build — is Yatu's
+own. See [docs/UPSTREAM.md](docs/UPSTREAM.md) for exactly what is used and why, and
+[docs/YATU-PLAN.md](docs/YATU-PLAN.md) for what is being built.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
