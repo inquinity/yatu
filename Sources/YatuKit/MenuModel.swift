@@ -93,9 +93,15 @@ public enum MenuModel {
                                container: URL?) -> HandOff.Request? {
         switch descriptor.kind {
         case let .setDefault(app):
-            return .setDefault(role: role, app: app)
+            // The role comes from the app, not from the caller. Pairing the
+            // caller's role with the descriptor's app can emit a request the
+            // app's allowlist then rejects -- and a rejected request is a menu
+            // item that silently does nothing, which is the failure this path
+            // has already produced twice.
+            return .setDefault(role: Role(owning: app.type), app: app)
         case let .sendToEditor(app):
-            return .open(role: .editor, app: app, items: selection, container: container)
+            return .open(role: Role(owning: app.type), app: app,
+                         items: selection, container: container)
         case .settings:
             return .settings(role: role)
         case .header, .separator:

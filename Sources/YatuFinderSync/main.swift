@@ -83,44 +83,18 @@ final class YatuFinderSync: FIFinderSync {
 
     private func optionMenu(selection: [URL], container: URL?) -> NSMenu {
         let installed = InstalledApps.shared.current()
-        let menu = NSMenu(title: "Yatu")
-        menu.autoenablesItems = false
-        pending.removeAll()
+        let built = MenuBuilder.build(
+            items: MenuModel.items(for: role,
+                                   installedTerminals: installed.terminals,
+                                   installedEditors: installed.editors),
+            action: #selector(chose(_:)),
+            image: { InstalledApps.shared.icon(for: $0) })
 
-        for descriptor in MenuModel.items(for: role,
-                                          installedTerminals: installed.terminals,
-                                          installedEditors: installed.editors) {
-            switch descriptor.kind {
-            case .separator:
-                menu.addItem(.separator())
-            case .header:
-                let header = NSMenuItem(title: descriptor.title, action: nil, keyEquivalent: "")
-                header.isEnabled = false
-                menu.addItem(header)
-            default:
-                let menuItem = NSMenuItem(title: descriptor.title,
-                                          action: #selector(chose(_:)), keyEquivalent: "")
-                // NO target, and nothing but an Int carried on the item.
-                //
-                // Finder draws this menu in its own process, so an NSMenu
-                // returned from here crosses a process boundary. A `target`
-                // pointing at this object cannot survive that, and neither can
-                // a `representedObject` holding a class Finder has never heard
-                // of. Setting either made the item look normal and do nothing
-                // at all when clicked -- the action was never delivered.
-                //
-                // Leaving the target nil sends the action down the responder
-                // chain, which is how FIFinderSync routes it back to this
-                // object, and `tag` is a plain integer that survives the trip.
-                menuItem.tag = pending.count
-                menuItem.isEnabled = true
-                menuItem.indentationLevel = 0
-                menuItem.image = descriptor.applicationURL.flatMap { InstalledApps.shared.icon(for: $0) }
-                pending.append(Choice(descriptor: descriptor, selection: selection, container: container))
-                menu.addItem(menuItem)
-            }
+        // The tags MenuBuilder assigned index into this, in the same order.
+        pending = built.actionable.map {
+            Choice(descriptor: $0, selection: selection, container: container)
         }
-        return menu
+        return built.menu
     }
 
     /// What a menu item stands for, carried until the user picks it.
