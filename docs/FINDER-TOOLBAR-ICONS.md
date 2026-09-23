@@ -461,6 +461,64 @@ system-tinted monochrome toolbar glyph becomes possible, which §§2.3–2.5b sh
 otherwise. Against that: a second signed and notarised bundle, an extension the user must enable, a
 new public entry point, the sandbox, and an interaction shaped like a menu rather than a button.
 
+### 6.7 What the extension can and cannot do (prototype iterations 5–8)
+
+All observed on macOS 27.0, 2026-09-23, with the sandboxed prototype driven by the user.
+
+**Interaction**
+
+- **A plain click performs an action and a modifier can open a menu.** `NSEvent.modifierFlags` *is*
+  readable inside `menu(for:)`, so the callback can branch: plain click acts and returns `nil`,
+  ⌥-click returns a real menu. This keeps Yatu's single-click behaviour **and** gives the chevron
+  something to do — BetterZip, by contrast, always returns a menu and has no single-click action.
+- **The chevron cannot be suppressed** and cannot be hit-tested separately; clicking the glyph and
+  clicking the chevron are the same event.
+
+**What the sandbox allows**
+
+| | Result |
+|---|---|
+| Resolve installed apps (`urlForApplication(withBundleIdentifier:)`) | **Yes** — Terminal, iTerm, VS Code, Xcode, TextEdit all resolved |
+| Read each app's icon (`NSWorkspace.icon(forFile:)`) | **Yes** — real icons render in the menu |
+| Fall back to `/Applications/<name>.app` | **Yes** — this is how Xcode was found at all (below) |
+| Open a URL scheme to hand off to the app | **Yes** |
+| Launch the containing app with `arguments` | **No** — the app received none |
+| **Read the app's preferences domain** | **No** — `UserDefaults(suiteName: "com.altmansoftwaredesign.yatu")` returned nil |
+
+**The preferences result is a design constraint, not a detail.** The extension cannot see which
+terminal is currently chosen, so it cannot mark it. Three ways out, none free:
+
+1. An **app group**, giving both sides a shared defaults suite. This overturns §1's "no app group"
+   decision and needs the entitlement on both bundles.
+2. The **app pushes** its current choice somewhere the extension can read — still a shared
+   container, so the same thing in another form.
+3. **Do not mark a default.** The menu offers equal choices and the current one is only visible in
+   the settings window. Costs nothing and ships today.
+
+**Upstream catalog bug, found in passing.** `SupportedApps` gives Xcode the bundle id
+`com.apple.Xcode`, which no longer resolves on macOS 27; the current one is `com.apple.dt.Xcode`.
+`com.sublimetext.3` is likewise stale. Yatu is unaffected **only** because `Launcher` falls back to
+an explicit `/Applications/<name>.app` — rule 2 doing exactly its job. Worth offering upstream; not
+acted on here.
+
+**Two quality lessons for a shipping implementation**
+
+- **Nothing slow may happen in `menu(for:)`.** It is called synchronously on the click. Building the
+  menu there — LaunchServices lookups plus icon loads on a cold cache — made the first menu appear
+  late and reflow, with a row visibly mis-indented. Resolving at startup and caching fixes it, at
+  the cost of a brief window after Finder loads the extension when the cache is still filling.
+- **The toolbar image should be an SF Symbol, or a custom symbol.** A hand-drawn glyph has to guess
+  system metrics, weight and optical alignment, and got all three wrong: it was small in its box yet
+  heavy in stroke, the opposite of a system symbol. BetterZip ships a vector `FinderTemplate.pdf`;
+  Keka ships `Keka_Toolbar` at exactly 24×24 and 48×48. Asking for `NSImage(systemSymbolName:)` at
+  18pt was immediately correct. Yatu's own folder-and-caret would ship as a **custom symbol** —
+  an SVG in SF Symbols format compiled into a symbol set — which inherits the same metrics.
+
+**What the menu could carry.** The prototype already lists installed terminals with icons and a
+"Send to editor" section. That is three things Yatu cannot currently express: choosing a terminal
+for one launch without changing the default, reaching the **editor role** that is built and tested
+but has no UI, and opening settings.
+
 ## 5. Sources
 
 Apple:
