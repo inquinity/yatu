@@ -127,3 +127,7 @@ iOSInjectionProject/
 # bin/make-symbol.swift, are Apple's artwork, and are not redistributed here.
 # See docs/BUILDING.md for how to export them.
 SFSymbols/
+
+# Built .app bundles. Kept out of SwiftPM's .build because that is a cache:
+# `swift package clean` empties it and CACHEDIR.TAG marks it regenerable.
+dist/

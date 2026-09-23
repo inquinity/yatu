@@ -9,7 +9,13 @@
 # This script never signs with a real identity. Developer ID signing and
 # notarization arrive here in M4; see docs/BUILDING.md.
 #
-# Output: .build/app/<App>.app
+# Output: dist/<App>.app
+#
+# Deliberately NOT inside .build. That directory is SwiftPM's derived-data
+# cache: `swift package clean` empties it, and the CACHEDIR.TAG it contains
+# tells backup tools the whole tree is regenerable. Both are true of object
+# files and false of a signed, notarized bundle, so the deliverable lives in
+# its own directory.
 #
 # The full colour palette is declared in every script by convention, so
 # the set is identical everywhere; not every script uses every colour.
@@ -37,7 +43,7 @@ print_colored() {
     printf "${color}%s${COLOR_RESET}\n" "$message"
 }
 
-OUTPUT_DIR=".build/app"
+OUTPUT_DIR="dist"
 PLIST_TEMPLATE="Resources/Info.plist.in"
 ENTITLEMENTS="Resources/Yatu.entitlements"
 EXTENSION_PLIST_TEMPLATE="Resources/Extension-Info.plist.in"
@@ -267,7 +273,7 @@ assemble_bundle() {
 
     install -m 755 "$binary_path" "$bundle_path/Contents/MacOS/$executable"
     # Finding L4: an unstripped binary carries local build paths into the
-    # shipped bundle. The dSYM stays out of the bundle, in .build.
+    # shipped bundle. The dSYM stays out of the bundle, in SwiftPM's .build.
     strip -x "$bundle_path/Contents/MacOS/$executable"
 
     install -m 644 "$ICON_FILE" "$bundle_path/Contents/Resources/AppIcon.icns"
@@ -315,8 +321,18 @@ fi
 validate_environment
 build_executables
 
-[[ "$DRY_RUN" == true ]] || rm -rf "$OUTPUT_DIR"
-[[ "$DRY_RUN" == true ]] || mkdir -p "$OUTPUT_DIR"
+# This deletes a directory, so it checks rather than trusts. The script has
+# already cd'd to the repository root, and OUTPUT_DIR is relative to it -- an
+# absolute or climbing path here would delete something outside the repo.
+[[ -n "$OUTPUT_DIR" ]] || die "OUTPUT_DIR is empty"
+case "$OUTPUT_DIR" in
+    /*|*..*) die "OUTPUT_DIR must be a path inside the repository, got '$OUTPUT_DIR'" ;;
+esac
+
+if [[ "$DRY_RUN" != true ]]; then
+    rm -rf "${PWD:?}/$OUTPUT_DIR"
+    mkdir -p "$OUTPUT_DIR"
+fi
 
 print_colored "$COLOR_CYAN" "Assembling"
 for role in "${requested_roles[@]}"; do

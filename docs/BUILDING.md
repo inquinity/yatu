@@ -21,7 +21,7 @@ just lint                     # shellcheck every script
 just --list                   # every task
 ```
 
-Output is `.build/app/Yatu.app` and `.build/app/Yatu Edit.app`. `bin/build.sh` always operates on
+Output is `dist/Yatu.app` and `dist/Yatu Edit.app`. `bin/build.sh` always operates on
 the repository, not on the directory you call it from, and removes its output directory before
 building.
 
@@ -36,7 +36,7 @@ The bundles are **ad-hoc signed**, so they run on the Mac that built them and no
 The Finder extension needs three things, and skipping any of them looks like a broken build:
 
 1. **Copy the app to `/Applications`.** macOS registers the extension from the containing app's
-   location; running it out of `.build/app` is not enough.
+   location; running it out of `dist/` is not enough.
 2. **Launch it once**, so `pluginkit` records the extension.
 3. **Enable it** in System Settings → General → Login Items & Extensions, then add the button with
    Finder's **View → Customize Toolbar**.
