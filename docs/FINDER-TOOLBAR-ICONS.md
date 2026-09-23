@@ -426,11 +426,20 @@ driven by the user on macOS 27.0. Everything below is observed.
 
 **Costs and constraints found by building it:**
 
-1. **A toolbar click asks for a menu, not an action.** The only entry point is
-   `menu(for: .toolbarItemMenu)`, and the system draws a **disclosure chevron** beside the glyph.
-   Acting inside that callback and returning a menu works, but v1 returned an empty `NSMenu` and an
-   empty menu visibly flashed. The Swift signature is optional, so `nil` can be returned instead.
-   **A one-click item like Yatu's today may not be reachable; a menu-shaped interaction is inherent.**
+1. **A single click does perform the action.** The only entry point is
+   `menu(for: .toolbarItemMenu)`, but the system calls it on the click itself, so that callback
+   *is* the click handler. Returning `nil` from it means no menu is shown and the action simply
+   runs: in the prototype one click produced the hand-off, with no second click anywhere.
+
+   Returning an **empty `NSMenu`** instead makes an empty menu visibly flash — that was a bug in
+   the first two prototype versions, not a platform constraint. The Swift signature is optional and
+   `nil` is the correct return.
+
+   *(An earlier version of this section said a one-click item "may not be reachable" and that a
+   menu-shaped interaction was inherent. That was wrong, and the prototype had already disproved it.)*
+
+   **Still unverified:** whether macOS draws a **disclosure chevron** beside the glyph anyway,
+   because the item is menu-capable. That is cosmetic, not an extra click.
 2. **`targetedURL()` is nil unless the folder is inside `directoryURLs`.** Watching only the home
    folder returned nothing everywhere else. A general tool must watch `/`.
 3. **`NSWorkspace.OpenConfiguration.arguments` did not arrive.** The app launched with no
