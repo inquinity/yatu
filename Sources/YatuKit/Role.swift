@@ -2,8 +2,11 @@
 //  Role.swift
 //  YatuKit
 //
-//  Yatu ships one codebase and two executables, differing only in the role they
-//  ask the shared code for. See docs/YATU-PLAN.md §4.1.
+//  Yatu ships one app that plays two roles. A click on the toolbar button opens
+//  a terminal; the button's menu carries Send to editor. There used to be a
+//  second executable, "Yatu Edit", for the editor role; it was retired on
+//  2026-09-23 when the Finder extension made it unnecessary (plan M6a).
+//  See docs/YATU-PLAN.md §4.1 and §9.
 //
 
 import Foundation
@@ -12,14 +15,18 @@ import YatuUpstream
 public enum Role: String, CaseIterable, Sendable {
     /// Opens the folder you are looking at in a terminal. Ships in 1.0.
     case terminal
-    /// Opens the items you have selected in an editor. Built and tested, not shipped in 1.0.
+    /// Opens the items you have selected in an editor. Reached from the Finder
+    /// button's menu, not from an app of its own.
     case editor
 
-    /// The bundle identifier of the app that plays this role.
+    /// The bundle identifier associated with this role.
     ///
-    /// These are literals rather than a lookup of the running bundle: the value
-    /// is also what `bin/build.sh` stamps into Info.plist, and a mismatch
-    /// between the two is a build error worth catching in tests.
+    /// `.terminal` is the shipping app, and this literal is what
+    /// `bin/build.sh` stamps into its Info.plist — a mismatch between the two
+    /// is a build error worth catching in tests. `.editor` no longer names a
+    /// bundle that exists: it is kept as the role's stable identity, used in
+    /// `--identity` output and in the preference domain, and it is the id the
+    /// retired "Yatu Edit" app would have had.
     public var bundleIdentifier: String {
         switch self {
         case .terminal: return "com.altmansoftwaredesign.yatu"
