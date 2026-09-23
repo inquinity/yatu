@@ -19,7 +19,8 @@ Inputs: the security review in `.security-review/` (git-excluded), the Belvedere
 | Functional base | **OpenInTerminal-Lite**, kept as the upstream to merge from |
 | Structure | **Swift package**, built into an app bundle by script — modelled on [sozercan/OpenInCode](https://github.com/sozercan/OpenInCode) |
 | Headline feature | A **settings window** for choosing the terminal, which OITL lacks |
-| Editor variant | Built and tested from day one, **not shipped in 1.0** — see §4.1 |
+| Toolbar button | A **Finder Sync extension** inside the app (decided 2026-09-23, §9) |
+| Editor role | Kept in `YatuKit` and reached from the extension's menu; **no separate app** (§9) |
 | Version line | Ours: `1.0.0` build 1. Release notes say which OpenInTerminal-Lite version it is based on. |
 
 Name screening (2026-09-17): no Homebrew cask or formula, no Mac App Store app, no GitHub
@@ -311,9 +312,10 @@ before anything is published.
 | Dead AppleScript helpers, `.travis.yml`, stray entitlements | Cleanup PR |
 | GH-287 (icon), GH-288 (Xcode 27) | Already open; the watch task tracks them |
 
-### M6a — Ship the editor app (optional, decided after 1.0)
-Signing, notarization, icon and a cask for Yatu Edit. Nothing in M1–M5 blocks it; the code and
-tests already exist by then.
+### ~~M6a — Ship the editor app~~ — **dropped 2026-09-23**
+Superseded by §9. The extension's menu carries a **Send to editor** section, so the editor role is
+reachable without a second bundle to sign, notarize, icon and explain. `YatuKit` keeps the role and
+its tests; `Sources/YatuEditor` is retired.
 
 ### M7 — Optional, after 1.0
 - App Sandbox spike on `fork/sandbox-spike`: `app-sandbox` plus temporary Apple Events exceptions for
@@ -418,3 +420,78 @@ tests already exist by then.
    toolbar art except the full OpenInTerminal app, whose blue tile is the outlier in its own row.
    Go2Shell ships neutral toolbar-only art distinct from its app icon; OpenInTerminal-Lite is a grey
    outline glyph at every size. Sample of three, local only; no web survey was done.
+
+## 9. Adopting a Finder Sync extension — decided 2026-09-23
+
+Decided after building a working prototype; the evidence is in
+[docs/FINDER-TOOLBAR-ICONS.md](FINDER-TOOLBAR-ICONS.md) §6. In short: an application dragged into
+Finder's toolbar is drawn as its **app icon**, which cannot be a template, is restyled by the four
+icon styles, and is desaturated when the window is inactive. An extension supplies a **template
+image** the system tints, appears in the customisation palette by name, and is unaffected by all of
+that. The prototype also showed a single click can perform an action, so nothing is lost.
+
+### 9.1 Shape
+
+```
+Yatu.app
+├── Contents/MacOS/YatuTerminal              unsandboxed; owns preferences and every rule
+├── Contents/PlugIns/YatuFinderSync.appex    sandboxed; reports context, executes nothing
+└── Contents/Resources/Assets.car            app icon + the toolbar symbol
+```
+
+**The division is the security property.** The extension resolves nothing, launches nothing and
+executes nothing; it reports what Finder is showing and hands off. Rule 3's directory resolution,
+rule 5's compiled-in templates and the catalog allowlist all stay in `YatuKit` where they are
+already tested. Upstream's extension does the opposite — it runs an installed AppleScript, which is
+where finding F1 lives. Ours closes F1 by construction.
+
+No app group: the extension keeps its own sandbox and cannot read the app's preferences. That is
+accepted, and it is why the menu does not mark the current default.
+
+### 9.2 Interaction
+
+| Gesture | Behaviour |
+|---|---|
+| Click | Open the default terminal at the resolved target |
+| ⌥-click | Menu: **Set default terminal program** (sets it), **Send to editor** (opens the editor role), **Settings…** |
+
+Items under "Set default terminal program" change the default; they do not open anything. The
+wording carries what a checkmark would, since the extension cannot read the current value.
+
+### 9.3 Milestones
+
+- **M2e — the extension.** `Sources/YatuFinderSync/`; hand-off over a `yatu://` URL parsed and
+  validated in `YatuKit`; a URL handler in the app that applies `FinderTarget`'s rules to the
+  reported context; menu construction as a pure function returning item descriptors so it is
+  testable without Finder. Carries the prototype's lessons: nothing slow inside `menu(for:)`,
+  resolution and icons cached and persisted, icons rasterised, hand-off off the callback thread.
+- **M1b — icons.** Toolbar: a **custom SF Symbol** of the folder-and-caret, authored as an SVG
+  symbol set and compiled by `actool`, so it inherits system weight and metrics. App icon: **back
+  to colour** — the violet folder tile as an Icon Composer icon. The toolbar constraint was the only
+  reason it went monochrome, and it no longer applies.
+- **M4 additions.** `bin/build.sh` assembles and signs the `.appex` *before* the app, with its own
+  entitlements; `actool` compiles the app icon and the symbol set; Xcode becomes a build
+  requirement. Verification asserts the extension is sandboxed and the app is not.
+- **M5 changes.** Cask caveats: enable the extension in System Settings, then add the item with
+  **View → Customize Toolbar** — not by ⌘-dragging the app. `zap` gains the extension's container
+  and caches.
+- **M2d additions.** Unit tests for URL parsing and the rejection of malformed input; menu model
+  tests; `bin/attack-matrix.sh` extended to fire hostile paths at the `yatu://` handler directly;
+  manual checklist covering enable, add, click, ⌥-click, the four icon styles and an inactive window.
+- **Security review** of the new entry point, before merge.
+
+### 9.4 The new risk
+
+A URL scheme is **public**: any application or web page can invoke `yatu://open?path=…`. The app
+treats it as untrusted input and applies the same rules as Finder input — a terminal still only ever
+receives an existing directory, and the target application is still only ever a catalog entry. But
+this converts an app with no entry points into an app with one, and that is what the security review
+is for, not a reassurance here.
+
+### 9.5 What stays
+
+- **Dragging the app into the toolbar still works.** Anyone who does not enable the extension keeps
+  a working button; it is drawn as the app icon, with the plate and restyling that implies.
+- The settings window (§5) is unchanged and remains where defaults are seen and changed.
+- Upstream's own Finder extension stays untouched and unsupported, as `CLAUDE.md` says. Yatu's is
+  new, fork-owned code and is not that extension.
