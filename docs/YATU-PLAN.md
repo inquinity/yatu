@@ -272,11 +272,14 @@ before anything is published.
   shown with Reveal in Finder; the version, the upstream version it is based on, and a source link
   are pinned below the scrolling catalog. Every row is a catalog case, so there is nowhere to type
   a path. The window/tab control in §5 was dropped, with the reasoning recorded there.
-- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests. Still outstanding:
+- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests; **87 tests and 4 shell
+  checks as of 2026-09-23**, after three defects shipped past the first 65 (see the test commit).
+  `docs/MANUAL-TEST-CHECKLIST.md` — **done 2026-09-23**, EXPECT / FAIL IF throughout, and its
+  §4 exists because a menu item that draws correctly and does nothing when clicked is
+  indistinguishable from one that works unless you click it. Rule 7 and rule 6's *absence* of a
+  log file are not unit-testable and are covered there. Still outstanding:
   `bin/attack-matrix.sh` automating the hostile-name and canary-app matrix from the dynamic review
-  (scratch only, prefs backed up and restored), and `docs/MANUAL-TEST-CHECKLIST.md` with
-  EXPECT / FAIL IF lines. Rule 7 and rule 6's *absence* of a log file are not unit-testable and
-  belong in the manual checklist.
+  (scratch only, prefs backed up and restored), extended to fire hostile paths at `yatu://`.
 - **Review:** independent code review plus a security review of the diff.
 - **Rollback:** the package is additive; delete it. OITL keeps building.
 
