@@ -96,8 +96,14 @@ public enum FinderTarget {
 
         switch role {
         case .terminal:
-            // A selected item names a place; the window's target is the fallback.
-            let candidate = selection.first ?? query.frontWindowTarget()
+            // One selected item names a place. Several do not: a terminal opens
+            // at exactly one directory, and picking the "first" of a set makes
+            // the result depend on the order things happened to be selected,
+            // which the user did not choose and cannot see. So a multiple
+            // selection is ignored in favour of the folder being viewed —
+            // a defined, visible answer rather than an arbitrary one.
+            let candidate = (selection.count == 1 ? selection[0] : nil)
+                ?? query.frontWindowTarget()
             guard let candidate,
                   let directory = directory(for: candidate, fileManager: fileManager) else {
                 Log.finder.info("no usable Finder target; using the Desktop")

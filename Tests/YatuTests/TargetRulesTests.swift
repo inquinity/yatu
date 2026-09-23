@@ -141,6 +141,34 @@ final class TargetRulesTests: XCTestCase {
                        [sandbox.resolvingSymlinksInPath().path])
     }
 
+    /// A terminal opens at one directory. With several items selected there is
+    /// no non-arbitrary way to choose between them, so the container wins.
+    func testSeveralSelectedItemsGiveTheTerminalTheContainingFolder() throws {
+        let first = try makeDirectory("alpha")
+        let second = try makeDirectory("beta")
+        let container = try makeDirectory("container")
+        let stub = StubFinder(selection: [first, second], windowTarget: container)
+        XCTAssertEqual(FinderTarget.resolve(for: .terminal, using: stub).map(\.lastPathComponent),
+                       ["container"])
+    }
+
+    /// One selected folder still names the place.
+    func testOneSelectedFolderGivesTheTerminalThatFolder() throws {
+        let folder = try makeDirectory("projects")
+        let container = try makeDirectory("container")
+        let stub = StubFinder(selection: [folder], windowTarget: container)
+        XCTAssertEqual(FinderTarget.resolve(for: .terminal, using: stub).map(\.lastPathComponent),
+                       ["projects"])
+    }
+
+    /// The editor is unaffected: order does not matter when opening documents.
+    func testSeveralSelectedItemsStillReachTheEditor() throws {
+        let a = try makeFile("a.txt"), b = try makeFile("b.txt")
+        let stub = StubFinder(selection: [a, b], windowTarget: sandbox)
+        XCTAssertEqual(FinderTarget.resolve(for: .editor, using: stub).map(\.lastPathComponent),
+                       ["a.txt", "b.txt"])
+    }
+
     func testEditorReceivesTheSelectedItemsThemselves() throws {
         let first = try makeFile("a.txt")
         let second = try makeFile("b.txt")

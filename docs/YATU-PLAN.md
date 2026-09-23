@@ -139,7 +139,10 @@ the reference for the behaviour.
 2. Catalog entries without a bundle id (GitHub Desktop, Fork) are resolved by an explicit
    `/Applications` path or dropped.
 3. A path handed to a **terminal** is always an existing directory — never a file, a symlink to a
-   file, or an `.app`/`.command` bundle. The **editor** role may receive files, since opening a
+   file, or an `.app`/`.command` bundle. **One** selected item names that directory; a selection of
+   **several** is ignored in favour of the folder being viewed, because a terminal opens at exactly
+   one place and choosing the "first" of a set would depend on selection order the user neither
+   chose nor can see. The **editor** role takes all of them, where order does not matter. The **editor** role may receive files, since opening a
    document is the point, **including executable ones**; `.app` bundles are still dropped.
    *(Relaxed 2026-09-18. The rule previously refused anything with the execute bit, which blocked
    `chmod +x` scripts — one of the commonest reasons to open an editor. The execution risk in
