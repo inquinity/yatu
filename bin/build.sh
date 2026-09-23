@@ -6,12 +6,12 @@
 # assembles them into .app bundles, substituting Resources/Info.plist.in and
 # ad-hoc signing the result so it launches locally.
 #
-# Developer ID signing, notarization and the release checks live in
-# bin/build-signed.sh (M4). This script never signs with a real identity.
+# This script never signs with a real identity. Developer ID signing and
+# notarization arrive here in M4; see docs/BUILDING.md.
 #
 # Output: .build/app/<App>.app
 #
-# The full colour palette is declared in every fork-owned script by convention, so
+# The full colour palette is declared in every script by convention, so
 # the set is identical everywhere; not every script uses every colour.
 # shellcheck disable=SC2034
 set -euo pipefail
@@ -78,8 +78,8 @@ Options:
   -n, --dry-run     Show what would be built without building it
   -h, --help        Show this help
 
-The bundles are ad-hoc signed and are not distributable; bin/build-signed.sh
-does Developer ID signing and notarization."
+The bundles are ad-hoc signed and run on this Mac only. Producing a
+distributable build needs an Apple Developer account; see docs/BUILDING.md."
 }
 
 die() {
