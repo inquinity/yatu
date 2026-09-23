@@ -20,6 +20,7 @@ let package = Package(
     products: [
         .executable(name: "YatuTerminal", targets: ["YatuTerminal"]),
         .executable(name: "YatuEditor", targets: ["YatuEditor"]),
+        .executable(name: "YatuFinderSync", targets: ["YatuFinderSync"]),
         .library(name: "YatuKit", targets: ["YatuKit"]),
     ],
     targets: [
@@ -31,6 +32,11 @@ let package = Package(
         .target(name: "YatuKit", dependencies: ["YatuUpstream"]),
 
         .executableTarget(name: "YatuTerminal", dependencies: ["YatuKit"]),
+
+        // The Finder toolbar button. Built as an executable and assembled into
+        // an .appex by bin/build.sh; it reports Finder's context and stops.
+        .executableTarget(name: "YatuFinderSync", dependencies: ["YatuKit"],
+                          linkerSettings: [.linkedFramework("FinderSync")]),
         .executableTarget(name: "YatuEditor", dependencies: ["YatuKit"]),
 
         .testTarget(name: "YatuTests", dependencies: ["YatuKit"]),
