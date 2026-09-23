@@ -67,7 +67,15 @@ Yatu **uses code from** [OpenInTerminal](https://github.com/Ji4n1ng/OpenInTermin
 
 Thanks for the jump-start.
 
+## The toolbar symbol
+
+Yatu's toolbar button draws a custom SF Symbol — a folder with a prompt caret — which is **derived
+from Apple's `folder` symbol**, exported from SF Symbols and modified. That file
+(`Resources/YatuFinderSync.xcassets/yatu.folder.caret.symbolset/`) is governed by **Apple's SF
+Symbols licence, not by Yatu's MIT licence**, and is shipped inside a macOS app, which is what SF
+Symbols are licensed for. Do not relicense it or reuse it off an Apple platform.
+
 ## Licence
 
 MIT, because free means free!
-See [LICENSE](LICENSE).
+See [LICENSE](LICENSE) — with the one carve-out noted above.

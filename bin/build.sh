@@ -42,6 +42,10 @@ PLIST_TEMPLATE="Resources/Info.plist.in"
 ENTITLEMENTS="Resources/Yatu.entitlements"
 EXTENSION_PLIST_TEMPLATE="Resources/Extension-Info.plist.in"
 EXTENSION_ENTITLEMENTS="Resources/YatuFinderSync.entitlements"
+EXTENSION_ASSETS="Resources/YatuFinderSync.xcassets"
+# The deployment target lives in Package.swift and is read from there by
+# both the Info.plist and actool, so the two can never disagree.
+MINIMUM_MACOS="$(sed -n 's/.*\.macOS(\.v\([0-9]*\)).*/\1/p' Package.swift | head -1).0"
 EXTENSION_EXECUTABLE="YatuFinderSync"
 ICON_FILE="Resources/AppIcon.icns"
 LICENSE_FILE="LICENSE"
@@ -96,6 +100,9 @@ validate_environment() {
     [[ -f "$ENTITLEMENTS" ]] || die "missing $ENTITLEMENTS"
     [[ -f "$EXTENSION_PLIST_TEMPLATE" ]] || die "missing $EXTENSION_PLIST_TEMPLATE"
     [[ -f "$EXTENSION_ENTITLEMENTS" ]] || die "missing $EXTENSION_ENTITLEMENTS"
+    [[ -d "$EXTENSION_ASSETS" ]] || die "missing $EXTENSION_ASSETS"
+    command -v xcrun >/dev/null || die "xcrun not found; install Xcode"
+    xcrun --find actool >/dev/null 2>&1 || die "actool not found; Xcode is required to compile the toolbar symbol"
     [[ -f "$LICENSE_FILE" ]] || die "missing $LICENSE_FILE (the MIT licence must ship in the bundle)"
 
     if [[ ! -f "$ICON_FILE" ]]; then
@@ -146,11 +153,10 @@ binary_directory() {
 write_info_plist() {
     local destination=$1 executable=$2 app_name=$3 bundle_id=$4 usage_description=$5
     local template=${6:-$PLIST_TEMPLATE}
-    local version build_number minimum_macos build_commit build_date
+    local version build_number build_commit build_date
 
     version="$(bin/ver short)"
     build_number="$(bin/ver build)"
-    minimum_macos="$(sed -n 's/.*\.macOS(\.v\([0-9]*\)).*/\1/p' Package.swift | head -1).0"
     build_commit="$(git rev-parse --short HEAD 2>/dev/null || printf 'unknown')"
     # Build date comes from the commit, not the clock, so a rebuild of the same
     # commit produces the same plist (S-series finding in the build review).
@@ -165,7 +171,7 @@ write_info_plist() {
     BUNDLE_ID="$bundle_id" \
     VERSION="$version" \
     BUILD="$build_number" \
-    MIN_MACOS="$minimum_macos" \
+    MIN_MACOS="$MINIMUM_MACOS" \
     COPYRIGHT="$COPYRIGHT" \
     USAGE_DESCRIPTION="$usage_description" \
     BUILD_COMMIT="$build_commit" \
@@ -204,6 +210,23 @@ assemble_extension() {
     write_info_plist "$extension_path/Contents/Info.plist" \
         "$EXTENSION_EXECUTABLE" "$app_name" "$app_bundle_id.findersync" "" \
         "$EXTENSION_PLIST_TEMPLATE"
+
+    # The toolbar symbol is a custom SF Symbol, and a sandboxed extension can
+    # only read its own bundle -- so the catalog is compiled into the .appex,
+    # not into the app. This must happen BEFORE the signature below: the
+    # extension is sealed leaf-first, and anything added afterwards invalidates
+    # it. `codesign --verify --strict` on the app would catch that, but only
+    # after a wasted cycle.
+    mkdir -p "$extension_path/Contents/Resources"
+    if ! xcrun actool "$EXTENSION_ASSETS" \
+            --compile "$extension_path/Contents/Resources" \
+            --platform macosx \
+            --minimum-deployment-target "$MINIMUM_MACOS" \
+            --output-partial-info-plist "$(mktemp -t yatu-actool)" > /dev/null 2>&1; then
+        die "actool failed to compile $EXTENSION_ASSETS"
+    fi
+    [[ -f "$extension_path/Contents/Resources/Assets.car" ]] \
+        || die "actool produced no Assets.car"
 
     codesign --force --sign - --entitlements "$EXTENSION_ENTITLEMENTS" "$extension_path" 2>/dev/null \
         || die "ad-hoc signing failed for $extension_path"
