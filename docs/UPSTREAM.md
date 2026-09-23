@@ -1,0 +1,117 @@
+# Upstream: what Yatu uses from OpenInTerminal
+
+Yatu is a Finder toolbar app that opens a terminal at the folder you are looking at. It **uses code
+from** [OpenInTerminal](https://github.com/Ji4n1ng/OpenInTerminal) by
+[Jianing Wang](https://github.com/Ji4n1ng), MIT licensed. This file records exactly which code, the
+obligations that come with it, and how upstream changes are noticed now that the two repositories
+are independent.
+
+## History
+
+Yatu began on 2026-09-16 as a private-label build of OpenInTerminal-Lite, in a fork of upstream's
+repository. It stopped being a fork on **2026-09-23**.
+
+The reason was measured rather than felt. The product compiled **three** upstream files. To get
+them the repository carried **289 more** — the full OpenInTerminal app, OpenInEditor-Lite, the Core
+framework, upstream's own Finder extension, the login helper, two Xcode projects and eight
+localized READMEs — none of which were built, shipped, or supported. By then Yatu shared almost no
+implementation with upstream: it has its own Finder Sync extension, its own launch path, its own
+settings, its own build. Carrying 289 files to keep three in sync by symlink was the wrong trade.
+
+The three files are now vendored, each with a provenance header naming the upstream path and the
+commit it was taken at. The licence and attribution obligations did not change and are not affected
+by the cut.
+
+## What is used
+
+Everything in [`Sources/YatuUpstream/`](../Sources/YatuUpstream/):
+
+| File | Origin | Taken at |
+|---|---|---|
+| `SupportedApps.swift` | `OpenInTerminalCore/SupportedApps.swift` — the catalog of terminals and editors, with their bundle identifiers | `81a6775` (2026-07-13) |
+| `Finder.swift` | `OpenInTerminalCore/ScriptingBridge/Finder.swift` | `eaa3bd5` (2019-04-17) |
+| `Terminal.swift` | `OpenInTerminalCore/ScriptingBridge/Terminal.swift` | `eaa3bd5` (2019-04-17) |
+| `Model.swift` | ours — the dependency-free `App`/`AppType` declarations lifted from upstream's `App.swift`, so the catalog compiles without the rest of the framework | — |
+
+The two ScriptingBridge files are generated interfaces that have not changed upstream since 2019
+and are regenerable from Apple's `sdef`. Nothing else from OpenInTerminal is compiled, and nothing
+in that directory is edited to make Yatu's code work — behaviour that has to change goes in
+`Sources/YatuKit/`.
+
+## Obligations
+
+- **The MIT licence stays.** `LICENSE` is upstream's and is shipped unchanged.
+- **Attribution stays.** Credit is given at the end of `README.md`, in `Sources/YatuUpstream/README.md`,
+  and in the provenance header of every vendored file.
+- **"Uses code from", not "fork of".** Yatu is a derivative work that vendors a few files; it is not
+  a variant of upstream's app and must not be described as one.
+
+## Noticing upstream changes
+
+`git merge upstream/master` is gone. In its place:
+
+```bash
+bin/check-upstream.sh          # has the app catalog moved since we vendored it?
+```
+
+It compares catalog entries — not commits — against upstream's current copy, preferring the
+contribution clone at `~/dev/oss/openinterminal` and falling back to fetching the file over HTTP.
+Adopting a change means editing the vendored file by hand and updating the commit in its provenance
+header.
+
+Upstream's catalog is **not an authoritative source**. It is one project's list, and it has shipped
+stale identifiers (`com.apple.Xcode`, `com.sublimetext.3`) that survived only because the launcher
+falls back to a name search in `/Applications`. Verify a bundle identifier against the real
+application before trusting it. See [YATU-PLAN.md](YATU-PLAN.md) §9.6.
+
+## Contributing back
+
+Fixes for upstream are developed in a **separate clone** — `inquinity/OpenInTerminal`, branch
+`master`, at `~/dev/oss/openinterminal` — on a `contrib/<topic>` branch cut from `upstream/master`,
+carrying only the fix being offered. **No contribution branch is ever cut in this repository**, and
+no Yatu work ever lands in that one.
+
+| Finding | Form | Status |
+|---|---|---|
+| Finder toolbar icons render wrong on macOS 26.6 | PR | **open** — [GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287), fixes [GH-283](https://github.com/Ji4n1ng/OpenInTerminal/issues/283) |
+| Build fails on Xcode 27 (deployment targets below macOS 12) | Issue | **open** — [GH-288](https://github.com/Ji4n1ng/OpenInTerminal/issues/288) |
+| Extension can hand a selected file to a terminal, which runs it | Private report, then PR | not started — reproduce on an upstream build first |
+| `DistributedNotificationCenter` observers accept any local sender | Issue → PR | not started |
+| Menu-bar copy-path does no escaping; extension's escaping is a denylist | PR | not started |
+| Preferences-driven arbitrary app launch; world-readable path log | Issue with patch | not started |
+| Dead AppleScript helpers, `.travis.yml`, stray entitlements | Cleanup PR | not started |
+
+A daily scheduled task (`watch-openinterminal-pr-287`) reports upstream movement.
+
+## Security posture
+
+A full review of the original fork (2026-09-16/17) is in `.security-review/` — git-excluded, since
+it includes a working attack log. Summary:
+
+- **The shipped build has no injection paths.** ~50 hostile launches with crafted folder and file
+  names produced no command execution, and selected `.command`, executables and `.app` bundles were
+  never run. This is a property to keep, not a one-off result: `bin/attack-matrix.sh` (M2d) re-runs
+  that matrix each release, and is being extended to fire hostile paths at the `yatu://` handler.
+- **Four Low findings** in what upstream ships, all fixed by design in Yatu: preferences-driven app
+  launch, a world-readable path log, force-casts that can crash on special Finder views, and
+  unstripped binaries carrying build paths.
+- **Build and release gaps** (unpinned dependency, `rm -rf export` from the caller's directory,
+  signing that accepts a dirty tree and never verifies the result) are addressed by `bin/build.sh`.
+- **The parts upstream ships that Yatu never did carry more** — one High (upstream's Finder
+  extension can hand a *file* to a terminal, which runs it) and four Medium. Those go upstream
+  through the contribution track, with the High reported privately first.
+
+Yatu's own new entry point, the `yatu://` URL scheme, is **public**: any application or web page can
+invoke it. It is parsed strictly in `Sources/YatuKit/HandOff.swift` and reviewed separately
+(YATU-PLAN.md §9.4).
+
+## Writing for other people
+
+This repository is **public**. Commit messages, PR descriptions and issue comments are readable by
+anyone.
+
+- Refer to upstream issues and PRs by **full URL or `GH-287`**, never a bare `#287` or
+  `Ji4n1ng/OpenInTerminal#287` — those auto-link into upstream's timeline permanently and cannot be
+  removed.
+- No project-internal shorthand (`M2a`, `L1`, `UPSTREAM.md`) in anything that travels upstream.
+  Write the actual subject.

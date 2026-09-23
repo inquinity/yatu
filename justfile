@@ -1,6 +1,5 @@
-# Fork-owned tasks. Upstream has no justfile, so this file is unambiguously
-# ours and never conflicts on merge. The work stays in bin/*.sh -- these
-# recipes are the one place those scripts are named and strung together.
+# Project tasks. The work stays in bin/*.sh -- these recipes are the one place
+# those scripts are named and strung together.
 #
 # Requires `just` (brew install just). Every recipe also works by calling the
 # underlying bin/ script directly.
@@ -31,28 +30,15 @@ icon:
 icon-concepts:
     docs/icon-concepts/make-concepts.swift docs/icon-concepts
 
-# Local ad-hoc build of the UPSTREAM apps into ./export (no Developer ID needed).
-# Yatu is built by `just build`; this is here to keep upstream's tree buildable.
-build-upstream *args:
-    bin/build-unsigned.sh {{ args }}
-
-# Developer ID signed + notarized build. Pass a scheme, e.g. `just build-signed OpenInTerminal-Lite`.
-build-signed *args:
-    NOTARY_PROFILE="${NOTARY_PROFILE:-altman-notary}" bin/build-signed.sh {{ args }}
-
-# Report which build is installed (fork, upstream, or unknown) and what brew thinks.
+# Report what is installed, whether the Finder extension is enabled, and what brew thinks.
 which:
     bin/which-yatu.sh
 
-# Read-only: has upstream moved ahead of this fork?
+# Read-only: has OpenInTerminal's app catalog moved since we vendored it?
 check-upstream *args:
     bin/check-upstream.sh {{ args }}
 
-# What this fork changes on top of upstream. Pass --stat, --files or --commits.
-private-changes *args:
-    bin/show-private-changes.sh {{ args }}
-
-# Shell-check every fork-owned script (requires shellcheck).
+# Shell-check every script (requires shellcheck).
 lint:
     #!/usr/bin/env bash
     set -euo pipefail

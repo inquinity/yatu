@@ -1,17 +1,16 @@
 #!/bin/bash
 #
-# Report which build of OpenInTerminal / OpenInTerminal-Lite / OpenInEditor-Lite
-# (and, once it ships, Yatu)
-# is installed: the upstream release (Homebrew / GitHub) or a local fork build
-# produced by build-unsigned.sh. Read-only.
+# Report what is installed: which build of Yatu, whether its Finder extension is
+# registered and enabled, and whether any of the OpenInTerminal apps Yatu
+# replaces are still present. Read-only.
 #
 # A bundle is identified as:
-#   fork      - Info.plist contains OITBuildSource (stamped by build-unsigned.sh)
-#   upstream  - signed by the upstream Developer ID team
-#   unknown   - anything else (e.g. a fork build made before stamping existed)
+#   release   - Developer ID signed by Altman Software Design (team 45GJWJVQN2)
+#   local     - built by bin/build.sh (ad-hoc signed, carries YatuBuildCommit)
+#   unknown   - anything else
 #
-# The full colour palette is declared in every fork-owned script by convention, so
-# the set is identical everywhere; not every script uses every colour.
+# The full colour palette is declared in every script by convention, so the set
+# is identical everywhere; not every script uses every colour.
 # shellcheck disable=SC2034
 set -euo pipefail
 
@@ -32,23 +31,22 @@ print_colored() {
     printf "${color}%s${COLOR_RESET}\n" "$message"
 }
 
-UPSTREAM_TEAM_ID="C8VX3ZLX5U"
-FINDER_EXTENSION_ID="wang.jianing.app.OpenInTerminal.OpenInTerminalFinderExtension"
+TEAM_ID="45GJWJVQN2"
+APP_NAME="Yatu"
+CASK_TOKEN="yatu"
+EXTENSION_ID="com.altmansoftwaredesign.yatu.findersync"
 
-# app name:official cask token:fork (inquinity/tap) cask token
-APPS=(
-    "OpenInTerminal:openinterminal:"
-    "OpenInTerminal-Lite:openinterminal-lite:openinterminal-lite-inquinity"
-    "OpenInEditor-Lite:openineditor-lite:"
-)
+# Apps Yatu replaces. Left installed they are harmless, but they put a second,
+# near-identical button in the toolbar; the cask's zap does not remove them.
+SUPERSEDED=("OpenInTerminal" "OpenInTerminal-Lite" "OpenInEditor-Lite")
 SEARCH_DIRS=("/Applications" "$HOME/Applications")
 
 usage() {
     print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [-h|--help]
 
-Show whether the installed OpenInTerminal apps are upstream releases or
-local fork builds, along with version, signing team, Homebrew state, and the
-registered Finder extension."
+Show which build of Yatu is installed, whether its Finder extension is
+registered and enabled, and whether any superseded OpenInTerminal app is
+still present."
 }
 
 # Print a key from a bundle's Info.plist, or an empty string if absent.
@@ -62,98 +60,93 @@ read_team_id() {  # $1 = bundle path
     printf '%s' "${team_id:-none}"
 }
 
-# Echo fork / upstream / unknown for a bundle.
-classify_bundle() {  # $1 = bundle path
-    local bundle_path="$1"
-    if [[ -n "$(read_plist_key "$bundle_path" OITBuildSource)" ]]; then
-        printf 'fork'
-    elif [[ "$(read_team_id "$bundle_path")" == "$UPSTREAM_TEAM_ID" ]]; then
-        printf 'upstream'
-    else
-        printf 'unknown'
-    fi
+find_app() {  # $1 = app name; prints the first matching bundle path, if any
+    local search_dir
+    for search_dir in "${SEARCH_DIRS[@]}"; do
+        [[ -d "$search_dir/$1.app" ]] && { printf '%s' "$search_dir/$1.app"; return 0; }
+    done
+    # Not found is an ordinary outcome, not an error: callers run under set -e
+    # and assign this through a command substitution.
+    return 0
 }
 
 print_bundle_source() {  # $1 = bundle path
-    local bundle_path="$1" source
-    source="$(classify_bundle "$bundle_path")"
-    case "$source" in
-        fork)
-            print_colored "$COLOR_BRIGHTYELLOW" "  source:   FORK ($(read_plist_key "$bundle_path" OITBuildSource)@$(read_plist_key "$bundle_path" OITBuildCommit), built $(read_plist_key "$bundle_path" OITBuildDate))" ;;
-        upstream)
-            print_colored "$COLOR_GREEN" "  source:   upstream release" ;;
-        *)
-            print_colored "$COLOR_RED" "  source:   unknown (not upstream-signed, no fork stamp; likely an older local build)" ;;
-    esac
-}
-
-cask_version() {  # $1 = cask token; prints the installed version, or nothing
-    [[ -n "$1" ]] || return 0
-    brew list --cask --versions "$1" 2>/dev/null | awk '{print $2}' || true
-}
-
-# $1 = official cask token, $2 = fork cask token (may be empty),
-# $3 = source classification (fork / upstream / unknown / none)
-report_brew_state() {
-    local official_token="$1" fork_token="$2" source="$3" official_version fork_version
-    if ! command -v brew >/dev/null 2>&1; then
-        return
+    local bundle_path="$1"
+    if [[ "$(read_team_id "$bundle_path")" == "$TEAM_ID" ]] \
+        && codesign -dv "$bundle_path" 2>&1 | grep -q 'Authority=Developer ID Application'; then
+        print_colored "$COLOR_GREEN" "  source:   release build, Developer ID signed"
+    elif [[ -n "$(read_plist_key "$bundle_path" YatuBuildCommit)" ]]; then
+        print_colored "$COLOR_BRIGHTYELLOW" "  source:   local build ($(read_plist_key "$bundle_path" YatuBuildCommit), built $(read_plist_key "$bundle_path" YatuBuildDate))"
+    else
+        print_colored "$COLOR_RED" "  source:   unknown (neither Developer ID signed nor stamped by bin/build.sh)"
     fi
-    official_version="$(cask_version "$official_token")"
-    fork_version="$(cask_version "$fork_token")"
-    if [[ -z "$official_version" && -z "$fork_version" ]]; then
+}
+
+report_brew_state() {  # $1 = source classification (installed / none)
+    local cask_version
+    command -v brew >/dev/null 2>&1 || return 0
+    cask_version="$(brew list --cask --versions "$CASK_TOKEN" 2>/dev/null | awk '{print $2}' || true)"
+    if [[ -z "$cask_version" ]]; then
         printf '  brew:     not installed via brew\n'
         return
     fi
-    if [[ -n "$fork_version" ]]; then
-        printf '  brew:     %s %s (inquinity/tap)\n' "$fork_token" "$fork_version"
-    fi
-    if [[ -n "$official_version" ]]; then
-        printf '  brew:     %s %s\n' "$official_token" "$official_version"
-    fi
-    if [[ "$source" == "none" ]]; then
-        print_colored "$COLOR_RED" "  warning:  brew lists this app as installed, but the app is missing"
-    elif [[ -n "$official_version" && "$source" != "upstream" ]]; then
-        print_colored "$COLOR_RED" "  warning:  brew thinks $official_token is installed, but the app is not the upstream build;
-            'brew upgrade/reinstall' will overwrite it"
-    elif [[ -n "$fork_version" && "$source" != "fork" ]]; then
-        print_colored "$COLOR_RED" "  warning:  brew thinks $fork_token is installed, but the app is not a fork build"
-    fi
+    printf '  brew:     %s %s (inquinity/tap)\n' "$CASK_TOKEN" "$cask_version"
+    [[ "$1" == "none" ]] && print_colored "$COLOR_RED" "  warning:  brew lists the cask as installed, but the app is missing"
+    return 0
 }
 
-report_app() {  # $1 = app name, $2 = official cask token, $3 = fork cask token
-    local app_name="$1" official_token="$2" fork_token="$3" search_dir app_path found_app=0 source
-    print_colored "$COLOR_CYAN" "$app_name"
-    for search_dir in "${SEARCH_DIRS[@]}"; do
-        app_path="$search_dir/$app_name.app"
-        [[ -d "$app_path" ]] || continue
-        found_app=1
-        source="$(classify_bundle "$app_path")"
-        printf '  path:     %s\n' "$app_path"
-        printf '  version:  %s (%s)\n' "$(read_plist_key "$app_path" CFBundleShortVersionString)" "$(read_plist_key "$app_path" CFBundleVersion)"
-        printf '  team:     %s\n' "$(read_team_id "$app_path")"
-        print_bundle_source "$app_path"
-        report_brew_state "$official_token" "$fork_token" "$source"
-    done
-    if (( ! found_app )); then
+report_yatu() {
+    local app_path
+    print_colored "$COLOR_CYAN" "$APP_NAME"
+    app_path="$(find_app "$APP_NAME")"
+    if [[ -z "$app_path" ]]; then
         printf '  not installed\n'
-        report_brew_state "$official_token" "$fork_token" "none"
+        report_brew_state none
+        return
+    fi
+    printf '  path:     %s\n' "$app_path"
+    printf '  version:  %s (build %s)\n' \
+        "$(read_plist_key "$app_path" CFBundleShortVersionString)" \
+        "$(read_plist_key "$app_path" CFBundleVersion)"
+    printf '  team:     %s\n' "$(read_team_id "$app_path")"
+    print_bundle_source "$app_path"
+    report_brew_state installed
+}
+
+# pluginkit marks an enabled plug-in with '+' in the first column. Registered
+# but not enabled is the state that makes the button absent from Finder's
+# customize palette, which is the usual reason Yatu "does not appear".
+report_finder_extension() {
+    local record path
+    print_colored "$COLOR_CYAN" "Finder extension ($EXTENSION_ID)"
+    record="$(pluginkit -mAvvv -i "$EXTENSION_ID" 2>/dev/null || true)"
+    if [[ -z "$record" ]]; then
+        printf '  not registered\n'
+        print_colored "$COLOR_YELLOW" "  Launch Yatu once so macOS registers the extension."
+        return
+    fi
+    path="$(printf '%s\n' "$record" | sed -n 's/^[[:space:]]*Path = //p' | head -n1)"
+    printf '  path:     %s\n' "$path"
+    if printf '%s\n' "$record" | grep -q '^+'; then
+        print_colored "$COLOR_GREEN" "  state:    enabled"
+    else
+        print_colored "$COLOR_BRIGHTYELLOW" "  state:    registered but NOT enabled"
+        print_colored "$COLOR_YELLOW" "  Enable it in System Settings > General > Login Items & Extensions,
+  then add the button with Finder's View > Customize Toolbar."
     fi
 }
 
-# pluginkit shows which copy of the Finder extension macOS will actually load.
-report_finder_extension() {
-    local extension_path found_extension=0
-    print_colored "$COLOR_CYAN" "Finder extension ($FINDER_EXTENSION_ID)"
-    while IFS= read -r extension_path; do
-        [[ -n "$extension_path" ]] || continue
-        found_extension=1
-        printf '  path:     %s\n' "$extension_path"
-        print_bundle_source "$extension_path"
-    done < <(pluginkit -mAvvv -i "$FINDER_EXTENSION_ID" 2>/dev/null | sed -n 's/^[[:space:]]*Path = //p')
-    if (( ! found_extension )); then
-        printf '  not registered\n'
-    fi
+report_superseded() {
+    local app_name app_path found=0
+    print_colored "$COLOR_CYAN" "Superseded apps"
+    for app_name in "${SUPERSEDED[@]}"; do
+        app_path="$(find_app "$app_name")"
+        [[ -n "$app_path" ]] || continue
+        found=1
+        printf '  %s %s\n' "$app_name" "$(read_plist_key "$app_path" CFBundleShortVersionString)"
+        printf '            %s\n' "$app_path"
+    done
+    (( found )) || printf '  none installed\n'
 }
 
 case "${1:-}" in
@@ -162,9 +155,8 @@ case "${1:-}" in
     *) print_colored "$COLOR_RED" "Unknown argument: $1"; usage; exit 2 ;;
 esac
 
-for pair in "${APPS[@]}"; do
-    IFS=: read -r app_name official_token fork_token <<< "$pair"
-    report_app "$app_name" "$official_token" "$fork_token"
-    printf '\n'
-done
+report_yatu
+printf '\n'
 report_finder_extension
+printf '\n'
+report_superseded

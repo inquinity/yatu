@@ -72,7 +72,7 @@ Build and release findings (S1–S7) are addressed in M4. The unshipped full app
 A single Swift package. No Xcode project, no workspace, no SPM dependencies.
 
 ```
-yatu/                            (repo root, the fork)
+yatu/                            (repo root)
 ├── Package.swift                library YatuKit + two executables, no dependencies
 ├── Sources/YatuKit/             everything below except the entry points
 ├── Sources/YatuTerminal/
@@ -86,14 +86,13 @@ yatu/                            (repo root, the fork)
 │   ├── SettingsWindow.swift     the new GUI (§5)
 │   ├── AppCatalog.swift         thin wrapper over upstream's SupportedApps, filtered by role
 │   └── Log.swift                os.Logger; paths marked .private
-├── Sources/YatuUpstream/        upstream files compiled UNCHANGED (see below)
+├── Sources/YatuUpstream/        vendored OpenInTerminal files, compiled UNCHANGED (see below)
 ├── Tests/YatuTests/             path resolution, validation, migration, catalog
 ├── Resources/                   Info.plist, entitlements, icon, terminal icons, strings
 ├── bin/                         build.sh, publish-release.sh, check-upstream.sh,
-│                                show-private-changes.sh, attack-matrix.sh, make-icon.swift
-├── docs/                        FORK-NOTES.md, this plan, MANUAL-TEST-CHECKLIST.md, release-notes/
-├── justfile                     just build | test | release <seg> | publish --go
-└── (upstream tree kept as-is: OpenInTerminal*/ , OpenInTerminalCore/ , *.xcodeproj)
+│                                attack-matrix.sh, make-icon.swift
+├── docs/                        UPSTREAM.md, this plan, MANUAL-TEST-CHECKLIST.md, release-notes/
+└── justfile                     just build | test | release <seg> | publish --go
 ```
 
 **Upstream files compiled unchanged** (symlinked or path-referenced into `Sources/YatuUpstream`):
@@ -190,30 +189,42 @@ The feature OITL doesn't have, and the main reason this is a product rather than
   allowlist is the fix. If a user needs an unsupported terminal, the answer is a catalog entry
   in a release, not a text field.
 
-## 6. Fork conventions (from Belvedere)
+## 6. Project conventions
 
-- `docs/FORK-NOTES.md` is the source of truth: why the fork exists, remote table, branch model,
-  what we change, upstream contribution track, roadmap.
-- `README.md` rewritten for Yatu with a **Credits** section naming OpenInTerminal and Jianing Wang;
-  `CLAUDE.md` gets a **FORK STATUS** block telling agents which upstream text to ignore.
+**Amended 2026-09-23**, when the fork was cut (§9.7). The conventions below that existed only to
+manage a fork — the `Fork:` / `Sync:` merge prefixes, the `fork/<topic>` branch name, and the
+"new files are free, edits to upstream files are rent" rule — are retired. What survives is
+everything that was never about the fork.
+
+- `docs/UPSTREAM.md` is the source of truth for what code comes from OpenInTerminal, the licence
+  and attribution obligations, how upstream changes are noticed, and the contribution track.
+- `README.md` credits OpenInTerminal and Jianing Wang at the end, worded as **uses code from**,
+  never "fork of". `CLAUDE.md` carries the same rule for agents.
 - Two repositories: `inquinity/yatu` (`~/dev/projects/yatu`, `main`) is the product;
-  `inquinity/OpenInTerminal` (`~/dev/oss/openinterminal`, `master`) is the contribution clone.
-  Both carry a read-only `upstream` remote (Ji4n1ng, push disabled). `git rerere` enabled in both.
-- Branches: `main` is the product line; `fork/<topic>` short-lived, merged `--no-ff`;
+  `inquinity/OpenInTerminal` (`~/dev/oss/openinterminal`, `master`) is the contribution clone and
+  is the only one with an `upstream` remote. `git rerere` enabled in both.
+- Branches: `main` is the product line; short-lived topic branches merged `--no-ff`;
   `contrib/<topic>` cut from `upstream/master` **in the contribution clone**, one fix each.
-- Merge commits: `Fork: <what>` and `Sync: upstream/master @ <sha>`. **Merge, never rebase** `main`.
-- "New files are free. Edits to upstream-maintained files are rent." Every rent-paying edit is
-  listed in FORK-NOTES.
+- Merge commits follow Conventional Commits, like every other commit. **Merge, never rebase** `main`.
+- Nothing in `Sources/YatuUpstream/` is edited to make Yatu's code work; new behaviour goes in
+  `Sources/YatuKit/` and calls into that target.
 - Public-repo writing: refer to upstream with full URLs or `GH-287`, never a bare `#287` or
   `owner/repo#287` (S7 — we already tripped this once in the tap commit and release notes).
-- Every upstream sync gets a security review of the incoming diff (`security-oss-app-reviewer`).
+- Adopting a catalog change gets a security review of what it adds (`security-oss-app-reviewer`);
+  so does anything touching the launch path or the `yatu://` handler.
 
 ## 7. Milestones
 
 Risk gates per `~/.claude/CLAUDE.md`. M4 and M5 are outward-facing and need separate approval
 before anything is published.
 
-### M0 — Fork scaffolding (low)
+### M0 — Fork scaffolding (low) — **done, then superseded 2026-09-23 by §9.7**
+
+> Kept as the record of what was built. Most of it has since been removed with the fork:
+> `docs/FORK-NOTES.md` is now `docs/UPSTREAM.md`, the README banner and the `CLAUDE.md` FORK STATUS
+> block are gone, `bin/show-private-changes.sh` and the two root build scripts are deleted, and
+> `bin/check-upstream.sh` compares catalog entries rather than commits.
+
 - `docs/FORK-NOTES.md`, README fork banner, `CLAUDE.md` FORK STATUS block.
 - `bin/check-upstream.sh`, `bin/show-private-changes.sh`, `justfile`, `git rerere`.
 - Remove upstream-only automation and leftovers: `.claude/skills/release/` (S4), `.travis.yml`,
@@ -333,7 +344,7 @@ its tests; `Sources/YatuEditor` is retired.
    PR's head repository under the product's name. It therefore keeps its name and becomes the
    contribution clone at `~/dev/oss/openinterminal` (`master`, six pre-split commits left in
    place, not force-pushed away). Yatu gets a **new** public repository, `inquinity/yatu`, cloned
-   at `~/dev/projects/yatu` on `main`. See `docs/FORK-NOTES.md`.
+   at `~/dev/projects/yatu` on `main`. See `docs/UPSTREAM.md`.
 
 2. **Minimum macOS — settled: 13.0 (Ventura).** Xcode 27's `MacOSX27.0.sdk` declares
    `MinimumDeploymentTarget = 12.0`, so 12.0 remains available and only 10.x/11.x are refused —
@@ -503,26 +514,47 @@ remembering what that list is and is not:
 - The set of popular terminals and editors **changes slowly**, so maintaining it ourselves is a few
   edits a year, not a burden.
 
-So when the fork relationship is cut (§9.7 below, after M2e), vendoring upstream's list verbatim is
-one option, but not obviously the right one. Owning the list means fixing the stale identifiers
-instead of papering over them, and dropping entries for apps that no longer exist. Decide then.
+**Settled 2026-09-23, with the cut (§9.7): vendored verbatim for now, owned later.** The list came
+across unchanged, stale identifiers and all, because changing code and changing its content in the
+same move makes neither reviewable. `bin/check-upstream.sh` now diffs catalog *entries* against
+upstream's copy, so adopting a change is already a hand edit rather than a merge — which is the
+mechanism owning the list requires. Fixing `com.apple.Xcode` and `com.sublimetext.3`, and dropping
+entries for apps that no longer exist, is a separate change against a file we now control outright.
 
-### 9.7 Cutting the fork relationship — analysis done 2026-09-23, decision pending
+### 9.7 Cutting the fork relationship — done 2026-09-23
 
-Measured: the product compiles **three** upstream files — `SupportedApps.swift` and the two
+Measured first: the product compiles **three** upstream files — `SupportedApps.swift` and the two
 ScriptingBridge interfaces, the latter unchanged since 2019 and regenerable from Apple's `sdef`.
-To get them the repository carries **279 unbuilt files** (the full app, the editor app, the Core
-framework, upstream's Finder extension, the helper, two Xcode projects). Upstream has not moved
-since 2026-07-14, and the bug we reported there (GH-283) is still open.
+To get them the repository carried **289 unbuilt files** (the full app, the editor app, the Core
+framework, upstream's Finder extension, the helper, two Xcode projects, eight localized READMEs).
+Upstream had not moved since 2026-07-14, and the bug we reported there (GH-283) is still open.
 
-The reference value of that tree is real — it was read repeatedly while designing §9 — but it is
+The reference value of that tree was real — it was read repeatedly while designing §9 — but it is
 duplicated in the `~/dev/oss/openinterminal` clone, which keeps its own `upstream` remote and is
-where contributions are made. Nothing is lost by removing it from the product repository.
+where contributions are made. Nothing was lost by removing it from the product repository.
 
-**Intended: cut it, after M2e**, so two structural changes do not land at once. The licence and
-attribution obligations do not change: the MIT notice stays, and credit stays in `README.md` and in
-the provenance headers of anything derived. What replaces `git merge upstream/master` is a small
-script that diffs upstream's catalog against ours, so a new terminal is still noticed.
+**Done, after M2e**, so two structural changes did not land at once. What happened:
+
+1. The three compiled files were **vendored** — the symlinks into the upstream tree became real
+   files, each with a provenance header naming the upstream path and the commit it was taken at.
+   Verified by the same 60 tests, unchanged.
+2. The tree, both Xcode projects, the root build scripts, upstream's localized READMEs, donation
+   images and dynamic app icons were **deleted** — 293 files, ~20,300 lines.
+3. `bin/build-unsigned.sh`, `bin/build-signed.sh` (which drove the removed Xcode workspace) and
+   `bin/show-private-changes.sh` (which diffed against upstream) were deleted with it. Signing
+   returns in M4, in `bin/build.sh`.
+4. `bin/check-upstream.sh` was rewritten to compare **catalog entries** against upstream's current
+   copy instead of counting commits, preferring the contribution clone and falling back to HTTP.
+   `bin/which-yatu.sh` was rewritten to report Yatu, whether its extension is registered and
+   enabled, and any superseded app still installed.
+5. `docs/FORK-NOTES.md` became `docs/UPSTREAM.md`; `README.md` and `CLAUDE.md` were rewritten.
+
+The licence and attribution obligations did not change: the MIT notice stays, and credit stays in
+`README.md`, in `Sources/YatuUpstream/README.md` and in every vendored file's header — worded
+**uses code from**, not "fork of".
+
+**Rollback:** the three steps are separate commits on `cut-upstream`; reverting the merge restores
+the tree in full.
 
 ### 9.5 What stays
 

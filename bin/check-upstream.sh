@@ -1,10 +1,18 @@
 #!/bin/bash
 #
-# Reports whether Ji4n1ng/OpenInTerminal has moved ahead of this fork.
-# Read-only: fetches remote metadata and prints counts, never merges.
+# Reports whether OpenInTerminal's app catalog has moved since the commit our
+# vendored copy records. Read-only: nothing is fetched into this repository and
+# no file is changed.
 #
-# The full colour palette is declared in every fork-owned script by convention, so
-# the set is identical everywhere; not every script uses every colour.
+# Yatu was a fork of Ji4n1ng/OpenInTerminal until 2026-09-23 and tracked upstream
+# with `git merge`. It no longer does. The only upstream code still compiled is
+# Sources/YatuUpstream/, and of that only the catalog changes in practice — so
+# this compares catalog entries rather than commits. Adopting a change is a
+# judgement call: upstream's list is one project's opinion, not an authority
+# (docs/YATU-PLAN.md section 9.6).
+#
+# The full colour palette is declared in every script by convention, so the set
+# is identical everywhere; not every script uses every colour.
 # shellcheck disable=SC2034
 set -euo pipefail
 
@@ -12,6 +20,9 @@ set -euo pipefail
 COLOR_GREEN="\e[32m"         # Used for success messages and instructions
 COLOR_RED="\e[31m"           # Used for error messages and warnings
 COLOR_YELLOW="\e[33m"        # Used for help text, lists, and informational content
+COLOR_MAGENTA="\e[35m"       # Available for general use
+COLOR_CYAN="\e[36m"          # Available for general use
+COLOR_BLUE="\e[34m"          # Available for general use; does not show on screen well
 COLOR_BRIGHTYELLOW="\e[93m"  # Used for highlighting important actions and status
 COLOR_RESET="\e[0m"          # Used to reset color formatting
 
@@ -22,21 +33,29 @@ print_colored() {
     printf "${color}%s${COLOR_RESET}\n" "$message"
 }
 
-REMOTE="${REMOTE:-upstream}"
-# Upstream's default branch is still master; ours is main.
-REMOTE_BRANCH="${REMOTE_BRANCH:-master}"
-UPSTREAM_URL="${UPSTREAM_URL:-https://github.com/Ji4n1ng/OpenInTerminal.git}"
+# The contribution clone keeps its own upstream remote; prefer it over the
+# network so this works offline and reports the upstream commit as well.
+UPSTREAM_CLONE="${UPSTREAM_CLONE:-$HOME/dev/oss/openinterminal}"
+UPSTREAM_REF="${UPSTREAM_REF:-upstream/master}"
+UPSTREAM_PATH="OpenInTerminalCore/SupportedApps.swift"
+UPSTREAM_RAW="${UPSTREAM_RAW:-https://raw.githubusercontent.com/Ji4n1ng/OpenInTerminal/master/$UPSTREAM_PATH}"
+
+VENDORED="Sources/YatuUpstream/SupportedApps.swift"
 
 usage() {
-    print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [-h|--help] [-n|--no-fetch]
+    print_colored "$COLOR_YELLOW" "Usage: $(basename "$0") [-h|--help] [-n|--no-fetch] [-d|--diff]
 
-Fetch upstream metadata and report whether it has new commits, tags or releases.
-Read-only: nothing is merged and no local branch is changed.
+Compare upstream's app catalog against the copy vendored in $VENDORED
+and report which terminals and editors upstream has added or removed.
+
+Options:
+  -n, --no-fetch  Do not update the upstream clone before comparing.
+  -d, --diff      Print a full unified diff instead of an entry summary.
 
 Environment:
-  REMOTE          Remote to inspect. Default: upstream
-  REMOTE_BRANCH   Upstream branch to compare against. Default: master
-  UPSTREAM_URL    Added as the remote if it is missing."
+  UPSTREAM_CLONE  Clone with an 'upstream' remote. Default: \$HOME/dev/oss/openinterminal
+  UPSTREAM_REF    Ref to compare against. Default: upstream/master
+  UPSTREAM_RAW    Fallback URL used when that clone is absent."
 }
 
 die() {
@@ -44,46 +63,84 @@ die() {
     exit 1
 }
 
+# Catalog entries only: `case iTerm = "iTerm"` -> `iTerm = "iTerm"`. Comments,
+# MARK dividers and the provenance header are all dropped, so a header-only
+# change never registers as a catalog change.
+catalog_entries() {  # reads a Swift source on stdin
+    sed -n 's/^[[:space:]]*case[[:space:]]\{1,\}\([A-Za-z0-9_]*[[:space:]]*=[[:space:]]*".*"\).*/\1/p'
+}
+
 no_fetch=0
-case "${1:-}" in
-    -h|--help) usage; exit 0 ;;
-    -n|--no-fetch) no_fetch=1 ;;
-    "") ;;
-    *) print_colored "$COLOR_RED" "Unknown argument: $1"; usage; exit 2 ;;
-esac
+show_diff=0
+while (( $# )); do
+    case "$1" in
+        -h|--help)     usage; exit 0 ;;
+        -n|--no-fetch) no_fetch=1 ;;
+        -d|--diff)     show_diff=1 ;;
+        *) print_colored "$COLOR_RED" "Unknown argument: $1"; usage; exit 2 ;;
+    esac
+    shift
+done
 
 cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-command -v git >/dev/null 2>&1 || die "git is required but was not found"
+[[ -f "$VENDORED" ]] || die "$VENDORED is missing"
 
-# Add the upstream remote on first use rather than failing.
-if ! git remote get-url "$REMOTE" >/dev/null 2>&1; then
-    print_colored "$COLOR_BRIGHTYELLOW" "Adding missing remote '$REMOTE' -> $UPSTREAM_URL"
-    git remote add "$REMOTE" "$UPSTREAM_URL"
+# The commit the vendored copy was taken at, recorded in its provenance header.
+recorded_commit="$(sed -n 's/.*as of upstream commit \([0-9a-f]\{7,\}\).*/\1/p' "$VENDORED" | head -n1)"
+
+upstream_source="$(mktemp)"
+trap 'rm -f "$upstream_source"' EXIT
+
+upstream_commit="unknown"
+if [[ -d "$UPSTREAM_CLONE/.git" ]]; then
+    origin="$UPSTREAM_CLONE ($UPSTREAM_REF)"
+    if (( ! no_fetch )); then
+        git -C "$UPSTREAM_CLONE" fetch --quiet "${UPSTREAM_REF%%/*}" \
+            || print_colored "$COLOR_RED" "warning: could not fetch; comparing against the last fetch"
+    fi
+    git -C "$UPSTREAM_CLONE" show "$UPSTREAM_REF:$UPSTREAM_PATH" > "$upstream_source" \
+        || die "could not read $UPSTREAM_PATH at $UPSTREAM_REF"
+    upstream_commit="$(git -C "$UPSTREAM_CLONE" log -1 --format='%h (%cs)' "$UPSTREAM_REF" -- "$UPSTREAM_PATH")"
+else
+    print_colored "$COLOR_BRIGHTYELLOW" "No clone at $UPSTREAM_CLONE — fetching over HTTP instead."
+    command -v curl >/dev/null 2>&1 || die "curl is required when the clone is absent"
+    curl --fail --silent --show-error --location "$UPSTREAM_RAW" > "$upstream_source" \
+        || die "could not fetch $UPSTREAM_RAW"
+    origin="$UPSTREAM_RAW"
 fi
 
-if (( ! no_fetch )); then
-    git fetch --quiet --tags "$REMOTE" || die "could not fetch from '$REMOTE'"
-fi
+printf 'vendored: %s @ %s\n' "$VENDORED" "${recorded_commit:-no commit recorded}"
+printf 'upstream: %s @ %s\n\n' "$origin" "$upstream_commit"
 
-upstream_ref="$REMOTE/$REMOTE_BRANCH"
-git rev-parse --verify --quiet "$upstream_ref" >/dev/null || die "no such ref: $upstream_ref"
-
-behind="$(git rev-list --count "HEAD..$upstream_ref")"
-ahead="$(git rev-list --count "$upstream_ref..HEAD")"
-upstream_head="$(git rev-parse --short "$upstream_ref")"
-upstream_date="$(git log -1 --format=%cs "$upstream_ref")"
-latest_tag="$(git tag --list --sort=-creatordate --merged "$upstream_ref" | head -n1)"
-
-printf '%s\n' "upstream:  $upstream_ref @ $upstream_head ($upstream_date)"
-printf '%s\n' "latest upstream tag: ${latest_tag:-none}"
-printf '%s\n' "this fork: $(git rev-parse --abbrev-ref HEAD) @ $(git rev-parse --short HEAD)"
-printf '%s\n' "ahead: $ahead commit(s)   behind: $behind commit(s)"
-
-if (( behind == 0 )); then
-    print_colored "$COLOR_GREEN" "Up to date with $upstream_ref — nothing to merge."
+if (( show_diff )); then
+    if diff -u "$VENDORED" "$upstream_source"; then
+        print_colored "$COLOR_GREEN" "Identical."
+    fi
     exit 0
 fi
 
-print_colored "$COLOR_BRIGHTYELLOW" "Upstream has $behind new commit(s). Review, then:"
-print_colored "$COLOR_YELLOW" "  git merge $upstream_ref     # merge, never rebase; prefix the merge 'Sync:'"
-print_colored "$COLOR_YELLOW" "  security-review the incoming diff before building anything"
+ours="$(catalog_entries < "$VENDORED")"
+theirs="$(catalog_entries < "$upstream_source")"
+
+added="$(comm -13 <(printf '%s\n' "$ours" | sort) <(printf '%s\n' "$theirs" | sort))"
+removed="$(comm -23 <(printf '%s\n' "$ours" | sort) <(printf '%s\n' "$theirs" | sort))"
+
+if [[ -z "$added" && -z "$removed" ]]; then
+    print_colored "$COLOR_GREEN" "Catalog unchanged — $(printf '%s\n' "$ours" | wc -l | tr -d ' ') entries, identical to upstream."
+    exit 0
+fi
+
+[[ -n "$added" ]] && {
+    print_colored "$COLOR_BRIGHTYELLOW" "Upstream has added:"
+    print_colored "$COLOR_YELLOW" "$(printf '%s\n' "$added" | sed 's/^/  + /')"
+}
+[[ -n "$removed" ]] && {
+    print_colored "$COLOR_BRIGHTYELLOW" "Upstream has removed (or we carry entries it does not):"
+    print_colored "$COLOR_YELLOW" "$(printf '%s\n' "$removed" | sed 's/^/  - /')"
+}
+
+printf '\n'
+print_colored "$COLOR_YELLOW" "Adopting a change means editing $VENDORED by hand and
+updating the commit in its provenance header. Verify the bundle identifier
+against the real application before trusting it — upstream's catalog has
+shipped stale identifiers."
