@@ -2,7 +2,7 @@
 #
 # Fire hostile input at Yatu and check that nothing executes.
 #
-# This automates the matrix from the dynamic security review (.security-review/,
+# This automates the matrix from the dynamic security review (security-review/,
 # git-excluded). The property it defends is the one finding F1 is about: Yatu
 # takes paths from Finder and hands them to another application, and a path is
 # attacker-controlled data — anyone who can name a file can choose part of it.

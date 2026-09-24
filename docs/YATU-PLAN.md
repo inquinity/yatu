@@ -3,7 +3,7 @@
 Status: **accepted 2026-09-18**, all questions in §8 answered.
 M0 is done; M1 is in progress.
 Replaces the earlier `PRIVATE-LABEL-PLAN.md` draft.
-Inputs: the security review in `.security-review/` (git-excluded), the Belvedere fork
+Inputs: the security review in `security-review/` (git-excluded), the Belvedere fork
 (`~/dev/oss/belvedere`) for fork conventions, and a GitHub survey of comparable apps.
 
 ## 1. Decisions taken
@@ -50,7 +50,7 @@ new Xcode rules — which is exactly what the 26.6 icon bug and the macOS 12 flo
 
 ## 3. Findings the build must address
 
-Detail in `.security-review/NOTES.md`. Shipped-app findings, all Low, all fixed by design in §4:
+Detail in `security-review/NOTES.md`. Shipped-app findings, all Low, all fixed by design in §4:
 
 | # | Finding | Fixed by |
 |---|---|---|
@@ -214,6 +214,11 @@ everything that was never about the fork.
   `Sources/YatuKit/` and calls into that target.
 - Public-repo writing: refer to upstream with full URLs or `GH-287`, never a bare `#287` or
   `owner/repo#287` (S7 — we already tripped this once in the tap commit and release notes).
+- **No invented dot-directories.** A leading dot means a tool owns the directory and you are meant
+  to ignore it — `.build` is SwiftPM's, `.github` is GitHub's. Our own content never takes one,
+  because hiding something a person is supposed to read is the opposite of what the dot means.
+  Keeping a directory out of git is `.gitignore`'s job; `security-review/` is both visible and
+  ignored, and those are two separate decisions.
 - Adopting a catalog change gets a security review of what it adds (`security-oss-app-reviewer`);
   so does anything touching the launch path or the `yatu://` handler.
 
@@ -542,7 +547,7 @@ wording carries what a checkmark would, since the extension cannot read the curr
   tests; `bin/attack-matrix.sh` extended to fire hostile paths at the `yatu://` handler directly;
   manual checklist covering enable, add, click, ⌥-click, the four icon styles and an inactive window.
 - **Security review** of the new entry point — **done 2026-09-24**, notes in
-  `.security-review/yatu-url-2026-09-24.md` (git-excluded). No High or Critical. **L1 and F1 are
+  `security-review/yatu-url-2026-09-24.md` (git-excluded). No High or Critical. **L1 and F1 are
   confirmed closed**: the catalog allowlist is applied on write *and* on parse, argument vectors are
   compiled-in constants, and the terminal role can only ever receive a directory. One **Medium**
   is open and needs a decision — see §9.9. Three Lows are accepted residual: `yatu://open` launching

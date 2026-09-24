@@ -42,8 +42,14 @@ Read **[docs/YATU-PLAN.md](docs/YATU-PLAN.md)** for what is being built and why,
 >   `#287` or `Ji4n1ng/OpenInTerminal#287`, which auto-links into upstream's timeline permanently.
 > - **Security-review anything touching the launch path** with the `security-oss-app-reviewer`
 >   skill. This app launches other programs with paths taken from Finder; that is the whole attack
->   surface. Review notes live in `.security-review/`, git-excluded on purpose (they contain a
->   working attack log). Summary in `docs/UPSTREAM.md`.
+>   surface. Review notes live in `security-review/` — **visible on purpose, and git-ignored on
+>   purpose**. Those are different decisions: the notes need attention, so they are not hidden in a
+>   dot-directory; they contain a working attack log and this repository is public, so they are
+>   never committed. Summary in `docs/UPSTREAM.md`.
+> - **Do not invent dot-directories.** A leading dot means "a tool owns this and you can ignore it"
+>   — `.build` is SwiftPM's, `.github` is a platform convention. Naming our own content
+>   `.something` hides material that someone is supposed to read. Keeping a directory out of git is
+>   `.gitignore`'s job, not the filename's.
 
 ## Build and check
 
