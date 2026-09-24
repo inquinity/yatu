@@ -56,15 +56,29 @@ public enum Launcher {
 
     /// Where the application actually is, resolved by bundle id.
     ///
-    /// Rule 1: resolution is by bundle id, never by name — a name is a string a
-    /// user can control, a bundle id is what LaunchServices indexes.
+    /// Rule 1: resolution is by bundle id, never by name.
+    ///
+    /// **Corrected 2026-09-24.** This used to say "a name is a string a user can
+    /// control, a bundle id is what LaunchServices indexes", as though the
+    /// identifier were a trust signal. It is not: a bundle planted in
+    /// ~/Downloads claiming another application's identifier resolves through
+    /// this call, with no write access to /Applications needed. That was
+    /// tested — see docs/LAUNCH-SECURITY.md.
+    ///
+    /// Resolving by identifier is still right, because it finds the app
+    /// wherever it lives rather than guessing a path. But the thing that stops
+    /// a planted impostor is **Gatekeeper**, not this lookup, and the comment
+    /// should not imply otherwise.
     /// Rule 2: the handful of catalog entries upstream ships without a bundle
     /// id are looked for at an explicit `/Applications` path, and dropped if
     /// they are not there.
     public static func applicationURL(for app: SupportedApps,
                                       fileManager: FileManager = .default) -> URL? {
-        if !app.bundleId.isEmpty,
-           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app.bundleId) {
+        // Corrected where the vendored catalog is known to be wrong, which is
+        // why this asks Catalog rather than reading app.bundleId directly.
+        let bundleIdentifier = Catalog.bundleIdentifier(for: app)
+        if !bundleIdentifier.isEmpty,
+           let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
             return url
         }
         let explicit = URL(fileURLWithPath: "/Applications")
