@@ -18,6 +18,7 @@ bin/build.sh --native --debug # this Mac's architecture, debug configuration
 bin/build.sh --help           # every option
 swift test                    # 87 tests                          (just test)
 bin/test-scripts.sh           # shell tests                       (just test-scripts)
+bin/attack-matrix.sh          # hostile input at an installed Yatu (just attack-matrix)
 just lint                     # shellcheck every script
 just --list                   # every task
 ```

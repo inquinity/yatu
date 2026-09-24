@@ -277,9 +277,15 @@ before anything is published.
   `docs/MANUAL-TEST-CHECKLIST.md` — **done 2026-09-23**, EXPECT / FAIL IF throughout, and its
   §4 exists because a menu item that draws correctly and does nothing when clicked is
   indistinguishable from one that works unless you click it. Rule 7 and rule 6's *absence* of a
-  log file are not unit-testable and are covered there. Still outstanding:
-  `bin/attack-matrix.sh` automating the hostile-name and canary-app matrix from the dynamic review
-  (scratch only, prefs backed up and restored), extended to fire hostile paths at `yatu://`.
+  log file are not unit-testable and are covered there. `bin/attack-matrix.sh` —
+  **done 2026-09-24**: the hostile-name and canary-app matrix, fired at the `yatu://` handler
+  directly, scratch only, preferences backed up and restored on exit even if interrupted. Detection
+  is by canary rather than by inspection — every hostile name embeds a command that writes one, so
+  the verdict is whether a file exists, not whether escaping looks right. Two modes: the default
+  fires only the cases that must be refused and launches nothing, `--live` adds the cases that
+  legitimately launch and opens a window each. The rule-6 log check is dated against a marker taken
+  at the start, because upstream's Lite build writes `~/Library/Logs/logfile-N.log` (finding L2) and
+  that is not ours to fail on. **M2d complete.**
 - **Review:** independent code review plus a security review of the diff.
 - **Rollback:** the package is additive; delete it. OITL keeps building.
 

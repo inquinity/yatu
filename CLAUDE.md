@@ -51,6 +51,7 @@ Read **[docs/YATU-PLAN.md](docs/YATU-PLAN.md)** for what is being built and why,
 bin/build.sh                                # assemble Yatu.app into dist/
 swift test                                  # 87 tests
 bin/test-scripts.sh                         # shell tests (pluginkit is stubbed)
+bin/attack-matrix.sh --live                 # hostile input at an installed Yatu
 bin/which-yatu.sh                           # what is installed; is the extension enabled?
 bin/check-upstream.sh                       # has upstream's app catalog moved?
 just lint                                   # shellcheck every script
