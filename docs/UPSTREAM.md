@@ -126,8 +126,13 @@ it includes a working attack log. Summary:
   through the contribution track, with the High reported privately first.
 
 Yatu's own new entry point, the `yatu://` URL scheme, is **public**: any application or web page can
-invoke it. It is parsed strictly in `Sources/YatuKit/HandOff.swift` and reviewed separately
-(YATU-PLAN.md §9.4).
+invoke it. It is parsed strictly in `Sources/YatuKit/HandOff.swift`, and it was reviewed on its own
+on **2026-09-24** (YATU-PLAN.md §9.4, notes in `.security-review/`). No High or Critical. The two
+findings inherited from upstream that this design exists to close — L1, preferences driving an
+arbitrary app launch, and F1, a file handed to a terminal which runs it — are **confirmed closed**,
+with the allowlist applied both on write and on parse and the terminal role able to receive only a
+directory. One Medium is open and needs a decision before release: `set-default` writes a stored
+preference on behalf of a caller the app cannot identify (§9.9).
 
 ## Writing for other people
 

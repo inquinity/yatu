@@ -541,7 +541,13 @@ wording carries what a checkmark would, since the extension cannot read the curr
 - **M2d additions.** Unit tests for URL parsing and the rejection of malformed input; menu model
   tests; `bin/attack-matrix.sh` extended to fire hostile paths at the `yatu://` handler directly;
   manual checklist covering enable, add, click, ⌥-click, the four icon styles and an inactive window.
-- **Security review** of the new entry point, before merge.
+- **Security review** of the new entry point — **done 2026-09-24**, notes in
+  `.security-review/yatu-url-2026-09-24.md` (git-excluded). No High or Critical. **L1 and F1 are
+  confirmed closed**: the catalog allowlist is applied on write *and* on parse, argument vectors are
+  compiled-in constants, and the terminal role can only ever receive a directory. One **Medium**
+  is open and needs a decision — see §9.9. Three Lows are accepted residual: `yatu://open` launching
+  a catalog app at a caller-chosen path (already accepted in §9.4), no rate limit on the scheme, and
+  a narrow TOCTOU between the directory check and Terminal.app's `open`.
 
 ### 9.4 The new risk
 
@@ -607,6 +613,28 @@ The licence and attribution obligations did not change: the MIT notice stays, an
 
 **Rollback:** the three steps are separate commits on `cut-upstream`; reverting the merge restores
 the tree in full.
+
+### 9.9 Open: `set-default` over an unauthenticated channel — decide before M5
+
+The security review of 2026-09-24 found one Medium, and it is a *design* question rather than a bug.
+
+`yatu://set-default?role=terminal&app=Warp` changes a stored preference on behalf of a caller the
+app cannot identify. Any local process, or any web page the user visits, can silently repoint the
+toolbar button at a different **installed, catalog** terminal or editor. It persists, and there is
+no visible feedback: the next plain click simply opens something else.
+
+The allowlist is what keeps this Medium rather than High — a crafted URL cannot name an arbitrary
+binary, so finding L1 stays closed. What remains is the shape of finding F2: a confused deputy over
+a channel with no sender identity. We introduced it with the extension model; it is not inherited.
+
+A shared nonce is **not available**: the extension is sandboxed with no app group and no shared
+state by design (§9.1), so there is nothing to sign a request with.
+
+1. **Remove `set-default` from the URL surface.** The menu item opens Settings with that app
+   preselected instead of writing directly. Costs one click; closes the finding outright.
+2. **Confirm before writing**, with a notification and an undo.
+3. **Accept and document.** Defensible — the blast radius is "a terminal you already have opens
+   instead of another one" — but it must be a recorded decision rather than an omission.
 
 ### 9.5 What stays
 
