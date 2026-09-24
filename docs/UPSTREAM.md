@@ -109,6 +109,10 @@ A daily scheduled task (`watch-openinterminal-pr-287`) reports upstream movement
 
 ## Security posture
 
+**[LAUNCH-SECURITY.md](LAUNCH-SECURITY.md) is the public assessment** of the question that matters
+most here: whether Yatu can be used to launch a malicious application. It cannot — Gatekeeper stops
+it, tested both for an unsigned impostor and for a notarized app the user has never approved.
+
 A full review of the original fork (2026-09-16/17) is in `security-review/` — visible, and
 git-ignored rather than hidden, since it includes a working attack log and this repository is
 public. Summary:
