@@ -294,7 +294,7 @@ before anything is published.
   shown with Reveal in Finder; the version, the upstream version it is based on, and a source link
   are pinned below the scrolling catalog. Every row is a catalog case, so there is nowhere to type
   a path. The window/tab control in §5 was dropped, with the reasoning recorded there.
-- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests; **101 tests and 4 shell
+- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests; **92 tests and 4 shell
   checks as of 2026-09-23**, after three defects shipped past the first 65 (see the test commit).
   `docs/MANUAL-TEST-CHECKLIST.md` — **done 2026-09-23**, EXPECT / FAIL IF throughout, and its
   §4 exists because a menu item that draws correctly and does nothing when clicked is
@@ -311,23 +311,28 @@ before anything is published.
 - **Review:** independent code review plus a security review of the diff.
 - **Rollback:** the package is additive; delete it. OITL keeps building.
 
-### M3 — Migration from the current cask (low, local) — **done 2026-09-24**
-- On launch, if no Yatu setting exists, read `LiteDefaultTerminal` from
-  `wang.jianing.app.OpenInTerminal-Lite`, validate it against the catalog, adopt it, and log once.
-  `Sources/YatuKit/Migration.swift`. Also covers `OpenInEditor-Lite`'s `LiteDefaultEditor` for the
-  editor role, for anyone who has it.
-- Read with `CFPreferencesCopyAppValue`, not `UserDefaults(suiteName:)`: the latter registers a
-  domain as a side effect of asking, and leaving an empty plist behind for another application is
-  exactly the hygiene this app is supposed to keep.
-- The old value is **validated, not trusted** — a foreign domain is input, and anyone who can write
-  it could otherwise choose what Yatu launches (finding L1 in another coat). It goes through
-  `Catalog`, so a path, an unknown name, an empty string (upstream's finding L5) or an editor in the
-  terminal's slot all adopt nothing.
-- **Never overwrites** a choice Yatu already has, so it is safe on every launch and cannot undo a
-  later change. Idempotent, and tested as such.
-- **Verified on this Mac, 2026-09-24:** with the old cask installed and Yatu's own setting removed,
-  a launch adopted `Terminal` from OpenInTerminal-Lite without a prompt.
-- Cask caveats tell the user to replace the toolbar button and approve the new Automation prompt.
+### ~~M3 — Migration from the current cask~~ — **dropped 2026-09-24**
+
+Built, verified, and then removed the same day. Recording why, because the reasoning applies to
+other "helpful" ideas that will come along.
+
+It read `LiteDefaultTerminal` from OpenInTerminal-Lite's preference domain on first launch and
+adopted the choice, so someone replacing that toolbar button was not asked a question they had
+already answered. It worked: with Yatu's own setting cleared, a launch adopted `Terminal`.
+
+**It was not worth its complexity.** Yatu is a stand-alone app, not an upgrade path. The population
+it helps is people who already ran OpenInTerminal-Lite *and* are installing Yatu *and* have not yet
+chosen a terminal — which in practice is one person. What it saves them is a single click, once.
+Against that: a permanent branch in the launch path, a file of untrusted-input handling, nine tests,
+and a foreign preference domain to keep reading correctly forever.
+
+Little value in breadth, little in depth. The cask caveats that were part of this milestone — tell
+the user to replace the toolbar button and approve the new Automation prompt — move to M5, where
+they belong.
+
+**Q5 is unaffected:** `openinterminal-lite-inquinity` still stays in the tap for older Macs. The two
+apps coexist by having different bundle ids and preference domains, which was always the mechanism;
+Yatu simply no longer reads the old one.
 
 ### M4 — Build and release pipeline (medium–high: signing) — **signing and notarization done 2026-09-24**
 
