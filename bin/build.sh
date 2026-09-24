@@ -51,7 +51,10 @@ EXTENSION_ENTITLEMENTS="Resources/YatuFinderSync.entitlements"
 EXTENSION_ASSETS="Resources/YatuFinderSync.xcassets"
 # The deployment target lives in Package.swift and is read from there by
 # both the Info.plist and actool, so the two can never disagree.
-MINIMUM_MACOS="$(sed -n 's/.*\.macOS(\.v\([0-9]*\)).*/\1/p' Package.swift | head -1).0"
+MINIMUM_MACOS="$(sed -n 's/.*\.macOS(\.v\([0-9]*\)).*/\1/p' Package.swift)"
+# First match only, without piping sed into head: head exits early, sed takes
+# SIGPIPE, and pipefail turns that into a failed assignment under set -e.
+MINIMUM_MACOS="${MINIMUM_MACOS%%$'\n'*}.0"
 EXTENSION_EXECUTABLE="YatuFinderSync"
 ICON_FILE="Resources/AppIcon.icns"
 LICENSE_FILE="LICENSE"

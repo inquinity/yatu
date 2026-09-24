@@ -378,6 +378,11 @@ Yatu simply no longer reads the old one.
 - New cask `yatu`: sha256-pinned, `depends_on macos:`, `uninstall quit:`, `zap` covering the prefs
   plist and Saved Application State, `caveats` for the toolbar button and
   `tccutil reset AppleEvents com.altmansoftwaredesign.yatu`, `livecheck` on our releases.
+- **Observed 2026-09-24:** replacing a local ad-hoc build with the Developer ID signed one
+  **re-triggers the Automation consent prompt**. TCC keys on the code signature, so a change of
+  signing identity makes it a different app as far as consent is concerned. Harmless, but it will
+  surprise anyone who has been running a local build, and it is worth a line in the caveats —
+  along with re-registering the extension, which also does not survive the replacement.
 - `openinterminal-lite-inquinity` **stays in the tap** (Q5, reversed 2026-09-24). It may still be
   wanted for Macs older than Yatu's macOS 13 floor. Nothing is deleted, nothing is sequenced, and
   the two coexist: different cask tokens, different bundle ids, different preference domains, and

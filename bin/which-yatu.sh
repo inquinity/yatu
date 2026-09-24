@@ -37,9 +37,13 @@ APP_NAME="Yatu"
 CASK_TOKEN="yatu"
 EXTENSION_ID="com.altmansoftwaredesign.yatu.findersync"
 
-# Apps Yatu replaces. Left installed they are harmless, but they put a second,
-# near-identical button in the toolbar; the cask's zap does not remove them.
-SUPERSEDED=("OpenInTerminal" "OpenInTerminal-Lite" "OpenInEditor-Lite")
+# The apps Yatu grew out of. These are NOT deprecated by it: the
+# openinterminal-lite-inquinity cask deliberately stays in the tap for Macs
+# below Yatu's macOS 13 floor (plan Q5, reversed 2026-09-24). They coexist --
+# different bundle ids, different preference domains, nothing shared. Reported
+# because having both installed puts two near-identical buttons in the toolbar,
+# which is worth knowing, not because either should go.
+ALONGSIDE=("OpenInTerminal" "OpenInTerminal-Lite" "OpenInEditor-Lite")
 SEARCH_DIRS=("/Applications" "$HOME/Applications")
 
 usage() {
@@ -140,7 +144,8 @@ report_finder_extension() {
     # Not "is the output empty": when nothing matches, pluginkit prints
     # "  (no matches)", which is not empty and used to be read as a plug-in
     # with no path. A record is a record only if it names one.
-    path="$(printf '%s\n' "$record" | sed -n 's/^[[:space:]]*Path = //p' | head -n1)"
+    path="$(sed -n 's/^[[:space:]]*Path = //p' <<< "$record")"
+    path="${path%%$'\n'*}"          # first match, without piping into head
     if [[ -z "$path" ]]; then
         printf '  not registered\n'
         print_colored "$COLOR_YELLOW" "  Register it without launching the app:
@@ -149,7 +154,10 @@ report_finder_extension() {
         return
     fi
     printf '  path:     %s\n' "$path"
-    if printf '%s\n' "$record" | grep -q '^+'; then
+    # No pipeline: `grep -q` exits on match, the producer takes SIGPIPE, and
+    # `set -o pipefail` turns a successful match into a failed test. That bug
+    # already cost this script once, in print_bundle_source.
+    if [[ "$record" == "+"* ]]; then
         print_colored "$COLOR_GREEN" "  state:    enabled"
     else
         print_colored "$COLOR_BRIGHTYELLOW" "  state:    registered but NOT enabled"
@@ -165,32 +173,39 @@ report_finder_extension() {
 # not what you expect, this is where you find out -- and `log show` will say
 # when it changed, since those writes are logged at notice level.
 report_defaults() {
-    local role value
+    local role value any=0
     print_colored "$COLOR_CYAN" "Chosen applications"
     for role in terminal editor; do
         value="$(defaults read "$PREFERENCE_DOMAIN" "$role" 2>/dev/null || true)"
         if [[ -n "$value" ]]; then
+            any=1
             printf '  %-9s %s\n' "$role:" "$value"
         else
             printf '  %-9s ' "$role:"
             print_colored "$COLOR_YELLOW" "not set — the first click opens Settings"
         fi
     done
-    print_colored "$COLOR_YELLOW" "  when these last changed:
+    # Only worth offering when there is something to look up.
+    (( any )) && print_colored "$COLOR_YELLOW" "  when these last changed:
     log show --predicate 'subsystem == \"$PREFERENCE_DOMAIN\"' --last 7d | grep default"
+    return 0
 }
 
-report_superseded() {
+report_alongside() {
     local app_name app_path found=0
-    print_colored "$COLOR_CYAN" "Superseded apps"
-    for app_name in "${SUPERSEDED[@]}"; do
+    print_colored "$COLOR_CYAN" "OpenInTerminal apps also installed"
+    for app_name in "${ALONGSIDE[@]}"; do
         app_path="$(find_app "$app_name")"
         [[ -n "$app_path" ]] || continue
         found=1
         printf '  %s %s\n' "$app_name" "$(read_plist_key "$app_path" CFBundleShortVersionString)"
         printf '            %s\n' "$app_path"
     done
-    (( found )) || printf '  none installed\n'
+    if (( found )); then
+        print_colored "$COLOR_YELLOW" "  Supported alongside Yatu, not replaced by it. Both can stay."
+    else
+        printf '  none installed\n'
+    fi
 }
 
 case "${1:-}" in
@@ -205,4 +220,4 @@ report_defaults
 printf '\n'
 report_finder_extension
 printf '\n'
-report_superseded
+report_alongside

@@ -105,10 +105,13 @@ command -v xcrun >/dev/null || die "xcrun not found; install Xcode"
 print_colored "$COLOR_CYAN" "Checking the signature before uploading"
 
 signature="$(codesign -dv "$app" 2>&1)"
-printf '%s\n' "$signature" | grep -q "TeamIdentifier=$TEAM_ID" \
+# String tests, not `| grep -q`: grep exits on match, the producer takes
+# SIGPIPE, and `set -o pipefail` reports the pipeline as failed. Here that
+# would refuse to notarize a correctly signed app.
+[[ "$signature" == *"TeamIdentifier=$TEAM_ID"* ]] \
     || die "$app is not signed by team $TEAM_ID — this is an ad-hoc build.
   Run: bin/build.sh --release"
-printf '%s\n' "$signature" | grep -q "flags=.*runtime" \
+[[ "$signature" == *"runtime"* ]] \
     || die "$app does not have the hardened runtime; notarization would reject it"
 codesign --verify --strict --deep "$app" || die "$app fails strict deep verification"
 print_colored "$COLOR_GREEN" "  signed by $TEAM_ID, hardened runtime on, verifies strictly"

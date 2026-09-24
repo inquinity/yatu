@@ -86,7 +86,9 @@ cd "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 [[ -f "$VENDORED" ]] || die "$VENDORED is missing"
 
 # The commit the vendored copy was taken at, recorded in its provenance header.
-recorded_commit="$(sed -n 's/.*as of upstream commit \([0-9a-f]\{7,\}\).*/\1/p' "$VENDORED" | head -n1)"
+# First match only, without piping into head — see bin/build.sh for why.
+recorded_commit="$(sed -n 's/.*as of upstream commit \([0-9a-f]\{7,\}\).*/\1/p' "$VENDORED")"
+recorded_commit="${recorded_commit%%$'\n'*}"
 
 upstream_source="$(mktemp)"
 trap 'rm -f "$upstream_source"' EXIT
