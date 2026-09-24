@@ -66,10 +66,20 @@ BUILD_CONFIGURATION="release"
 RELEASE=false
 SIGNING_IDENTITY=""
 TEAM_ID="45GJWJVQN2"
-# What `codesign -dr -` must print for a release build. Pinning the team's OU
-# rather than a certificate hash means a renewed certificate still matches,
-# while another developer's Developer ID does not.
-DESIGNATED_REQUIREMENT='identifier "com.altmansoftwaredesign.yatu" and anchor apple generic and certificate leaf[subject.OU] = "45GJWJVQN2"' 
+# What `codesign -dr -` must amount to for a release build.
+#
+# This is the requirement codesign itself derives from a Developer ID
+# signature, and it is stronger than the obvious hand-written version: besides
+# the team's OU it pins the intermediate to Apple's Developer ID CA
+# (1.2.840.113635.100.6.2.6) and the leaf to a Developer ID Application
+# certificate (1.2.840.113635.100.6.1.13). An earlier draft of this script
+# pinned only identifier + anchor + OU, and the assertion below rejected the
+# real signature for being MORE specific -- which is the good direction for an
+# assertion to fail in.
+#
+# Pinning the OU rather than a certificate hash means a renewed certificate
+# still matches, while another developer's Developer ID does not.
+DESIGNATED_REQUIREMENT='identifier "com.altmansoftwaredesign.yatu" and anchor apple generic and certificate 1[field.1.2.840.113635.100.6.2.6] and certificate leaf[field.1.2.840.113635.100.6.1.13] and certificate leaf[subject.OU] = "45GJWJVQN2"' 
 UNIVERSAL=true
 DRY_RUN=false
 OPEN_AFTER_BUILD=false
@@ -171,10 +181,16 @@ assert_release_signature() {  # $1 = bundle path
     codesign --verify --strict --deep "$path" \
         || die "$path failed strict deep verification"
 
-    requirement="$(codesign -d -r- "$path" 2>&1 | sed -n 's/^designated => //p')"
-    [[ "$requirement" == "$DESIGNATED_REQUIREMENT" ]] \
+    # Compared with codesign's `/* exists */` comments and repeated spaces
+    # removed, so the check is about the requirement and not its formatting.
+    normalise_requirement() {
+        sed -e 's|/\*[^*]*\*/||g' -e 's/  */ /g' -e 's/ $//'
+    }
+    requirement="$(codesign -d -r- "$path" 2>&1 | sed -n 's/^designated => //p' | normalise_requirement)"
+    expected="$(printf '%s' "$DESIGNATED_REQUIREMENT" | normalise_requirement)"
+    [[ "$requirement" == "$expected" ]] \
         || die "designated requirement is not what we pin:
-  expected: $DESIGNATED_REQUIREMENT
+  expected: $expected
   got:      $requirement"
 
     runtime="$(codesign -d -v "$path" 2>&1 | sed -n 's/^CodeDirectory.*flags=\([^ ]*\).*/\1/p')"
