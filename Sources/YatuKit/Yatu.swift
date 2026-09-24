@@ -40,6 +40,12 @@ public enum Yatu {
 
         let settings = Settings()
 
+        // M3: adopt a choice already made in OpenInTerminal-Lite, so someone
+        // replacing that toolbar button is not asked a question they have
+        // already answered. Cheap, never overwrites, and safe to run every
+        // launch — see Migration.swift.
+        Migration.adoptLegacyChoices(into: settings)
+
         // §5: a Finder toolbar app has no menu bar, so ⌥ is the discoverable
         // way in. --settings is the same door, for scripting and the cask.
         if arguments.contains("--settings") || NSEvent.modifierFlags.contains(.option) {

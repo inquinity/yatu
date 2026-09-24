@@ -294,7 +294,7 @@ before anything is published.
   shown with Reveal in Finder; the version, the upstream version it is based on, and a source link
   are pinned below the scrolling catalog. Every row is a catalog case, so there is nowhere to type
   a path. The window/tab control in §5 was dropped, with the reasoning recorded there.
-- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests; **92 tests and 4 shell
+- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests; **101 tests and 4 shell
   checks as of 2026-09-23**, after three defects shipped past the first 65 (see the test commit).
   `docs/MANUAL-TEST-CHECKLIST.md` — **done 2026-09-23**, EXPECT / FAIL IF throughout, and its
   §4 exists because a menu item that draws correctly and does nothing when clicked is
@@ -311,11 +311,23 @@ before anything is published.
 - **Review:** independent code review plus a security review of the diff.
 - **Rollback:** the package is additive; delete it. OITL keeps building.
 
-### M3 — Migration from the current cask (low, local)
+### M3 — Migration from the current cask (low, local) — **done 2026-09-24**
 - On launch, if no Yatu setting exists, read `LiteDefaultTerminal` from
   `wang.jianing.app.OpenInTerminal-Lite`, validate it against the catalog, adopt it, and log once.
+  `Sources/YatuKit/Migration.swift`. Also covers `OpenInEditor-Lite`'s `LiteDefaultEditor` for the
+  editor role, for anyone who has it.
+- Read with `CFPreferencesCopyAppValue`, not `UserDefaults(suiteName:)`: the latter registers a
+  domain as a side effect of asking, and leaving an empty plist behind for another application is
+  exactly the hygiene this app is supposed to keep.
+- The old value is **validated, not trusted** — a foreign domain is input, and anyone who can write
+  it could otherwise choose what Yatu launches (finding L1 in another coat). It goes through
+  `Catalog`, so a path, an unknown name, an empty string (upstream's finding L5) or an editor in the
+  terminal's slot all adopt nothing.
+- **Never overwrites** a choice Yatu already has, so it is safe on every launch and cannot undo a
+  later change. Idempotent, and tested as such.
+- **Verified on this Mac, 2026-09-24:** with the old cask installed and Yatu's own setting removed,
+  a launch adopted `Terminal` from OpenInTerminal-Lite without a prompt.
 - Cask caveats tell the user to replace the toolbar button and approve the new Automation prompt.
-- **Verify:** on this Mac, with the old cask still installed, Yatu adopts "Terminal" without a prompt.
 
 ### M4 — Build and release pipeline (medium–high: signing)
 - `bin/build.sh`: `cd` to the repo root (S2), build into `.build/app`, universal (`arm64` + `x86_64`),
@@ -345,15 +357,13 @@ before anything is published.
 - New cask `yatu`: sha256-pinned, `depends_on macos:`, `uninstall quit:`, `zap` covering the prefs
   plist and Saved Application State, `caveats` for the toolbar button and
   `tccutil reset AppleEvents com.altmansoftwaredesign.yatu`, `livecheck` on our releases.
-- `openinterminal-lite-inquinity` is **deleted outright, with no deprecation period** (Q5). Order
-  matters, because it is installed on this Mac: install `yatu`, then
-  `brew uninstall --cask openinterminal-lite-inquinity` on **both** Macs, and only then delete the
-  cask from the tap — removing it while an install still points at it makes `brew update` error
-  on that machine. The old cask's `url`, `homepage` and README row keep naming
-  `inquinity/OpenInTerminal` until that moment and are **not** repointed — the
-  `v1.2.8-inquinity.1` release they resolve to lives in that repository and stays there. The new
-  `yatu` cask is a separate file pointing at `inquinity/yatu` releases; the old row is deleted
-  from the tap README rather than edited.
+- `openinterminal-lite-inquinity` **stays in the tap** (Q5, reversed 2026-09-24). It may still be
+  wanted for Macs older than Yatu's macOS 13 floor. Nothing is deleted, nothing is sequenced, and
+  the two coexist: different cask tokens, different bundle ids, different preference domains, and
+  Yatu's migration reads the old app's choice without modifying it (M3). The old cask's `url`,
+  `homepage` and README row keep naming `inquinity/OpenInTerminal`, because the
+  `v1.2.8-inquinity.1` release they resolve to lives in that repository. The `yatu` cask is a
+  separate file pointing at `inquinity/yatu` releases, added as a new row rather than replacing one.
 - Update the tap README, `bin/which-yatu.sh`, the daily upstream-watch task, and the project memory.
 - Migrate this Mac, then the second Mac. The icon-cache confusion disappears once the bundle id differs.
 
@@ -420,7 +430,12 @@ stable identity and the comment says so.
    Remaining step, outside this plan: upload the public key to GitHub as a **signing** key
    (`gh ssh-key add ~/.ssh/git-signing.pub --type signing`) so commits and tags show Verified.
 
-5. **Old cask — settled: delete outright, no deprecation period.** Sequencing in M5.
+5. **Old cask — ~~delete outright, no deprecation period~~. Reversed 2026-09-24: it stays.**
+   `openinterminal-lite-inquinity` remains in the tap, because it may still be wanted for older
+   Macs that Yatu's macOS 13 floor excludes. That makes M5 simpler rather than harder — there is no
+   removal to sequence, no window where an installed machine points at a deleted cask, and the two
+   can coexist. Yatu's migration reads the old app's preference without touching it (M3), so both
+   can be installed at once.
 
 6. **Icon — settled: a folder with a prompt caret, "Violet Folder."** A board of seven concepts
    was drawn in `docs/icon-concepts/`; concept 7 (an aperture) was chosen on 2026-09-18 and then

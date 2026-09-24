@@ -57,7 +57,7 @@ Read **[docs/YATU-PLAN.md](docs/YATU-PLAN.md)** for what is being built and why,
 
 ```bash
 bin/build.sh                                # assemble Yatu.app into dist/
-swift test                                  # 92 tests
+swift test                                  # 101 tests
 bin/test-scripts.sh                         # shell tests (pluginkit is stubbed)
 bin/attack-matrix.sh --live                 # hostile input at an installed Yatu
 bin/which-yatu.sh                           # what is installed; is the extension enabled?
