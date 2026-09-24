@@ -136,8 +136,10 @@ on **2026-09-24** (YATU-PLAN.md §9.4, notes in `security-review/`). No High or 
 findings inherited from upstream that this design exists to close — L1, preferences driving an
 arbitrary app launch, and F1, a file handed to a terminal which runs it — are **confirmed closed**,
 with the allowlist applied both on write and on parse and the terminal role able to receive only a
-directory. One Medium is open and needs a decision before release: `set-default` writes a stored
-preference on behalf of a caller the app cannot identify (§9.9).
+directory. The one Medium it raised — `set-default` writing a stored preference for a caller the app cannot
+identify — was **settled as Low on 2026-09-24** once the launch path was tested: its worst outcome
+is redirecting the user to an application Gatekeeper blocks, gates, or that they already trusted
+(§9.9).
 
 ## Writing for other people
 

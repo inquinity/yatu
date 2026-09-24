@@ -136,6 +136,23 @@ the reference for the behaviour.
 
 **Behavioural rules, each with a unit test:**
 1. The chosen terminal must exist in the catalog; resolution is by bundle id, never by name.
+
+   **Corrected 2026-09-24: a bundle id is not a trust signal.** The rationale used to be "a name is
+   a string a user can control, a bundle id is what LaunchServices indexes", which implies a
+   guarantee it does not provide. A bundle planted in `~/Downloads` claiming another application's
+   identifier resolves through `urlForApplication(withBundleIdentifier:)` with no write access to
+   `/Applications` needed — tested, in [LAUNCH-SECURITY.md](LAUNCH-SECURITY.md). Resolving by
+   identifier is still right, because it finds an app wherever it lives rather than guessing a path.
+   But what stops a planted impostor is **Gatekeeper**, and the rule should not be read as claiming
+   otherwise.
+
+   **The identifiers themselves are not reliable either**, which is a separate problem with the same
+   root. Two are verifiably stale — `com.apple.Xcode` (really `com.apple.dt.Xcode`) and `dev.warp`
+   (really `dev.warp.Warp-Stable`, which resolves to nothing) — and both were surviving only through
+   rule 2's `/Applications` fallback, so they would fail for anyone keeping apps in
+   `~/Applications`. Corrections live in `Sources/YatuKit/CatalogCorrections.swift`, on our side of
+   the line that keeps `Sources/YatuUpstream/` unedited, and the bar for adding one is verification
+   against the real application.
 2. Catalog entries without a bundle id (GitHub Desktop, Fork) are resolved by an explicit
    `/Applications` path or dropped.
 3. A path handed to a **terminal** is always an existing directory — never a file, a symlink to a
@@ -619,27 +636,33 @@ The licence and attribution obligations did not change: the MIT notice stays, an
 **Rollback:** the three steps are separate commits on `cut-upstream`; reverting the merge restores
 the tree in full.
 
-### 9.9 Open: `set-default` over an unauthenticated channel — decide before M5
-
-The security review of 2026-09-24 found one Medium, and it is a *design* question rather than a bug.
+### 9.9 `set-default` over an unauthenticated channel — settled 2026-09-24, Low
 
 `yatu://set-default?role=terminal&app=Warp` changes a stored preference on behalf of a caller the
-app cannot identify. Any local process, or any web page the user visits, can silently repoint the
-toolbar button at a different **installed, catalog** terminal or editor. It persists, and there is
-no visible feedback: the next plain click simply opens something else.
+app cannot identify. Any local process, or a web page, can silently repoint the toolbar button at a
+different **installed, catalog** terminal or editor.
 
-The allowlist is what keeps this Medium rather than High — a crafted URL cannot name an arbitrary
-binary, so finding L1 stays closed. What remains is the shape of finding F2: a confused deputy over
-a channel with no sender identity. We introduced it with the extension model; it is not inherited.
+The security review of 2026-09-24 called this Medium. Testing the launch path
+([LAUNCH-SECURITY.md](LAUNCH-SECURITY.md)) **collapsed it to Low**, for a reason that is worth
+keeping: the worst an attacker achieves is pointing Yatu at an application that is either blocked by
+Gatekeeper, gated behind a consent prompt Yatu cannot answer, or already trusted by the user. The
+catalog allowlist already prevented naming an arbitrary binary, so finding L1 stays closed, and
+Gatekeeper closes the rest.
 
-A shared nonce is **not available**: the extension is sandboxed with no app group and no shared
-state by design (§9.1), so there is nothing to sign a request with.
+**Sender verification was investigated and withdrawn.** The Apple Event delivering a URL carries
+`keySenderPIDAttr`, and `SecCodeCopyGuestWithAttributes` plus `SecCodeCheckValidity` can hold that
+PID to a code requirement — verified working against a live sender. Two things stopped it. The
+requirement has to include `anchor apple generic` and the team OU to mean anything at all: an
+identifier-only requirement is satisfied by any ad-hoc signed binary claiming that identifier, which
+takes about ten seconds, so the check would have been decorative in exactly the builds where it is
+easiest to get wrong. And it cannot work in a development build, where there is no team identifier.
+Set against a Low finding whose payoff Gatekeeper already denies, it is not worth the code. If the
+hand-off ever moves to XPC, `SecCodeCreateWithXPCMessage` gives an audit token and the whole
+question disappears — but that reopens the app-group decision §9.1 closed deliberately.
 
-1. **Remove `set-default` from the URL surface.** The menu item opens Settings with that app
-   preselected instead of writing directly. Costs one click; closes the finding outright.
-2. **Confirm before writing**, with a notification and an undo.
-3. **Accept and document.** Defensible — the blast radius is "a terminal you already have opens
-   instead of another one" — but it must be a recorded decision rather than an omission.
+**What remains worth doing is not a security control.** A default changing without the user seeing
+it is poor behaviour regardless of who changed it: a notification with an undo, and a durable log
+entry, so the change is visible and traceable. Tracked as ordinary work, not as a finding.
 
 ### 9.5 What stays
 
