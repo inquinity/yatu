@@ -13,7 +13,7 @@ to click every kind of menu item, not to look at the menu and conclude it is fin
 Automated cover, so you know what this is *not* repeating:
 
 ```bash
-swift test              # 87 tests: rules 1-6, the URL contract, the menu model, hostile input
+swift test              # 92 tests: rules 1-6, the URL contract, the menu model, hostile input
 bin/test-scripts.sh     #  4 checks: which-yatu.sh reading pluginkit
 just lint               # shellcheck
 ```

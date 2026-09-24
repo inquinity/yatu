@@ -294,7 +294,7 @@ before anything is published.
   shown with Reveal in Finder; the version, the upstream version it is based on, and a source link
   are pinned below the scrolling catalog. Every row is a catalog case, so there is nowhere to type
   a path. The window/tab control in §5 was dropped, with the reasoning recorded there.
-- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests; **87 tests and 4 shell
+- **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests; **92 tests and 4 shell
   checks as of 2026-09-23**, after three defects shipped past the first 65 (see the test commit).
   `docs/MANUAL-TEST-CHECKLIST.md` — **done 2026-09-23**, EXPECT / FAIL IF throughout, and its
   §4 exists because a menu item that draws correctly and does nothing when clicked is
