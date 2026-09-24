@@ -62,6 +62,14 @@ COPYRIGHT="© 2026 Altman Software Design, LLC — portions © 2019 Jianing Wang
 UPSTREAM_VERSION="1.2.8"
 
 BUILD_CONFIGURATION="release"
+# Ad-hoc by default; --release signs with the Developer ID for this team.
+RELEASE=false
+SIGNING_IDENTITY=""
+TEAM_ID="45GJWJVQN2"
+# What `codesign -dr -` must print for a release build. Pinning the team's OU
+# rather than a certificate hash means a renewed certificate still matches,
+# while another developer's Developer ID does not.
+DESIGNATED_REQUIREMENT='identifier "com.altmansoftwaredesign.yatu" and anchor apple generic and certificate leaf[subject.OU] = "45GJWJVQN2"' 
 UNIVERSAL=true
 DRY_RUN=false
 OPEN_AFTER_BUILD=false
@@ -86,6 +94,8 @@ Roles:
 
 Options:
   -d, --debug       Build the debug configuration instead of release
+      --release     Sign with the Developer ID for team 45GJWJVQN2 and assert
+                    the result. Refuses a dirty or untracked tree.
       --native      Build for this Mac only, skipping the universal binary
   -o, --open        Reveal the output directory in Finder when done
   -n, --dry-run     Show what would be built without building it
@@ -118,6 +128,66 @@ validate_environment() {
         print_colored "$COLOR_YELLOW" "note: $ICON_FILE is missing; generating a placeholder"
         [[ "$DRY_RUN" == true ]] || bin/make-icon.swift "$ICON_FILE"
     fi
+}
+
+# The Developer ID to sign with, chosen BY TEAM.
+#
+# Never "the first identity found" (finding S3). This Mac carries three signing
+# identities, and picking by position would sign Yatu with an iPhone Developer
+# certificate the day the keychain order changes. Exactly one match is required:
+# two would mean the choice is ambiguous, and guessing is how the wrong one
+# ships.
+signing_identity() {
+    local matches
+    matches="$(security find-identity -v -p codesigning 2>/dev/null \
+        | grep "Developer ID Application" | grep "($TEAM_ID)")"
+    [[ -n "$matches" ]] \
+        || die "no Developer ID Application identity for team $TEAM_ID in the keychain"
+    [[ "$(printf '%s\n' "$matches" | wc -l | tr -d ' ')" == "1" ]] \
+        || die "more than one Developer ID Application identity for team $TEAM_ID; refusing to guess"
+    printf '%s' "$matches" | sed 's/.*"\(.*\)"/\1/'
+}
+
+# Sign one bundle, ad-hoc or for release.
+sign_bundle() {  # $1 = path, $2 = entitlements
+    local path=$1 entitlements=$2
+    if [[ "$RELEASE" == true ]]; then
+        # --options runtime is the hardened runtime, which notarization
+        # requires. --timestamp means the signature outlives the certificate.
+        codesign --force --sign "$SIGNING_IDENTITY" --entitlements "$entitlements" \
+                 --options runtime --timestamp "$path" \
+            || die "signing failed for $path"
+    else
+        codesign --force --sign - --entitlements "$entitlements" "$path" 2>/dev/null \
+            || die "ad-hoc signing failed for $path"
+    fi
+}
+
+# Everything a release signature has to be, asserted rather than hoped for.
+# Each of these was a gap in the build this replaces (finding S3).
+assert_release_signature() {  # $1 = bundle path
+    local path=$1 requirement runtime
+
+    codesign --verify --strict --deep "$path" \
+        || die "$path failed strict deep verification"
+
+    requirement="$(codesign -d -r- "$path" 2>&1 | sed -n 's/^designated => //p')"
+    [[ "$requirement" == "$DESIGNATED_REQUIREMENT" ]] \
+        || die "designated requirement is not what we pin:
+  expected: $DESIGNATED_REQUIREMENT
+  got:      $requirement"
+
+    runtime="$(codesign -d -v "$path" 2>&1 | sed -n 's/^CodeDirectory.*flags=\([^ ]*\).*/\1/p')"
+    [[ "$runtime" == *"runtime"* ]] \
+        || die "hardened runtime is not enabled on $path (flags: $runtime)"
+
+    # A debuggable build must never reach anyone: get-task-allow lets any
+    # process attach to it.
+    if codesign -d --entitlements :- "$path" 2>/dev/null | grep -q "get-task-allow"; then
+        die "$path carries get-task-allow"
+    fi
+
+    print_colored "$COLOR_GREEN" "    signature verified: strict, deep, hardened, team $TEAM_ID"
 }
 
 # Look up one field of a role definition: role_field <role> <1-based index>
@@ -237,8 +307,7 @@ assemble_extension() {
     [[ -f "$extension_path/Contents/Resources/Assets.car" ]] \
         || die "actool produced no Assets.car"
 
-    codesign --force --sign - --entitlements "$EXTENSION_ENTITLEMENTS" "$extension_path" 2>/dev/null \
-        || die "ad-hoc signing failed for $extension_path"
+    sign_bundle "$extension_path" "$EXTENSION_ENTITLEMENTS"
 
     # The property that matters, asserted rather than assumed: the extension is
     # sandboxed. If this ever stops being true the extension has become able to
@@ -293,9 +362,9 @@ assemble_bundle() {
 
     # Leaf first: the extension is sealed before the bundle that contains it,
     # or the app's signature covers code that changes afterwards.
-    codesign --force --sign - --entitlements "$ENTITLEMENTS" "$bundle_path" 2>/dev/null \
-        || die "ad-hoc signing failed for $bundle_path"
+    sign_bundle "$bundle_path" "$ENTITLEMENTS"
     codesign --verify --strict "$bundle_path" || die "$bundle_path failed verification"
+    [[ "$RELEASE" != true ]] || assert_release_signature "$bundle_path"
 
     print_colored "$COLOR_GREEN" "  $bundle_path"
     print_colored "$COLOR_YELLOW" "    $bundle_id — $(bin/ver)"
@@ -305,6 +374,7 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         -h|--help)    usage; exit 0 ;;
         -d|--debug)   BUILD_CONFIGURATION="debug"; shift ;;
+        --release)    RELEASE=true; shift ;;
         --native)     UNIVERSAL=false; shift ;;
         -o|--open)    OPEN_AFTER_BUILD=true; shift ;;
         -n|--dry-run) DRY_RUN=true; shift ;;
@@ -317,6 +387,22 @@ done
 # No role named means all of them, which is currently one.
 if [[ ${#requested_roles[@]} -eq 0 ]]; then
     requested_roles=(terminal)
+fi
+
+# A release must be reproducible from what is committed. Signing a tree with
+# uncommitted or untracked files produces a binary nobody can rebuild, and the
+# build this replaces did exactly that (finding S3).
+if [[ "$RELEASE" == true ]]; then
+    [[ "$BUILD_CONFIGURATION" == "release" ]] \
+        || die "--release and --debug are contradictory"
+    git rev-parse --git-dir >/dev/null 2>&1 || die "--release needs a git repository"
+    if [[ -n "$(git status --porcelain)" ]]; then
+        print_colored "$COLOR_RED" "The tree is not clean:"
+        git status --short >&2
+        die "--release refuses a dirty or untracked tree"
+    fi
+    SIGNING_IDENTITY="$(signing_identity)"
+    print_colored "$COLOR_BRIGHTYELLOW" "Release build — signing as: $SIGNING_IDENTITY"
 fi
 
 validate_environment
