@@ -42,7 +42,9 @@ Read **[docs/YATU-PLAN.md](docs/YATU-PLAN.md)** for what is being built and why,
 >   `#287` or `Ji4n1ng/OpenInTerminal#287`, which auto-links into upstream's timeline permanently.
 > - **Security-review anything touching the launch path** with the `security-oss-app-reviewer`
 >   skill. This app launches other programs with paths taken from Finder; that is the whole attack
->   surface. Review notes live in `security-review/` — **visible on purpose, and git-ignored on
+>   surface. **[docs/LAUNCH-SECURITY.md](docs/LAUNCH-SECURITY.md)** is the public assessment of
+>   whether that can be abused — it cannot, because Gatekeeper stops it, and the testing is recorded
+>   there. Read it before reasoning about this again from scratch. Review notes live in `security-review/` — **visible on purpose, and git-ignored on
 >   purpose**. Those are different decisions: the notes need attention, so they are not hidden in a
 >   dot-directory; they contain a working attack log and this repository is public, so they are
 >   never committed. Summary in `docs/UPSTREAM.md`.
