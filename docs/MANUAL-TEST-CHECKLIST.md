@@ -25,9 +25,9 @@ just lint               # shellcheck
 - [ ] `bin/which-yatu.sh` — note what is installed and whether the extension is enabled.
 - [ ] Back up your own preference so the test does not cost you your setting:
       `defaults read com.altmansoftwaredesign.yatu > ~/yatu-prefs-backup.txt`
-- [ ] A scratch folder with awkward names in it — a space, a quote, `$(id)`, a newline, a leading
-      dash, a symlink to a file, an `.app` bundle. `bin/attack-matrix.sh` will create these once it
-      exists (M2d, not yet written); until then, by hand.
+- [ ] `bin/attack-matrix.sh --keep` creates the awkward-names corpus — a space, a quote, a command
+      substitution, a newline, a leading dash, a symlink to a file, a `.command`, a canary `.app` —
+      and leaves it in place for the clicking you do by hand below.
 
 ## 1. Install and enable
 
@@ -169,8 +169,10 @@ actually running.
       **EXPECT** nothing happens. **FAIL IF** anything launches.
 - [ ] `open "yatu://execute?role=terminal&container=/tmp"`
       **EXPECT** nothing happens. **FAIL IF** anything launches.
-- [ ] `bin/attack-matrix.sh` — **not yet written (M2d)**. When it is: **EXPECT** it reports no
-      command execution and no app launched from a selected file. **FAIL IF** it reports either.
+- [ ] `bin/attack-matrix.sh --live`
+      **EXPECT** "All checks passed" — no canary fired, no log file written by the run, no path in
+      the unified log. It opens a terminal window per case; that is expected.
+      **FAIL IF** any canary exists: something interpreted a filename or ran a selected file.
 
 ## 10. Afterwards
 

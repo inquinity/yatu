@@ -38,6 +38,10 @@ which:
 check-upstream *args:
     bin/check-upstream.sh {{ args }}
 
+# Fire hostile input at an INSTALLED Yatu. Scratch only; prefs restored. See --help.
+attack-matrix *args:
+    bin/attack-matrix.sh {{ args }}
+
 # Test the shell in bin/. Stubs its dependencies; changes nothing on this Mac.
 test-scripts:
     bin/test-scripts.sh
