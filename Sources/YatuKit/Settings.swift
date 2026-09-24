@@ -55,11 +55,25 @@ public struct Settings {
             Log.settings.error("refused to store \(app.name, privacy: .public) for \(role.rawValue, privacy: .public)")
             return false
         }
+        let previous = store.stringValue(forKey: role.preferenceKey)
         store.setStringValue(app.name, forKey: role.preferenceKey)
+        // .notice, not .info: os_log keeps info in a memory ring buffer and
+        // never writes it to disk, so `log show` cannot see it afterwards.
+        // A default changing is the one thing here worth being able to look up
+        // later -- including when the change was nobody's intent.
+        //
+        // Logged HERE rather than in a caller because every path that changes
+        // this preference has to leave the same trace. The settings window used
+        // to change it silently; only the URL hand-off logged anything.
+        Log.settings.notice(
+            "\(role.rawValue, privacy: .public) default: \(previous ?? "(none)", privacy: .public) -> \(app.name, privacy: .public)")
         return true
     }
 
     public func clearChosenApp(for role: Role) {
+        let previous = store.stringValue(forKey: role.preferenceKey)
         store.removeValue(forKey: role.preferenceKey)
+        Log.settings.notice(
+            "\(role.rawValue, privacy: .public) default cleared (was \(previous ?? "(none)", privacy: .public))")
     }
 }
