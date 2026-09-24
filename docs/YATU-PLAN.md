@@ -365,7 +365,26 @@ Yatu simply no longer reads the old one.
   `ON-TOP-OF-UPSTREAM.md`, commits, and creates a **signed annotated tag** (§8 Q4). `just publish` is a dry run unless `--go`.
 - **Rollback:** delete the tag and release; the dry-run default is the guard.
 
-### M5 — Distribution (high: public)
+### M5 — Distribution (high: public) — **cask and packaging ready 2026-09-24; nothing published**
+
+> **Done, all local and reversible:**
+> `bin/package.sh` builds `dist/Yatu-<version>.dmg` from the signed, notarized app — staged so the
+> image holds exactly the app and an `/Applications` shortcut, signed, notarized and stapled in its
+> own right, with `dist/SHA256SUMS` written for the cask. Verified: the stapled ticket survives the
+> round trip, and the app mounted from the DMG is accepted by Gatekeeper.
+>
+> The cask at `~/dev/projects/homebrew-tap/Casks/yatu.rb` is rewritten and committed **locally,
+> unpushed** (`a61ef50`). `brew audit --cask --strict` and `brew style` both pass. Its caveats now
+> lead with enabling the extension, name the symptom of skipping that, explain the Automation
+> prompt, warn that replacing a self-compiled build re-triggers both it and the extension
+> registration, and say OpenInTerminal-Lite may stay. Its `zap` covers the extension's container,
+> and `uninstall` quits the extension as well as the app.
+>
+> **Not done, and deliberately not started — everything from here is public and irreversible:**
+> cutting the version and a signed tag, creating the GitHub release with the DMG, filling in the
+> real `version` and `sha256`, and pushing the tap. The sha256 must come from the artifact actually
+> released: re-notarizing changes the file.
+
 
 > **The cask is already scaffolded** at `~/dev/projects/homebrew-tap/Casks/yatu.rb` (commit
 > `d72443c`, unpushed), marked "not yet installable" with `version "0.0.0"` and `sha256 :no_check`.
