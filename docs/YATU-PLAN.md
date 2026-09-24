@@ -329,7 +329,23 @@ before anything is published.
   a launch adopted `Terminal` from OpenInTerminal-Lite without a prompt.
 - Cask caveats tell the user to replace the toolbar button and approve the new Automation prompt.
 
-### M4 — Build and release pipeline (medium–high: signing)
+### M4 — Build and release pipeline (medium–high: signing) — **signing and notarization done 2026-09-24**
+
+> **Done:** `bin/build.sh --release` signs with the Developer ID chosen *by team*, with the hardened
+> runtime and a secure timestamp, refuses a dirty or untracked tree, and then asserts what it
+> produced — strict deep verification, the exact designated requirement, the runtime flag, and the
+> absence of `get-task-allow`. `bin/notarize.sh` submits, requires the status to be literally
+> `Accepted`, staples, and confirms with `spctl` that Gatekeeper would let the app run.
+> **First notarized build: submission `fe44e1e9-7be8-42d3-a65f-da62f2b3c7e0`, accepted.**
+>
+> The assertions earned their place immediately. The pinned designated requirement was wrong on the
+> first attempt — the real one also pins Apple's Developer ID CA and the Developer ID Application
+> leaf — and the check rejected the signature for being *more* specific than expected, which is the
+> right direction for an assertion to fail in.
+>
+> **Still open:** `SHA256SUMS`, the dSYM kept privately, `just release <seg>` composing notes and
+> cutting a signed annotated tag, and `just publish --go`.
+
 - `bin/build.sh`: `cd` to the repo root (S2), build into `.build/app`, universal (`arm64` + `x86_64`),
   assemble the bundle, `--release` refuses a dirty or untracked tree (S3).
 - Signing: select the identity **by team 45GJWJVQN2**, never "first found". After signing assert

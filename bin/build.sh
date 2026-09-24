@@ -199,7 +199,9 @@ assert_release_signature() {  # $1 = bundle path
 
     # A debuggable build must never reach anyone: get-task-allow lets any
     # process attach to it.
-    if codesign -d --entitlements :- "$path" 2>/dev/null | grep -q "get-task-allow"; then
+    local entitlements
+    entitlements="$(codesign -d --entitlements :- "$path" 2>/dev/null || true)"
+    if [[ "$entitlements" == *"get-task-allow"* ]]; then
         die "$path carries get-task-allow"
     fi
 
@@ -328,7 +330,12 @@ assemble_extension() {
     # The property that matters, asserted rather than assumed: the extension is
     # sandboxed. If this ever stops being true the extension has become able to
     # do things this design says it cannot.
-    codesign -d --entitlements :- "$extension_path" 2>/dev/null | grep -q 'app-sandbox' \
+    # Captured, not piped: `grep -q` closing the pipe early kills codesign with
+    # SIGPIPE, and `set -o pipefail` turns that into a failed pipeline. Here
+    # that would mean refusing to ship a perfectly good extension.
+    local extension_entitlements
+    extension_entitlements="$(codesign -d --entitlements :- "$extension_path" 2>/dev/null || true)"
+    [[ "$extension_entitlements" == *"app-sandbox"* ]] \
         || die "extension is not sandboxed — refusing to ship it"
 
     print_colored "$COLOR_YELLOW" "    + $EXTENSION_EXECUTABLE.appex (sandboxed)"
