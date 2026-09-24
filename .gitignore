@@ -123,10 +123,11 @@ iOSInjectionProject/
 
 # End of https://www.gitignore.io/api/macos,xcode,swift
 
-# SF Symbols templates exported from Apple's app. These are inputs to
-# bin/make-symbol.swift, are Apple's artwork, and are not redistributed here.
-# See docs/BUILDING.md for how to export them.
-SFSymbols/
+# SF Symbols templates exported from Apple's app. These are INPUTS to
+# bin/make-symbol.swift, not something we ship: they are Apple's artwork
+# unmodified, and are not redistributed here. See docs/BUILDING.md for how to
+# export them again.
+symbol-templates/
 
 # Built .app bundles. Kept out of SwiftPM's .build because that is a cache:
 # `swift package clean` empties it and CACHEDIR.TAG marks it regenerable.
