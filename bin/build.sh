@@ -443,7 +443,14 @@ for role in "${requested_roles[@]}"; do
 done
 
 if [[ "$DRY_RUN" == false ]]; then
-    print_colored "$COLOR_GREEN" "
+    if [[ "$RELEASE" == true ]]; then
+        print_colored "$COLOR_GREEN" "
+Done. Signed with the Developer ID for team $TEAM_ID."
+        print_colored "$COLOR_YELLOW" "Not yet notarized — Gatekeeper will still warn. Next:
+  bin/notarize.sh"
+    else
+        print_colored "$COLOR_GREEN" "
 Done. These bundles are ad-hoc signed: they run on this Mac only."
+    fi
     [[ "$OPEN_AFTER_BUILD" == false ]] || open "$OUTPUT_DIR"
 fi
