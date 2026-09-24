@@ -109,8 +109,9 @@ A daily scheduled task (`watch-openinterminal-pr-287`) reports upstream movement
 
 ## Security posture
 
-A full review of the original fork (2026-09-16/17) is in `.security-review/` — git-excluded, since
-it includes a working attack log. Summary:
+A full review of the original fork (2026-09-16/17) is in `security-review/` — visible, and
+git-ignored rather than hidden, since it includes a working attack log and this repository is
+public. Summary:
 
 - **The shipped build has no injection paths.** ~50 hostile launches with crafted folder and file
   names produced no command execution, and selected `.command`, executables and `.app` bundles were
@@ -127,7 +128,7 @@ it includes a working attack log. Summary:
 
 Yatu's own new entry point, the `yatu://` URL scheme, is **public**: any application or web page can
 invoke it. It is parsed strictly in `Sources/YatuKit/HandOff.swift`, and it was reviewed on its own
-on **2026-09-24** (YATU-PLAN.md §9.4, notes in `.security-review/`). No High or Critical. The two
+on **2026-09-24** (YATU-PLAN.md §9.4, notes in `security-review/`). No High or Critical. The two
 findings inherited from upstream that this design exists to close — L1, preferences driving an
 arbitrary app launch, and F1, a file handed to a terminal which runs it — are **confirmed closed**,
 with the allowlist applied both on write and on parse and the terminal role able to receive only a
