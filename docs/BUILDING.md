@@ -77,10 +77,11 @@ brew install --cask sf-symbols
 ```
 
 In SF Symbols: search `folder`, select the plain folder, **File → Export Template**, choose
-**Static**, and save it. Then:
+**Static**, and save it into `symbol-templates/` — a git-ignored directory that exists to hold
+exactly this, so the input sits beside the repo without being redistributed. Then:
 
 ```bash
-bin/make-symbol.swift ~/path/to/folder.svg \
+bin/make-symbol.swift symbol-templates/folder.svg \
     Resources/YatuFinderSync.xcassets/yatu.folder.caret.symbolset/yatu.folder.caret.svg
 ```
 
@@ -89,7 +90,7 @@ The caret's size and position are environment variables, so trying a different o
 0.60 is timid at Regular weight and 0.84 merges into the walls at Black.
 
 Apple's exported `folder.svg` is deliberately **not** in the repository: it is Apple's artwork
-unmodified, and `.gitignore` keeps `SFSymbols/` out. The generated symbol is shipped, and carries
+unmodified, and `.gitignore` keeps `symbol-templates/` out. The generated symbol is shipped, and carries
 Apple's licence rather than Yatu's — see [UPSTREAM.md](UPSTREAM.md).
 
 ## Signing and notarization
