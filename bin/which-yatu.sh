@@ -73,9 +73,25 @@ find_app() {  # $1 = app name; prints the first matching bundle path, if any
 
 print_bundle_source() {  # $1 = bundle path
     local bundle_path="$1"
+    # Two traps, both of which silently reported a release build as a local one.
+    #
+    # -dvv, not -dv: the Authority lines only appear at the second level of
+    # verbosity, so the -dv form never matched anything.
+    #
+    # And the output is captured BEFORE grepping rather than piped into it.
+    # `grep -q` exits as soon as it matches, which closes the pipe and kills
+    # codesign with SIGPIPE; under `set -o pipefail` the pipeline then reports
+    # that failure, so the test was false even when the text was there. The
+    # symptom was a correct-looking condition that never fired.
+    local description
+    description="$(codesign -dvv "$bundle_path" 2>&1 || true)"
     if [[ "$(read_team_id "$bundle_path")" == "$TEAM_ID" ]] \
-        && codesign -dv "$bundle_path" 2>&1 | grep -q 'Authority=Developer ID Application'; then
-        print_colored "$COLOR_GREEN" "  source:   release build, Developer ID signed"
+        && [[ "$description" == *"Authority=Developer ID Application"* ]]; then
+        local notarized="not notarized"
+        if xcrun stapler validate "$bundle_path" >/dev/null 2>&1; then
+            notarized="notarized, ticket stapled"
+        fi
+        print_colored "$COLOR_GREEN" "  source:   release build, Developer ID signed ($notarized)"
     elif [[ -n "$(read_plist_key "$bundle_path" YatuBuildCommit)" ]]; then
         print_colored "$COLOR_BRIGHTYELLOW" "  source:   local build ($(read_plist_key "$bundle_path" YatuBuildCommit), built $(read_plist_key "$bundle_path" YatuBuildDate))"
     else
