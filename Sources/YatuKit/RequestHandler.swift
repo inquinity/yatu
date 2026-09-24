@@ -65,7 +65,9 @@ public enum RequestHandler {
             guard settings.setChosenApp(app, for: role) else {
                 return .nothingToDo("refused \(app.name) for \(role.rawValue)")
             }
-            Log.settings.info("default \(role.rawValue, privacy: .public) set to \(app.name, privacy: .public)")
+            // Not logged here: Settings.setChosenApp logs the write itself, so
+            // every path that changes the preference leaves one trace, not one
+            // per caller.
             return .defaultChanged(role, app)
 
         case let .settings(role):

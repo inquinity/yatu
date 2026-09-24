@@ -23,5 +23,10 @@ public enum Log {
     /// Choosing and launching the target application.
     public static let launch = Logger(subsystem: subsystem, category: "launch")
     /// Reading and writing the chosen app.
+    ///
+    /// Changes to a stored default are logged at `.notice`, deliberately.
+    /// `.info` is held in a memory ring buffer and never written to disk, so it
+    /// cannot be read back after the fact — which made a silent preference
+    /// change untraceable. `.notice` is the lowest level macOS persists.
     public static let settings = Logger(subsystem: subsystem, category: "settings")
 }

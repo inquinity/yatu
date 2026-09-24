@@ -32,6 +32,7 @@ print_colored() {
 }
 
 TEAM_ID="45GJWJVQN2"
+PREFERENCE_DOMAIN="com.altmansoftwaredesign.yatu"
 APP_NAME="Yatu"
 CASK_TOKEN="yatu"
 EXTENSION_ID="com.altmansoftwaredesign.yatu.findersync"
@@ -141,6 +142,28 @@ report_finder_extension() {
     fi
 }
 
+# What a plain click and a Send-to-editor will actually open.
+#
+# Here because nothing else showed it. The settings window shows it only while
+# open, and a change made there used to leave no trace at all. If a default is
+# not what you expect, this is where you find out -- and `log show` will say
+# when it changed, since those writes are logged at notice level.
+report_defaults() {
+    local role value
+    print_colored "$COLOR_CYAN" "Chosen applications"
+    for role in terminal editor; do
+        value="$(defaults read "$PREFERENCE_DOMAIN" "$role" 2>/dev/null || true)"
+        if [[ -n "$value" ]]; then
+            printf '  %-9s %s\n' "$role:" "$value"
+        else
+            printf '  %-9s ' "$role:"
+            print_colored "$COLOR_YELLOW" "not set — the first click opens Settings"
+        fi
+    done
+    print_colored "$COLOR_YELLOW" "  when these last changed:
+    log show --predicate 'subsystem == \"$PREFERENCE_DOMAIN\"' --last 7d | grep default"
+}
+
 report_superseded() {
     local app_name app_path found=0
     print_colored "$COLOR_CYAN" "Superseded apps"
@@ -161,6 +184,8 @@ case "${1:-}" in
 esac
 
 report_yatu
+printf '\n'
+report_defaults
 printf '\n'
 report_finder_extension
 printf '\n'
