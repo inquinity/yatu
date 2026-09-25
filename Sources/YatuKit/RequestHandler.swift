@@ -21,6 +21,7 @@ public enum RequestHandler {
         case launched(SupportedApps, [URL])
         case defaultChanged(Role, SupportedApps)
         case showSettings(Role)
+        case showAbout(Role)
         /// Understood, but there is nothing to act on.
         case nothingToDo(String)
     }
@@ -83,6 +84,9 @@ public enum RequestHandler {
 
         case let .settings(role):
             return .showSettings(role)
+
+        case let .about(role):
+            return .showAbout(role)
         }
     }
 }

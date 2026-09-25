@@ -30,6 +30,7 @@ public enum MenuModel {
             /// Choosing this opens the selection in that editor, once.
             case sendToEditor(SupportedApps)
             case settings
+            case about
         }
 
         public let title: String
@@ -78,6 +79,9 @@ public enum MenuModel {
 
         if !items.isEmpty { items.append(Item(title: "", kind: .separator)) }
         items.append(Item(title: "Settings…", kind: .settings))
+        // "About Yatu" rather than "About": the menu belongs to Finder's
+        // toolbar, not to Yatu's own menu bar, so the app has to name itself.
+        items.append(Item(title: "About \(Role.terminal.displayName)", kind: .about))
         return items
     }
 
@@ -104,6 +108,8 @@ public enum MenuModel {
                          items: selection, container: container)
         case .settings:
             return .settings(role: role)
+        case .about:
+            return .about(role: role)
         case .header, .separator:
             return nil
         }

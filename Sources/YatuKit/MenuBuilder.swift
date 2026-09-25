@@ -66,7 +66,7 @@ public enum MenuBuilder {
                 header.isEnabled = false
                 menu.addItem(header)
 
-            case .setDefault, .sendToEditor, .settings:
+            case .setDefault, .sendToEditor, .settings, .about:
                 let item = NSMenuItem(title: descriptor.title, action: action, keyEquivalent: "")
                 item.target = nil               // see the note above; this is the bug
                 item.tag = actionable.count
