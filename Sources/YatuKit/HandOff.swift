@@ -48,6 +48,8 @@ public enum HandOff {
         case setDefault(role: Role, app: SupportedApps)
         /// Show the settings window.
         case settings(role: Role)
+        /// Show the about window.
+        case about(role: Role)
     }
 
     // MARK: - Building (the extension's side)
@@ -75,6 +77,9 @@ public enum HandOff {
             items.append(URLQueryItem(name: "app", value: app.name))
         case let .settings(role):
             components.host = "settings"
+            items.append(URLQueryItem(name: "role", value: role.rawValue))
+        case let .about(role):
+            components.host = "about"
             items.append(URLQueryItem(name: "role", value: role.rawValue))
         }
 
@@ -144,6 +149,9 @@ public enum HandOff {
 
         case "settings":
             return .settings(role: role)
+
+        case "about":
+            return .about(role: role)
 
         default:
             return nil

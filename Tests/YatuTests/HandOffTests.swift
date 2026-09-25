@@ -33,6 +33,17 @@ final class HandOffTests: XCTestCase {
         XCTAssertEqual(HandOff.request(from: HandOff.url(for: request)!), request)
     }
 
+    func testAboutRoundTrips() {
+        let request = HandOff.Request.about(role: .terminal)
+        XCTAssertEqual(HandOff.request(from: HandOff.url(for: request)!), request)
+    }
+
+    func testAboutStillRequiresAValidRole() {
+        // A new host does not get to be laxer than the others.
+        XCTAssertNil(parse("yatu://about"))
+        XCTAssertNil(parse("yatu://about?role=root"))
+    }
+
     func testSettingsRoundTrips() {
         let request = HandOff.Request.settings(role: .editor)
         XCTAssertEqual(HandOff.request(from: HandOff.url(for: request)!), request)
@@ -245,7 +256,21 @@ final class MenuModelTests: XCTestCase {
         // these items set rather than open.
         XCTAssertEqual(items.first?.title, "Set default terminal program")
         XCTAssertTrue(items.contains { $0.title == "Send to editor" })
-        XCTAssertEqual(items.last?.title, "Settings…")
+        // Settings and About close the menu, in that order.
+        XCTAssertEqual(items.suffix(2).map(\.title), ["Settings…", "About Yatu"])
+    }
+
+    func testAboutNamesTheApp() {
+        // This menu belongs to Finder's toolbar, not to a menu bar of Yatu's
+        // own, so a bare "About" would not say whose.
+        let items = MenuModel.items(for: .terminal,
+                                    installedTerminals: terminals, installedEditors: editors)
+        guard let about = items.last else { return XCTFail("no items") }
+        XCTAssertEqual(about.kind, .about)
+        XCTAssertEqual(about.title, "About Yatu")
+        XCTAssertEqual(MenuModel.request(for: about, role: .terminal,
+                                         selection: [], container: nil),
+                       .about(role: .terminal))
     }
 
     func testHeadersAndSeparatorsAreNotChoosable() {
@@ -274,8 +299,11 @@ final class MenuModelTests: XCTestCase {
                        .open(role: .editor, app: .vscode, items: [folder], container: nil))
     }
 
-    func testNothingInstalledStillOffersSettings() {
+    func testNothingInstalledStillOffersSettingsAndAbout() {
+        // With no terminals and no editors the menu is these two and nothing
+        // else -- it must never be empty, which would be a button that opens a
+        // blank frame.
         let items = MenuModel.items(for: .terminal, installedTerminals: [], installedEditors: [])
-        XCTAssertEqual(items.map(\.title), ["Settings…"])
+        XCTAssertEqual(items.map(\.title), ["Settings…", "About Yatu"])
     }
 }

@@ -134,12 +134,15 @@ final class MenuBuilderTests: XCTestCase {
         }
     }
 
-    func testAnEmptyCatalogStillOffersSettings() {
+    func testAnEmptyCatalogStillOffersSettingsAndAbout() {
         // Nothing installed is not an error: the menu must still be usable.
         let built = MenuBuilder.build(
             items: MenuModel.items(for: .terminal, installedTerminals: [], installedEditors: []),
             action: action)
-        XCTAssertEqual(built.actionable.count, 1)
-        XCTAssertTrue(built.menu.items.contains { $0.action != nil })
+        XCTAssertEqual(built.actionable.count, 2)
+        XCTAssertEqual(built.actionable.map(\.title), ["Settings…", "About Yatu"])
+        // And both must be clickable, not merely present -- an item that draws
+        // and does nothing is this project's signature bug.
+        XCTAssertEqual(built.menu.items.filter { $0.action != nil }.count, 2)
     }
 }
