@@ -19,7 +19,7 @@ Nothing else from `OpenInTerminalCore` is compiled. Upstream's `App.swift` is
 not, because its `Openable` extension pulls in `FinderManager`,
 `DefaultsManager`, `ScriptManager`, `Constants`, `OITError` and `logw` — which
 is the whole framework, and includes the three components Yatu replaces by
-design (findings L1–L3 in [docs/YATU-PLAN.md](../../docs/YATU-PLAN.md) §3).
+design (findings L1–L3 in [docs/ROADMAP.md](../../docs/ROADMAP.md) §3).
 
 **Rule:** no vendored file is edited to make Yatu's code work. If upstream's
 code needs to behave differently, the new behaviour goes in `Sources/YatuKit/`

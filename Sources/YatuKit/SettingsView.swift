@@ -3,7 +3,7 @@
 //  YatuKit
 //
 //  The feature OpenInTerminal-Lite does not have: a way to change your mind.
-//  See docs/YATU-PLAN.md §5.
+//  See docs/ROADMAP.md §5.
 //
 //  What it must not offer is a free-text command or application path. That is
 //  finding L1, and the catalog is the fix: every row here is a `SupportedApps`

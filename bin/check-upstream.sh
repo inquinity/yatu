@@ -18,7 +18,7 @@
 # `gh release create` resolved to upstream and tried to publish there, and only
 # --verify-tag stopped it. Adopting a change is a
 # judgement call: upstream's list is one project's opinion, not an authority
-# (docs/YATU-PLAN.md section 9.6).
+# (docs/ROADMAP.md section 9.6).
 #
 # The full colour palette is declared in every script by convention, so the set
 # is identical everywhere; not every script uses every colour.
