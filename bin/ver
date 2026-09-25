@@ -6,6 +6,14 @@
 #   1.0.0     <- CFBundleShortVersionString
 #   1         <- CFBundleVersion
 #
+# The build number only ever goes up. It is NOT reset when the version changes,
+# which this script used to do on the stated grounds that Apple expects it --
+# Apple permits it for App Store trains, and it is not what you want anywhere
+# else. Resetting made CFBundleVersion carry no information at all: 1.0.0, 1.0.1
+# and 1.0.2 all shipped as build 1, so nothing could order two copies of the
+# bundle by it, and a local build was indistinguishable from the release it was
+# built on top of. A single monotonic integer is the whole point of the field.
+#
 # bin/build.sh reads these and stamps them into Info.plist. This replaces the
 # Version.xcconfig an Xcode project would carry (docs/ROADMAP.md, M1).
 #
@@ -34,7 +42,10 @@ print_colored() {
     printf "${color}%s${COLOR_RESET}\n" "$message"
 }
 
-VERSION_FILE="VERSION"
+# Overridable so bin/test-scripts.sh can exercise this against a scratch file
+# rather than the repo's own VERSION. Give it an absolute path: this script has
+# already cd'd to the repo root by the time it is read.
+VERSION_FILE="${VERSION_FILE:-VERSION}"
 DRY_RUN=false
 
 usage() {
@@ -44,10 +55,13 @@ Commands:
   (none)            Print the version and build, e.g. \"1.0.0 build 1\"
   short             Print the marketing version only, e.g. \"1.0.0\"
   build             Print the build number only, e.g. \"1\"
-  set <version>     Set the marketing version and reset the build to 1
+  set <version>     Set the marketing version; the build number goes up with it
   bump major|minor|patch
-                    Increment that segment and reset the build to 1
+                    Increment that segment; the build number goes up with it
   bump build        Increment the build number, leaving the version alone
+
+The build number is never reset. It is a single monotonic integer, which is
+what CFBundleVersion is for.
 
 Options:
   -n, --dry-run     Show what would be written without writing it
@@ -88,16 +102,17 @@ write_version() {
     print_colored "$COLOR_GREEN" "$VERSION_FILE: $current_version build $current_build -> $new_version build $new_build"
 }
 
-# bump <segment>; build numbers reset on any version change, as Apple expects.
+# bump <segment>; the build number goes up with it and is never reset.
 bump_segment() {
     local segment=$1
-    local major minor patch
+    local major minor patch next_build
     IFS=. read -r major minor patch <<< "$current_version"
+    next_build=$((current_build + 1))
 
     case "$segment" in
-        major) write_version "$((major + 1)).0.0" 1 ;;
-        minor) write_version "$major.$((minor + 1)).0" 1 ;;
-        patch) write_version "$major.$minor.$((patch + 1))" 1 ;;
+        major) write_version "$((major + 1)).0.0" "$next_build" ;;
+        minor) write_version "$major.$((minor + 1)).0" "$next_build" ;;
+        patch) write_version "$major.$minor.$((patch + 1))" "$next_build" ;;
         build) write_version "$current_version" "$((current_build + 1))" ;;
         *) die "unknown segment '$segment' (expected major, minor, patch or build)" ;;
     esac
@@ -125,7 +140,7 @@ case "${positional_arguments[0]:-}" in
         [[ -n "$new_version" ]] || die "set requires a version, e.g. 'bin/ver set 1.1.0'"
         [[ "$new_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] \
             || die "'$new_version' is not a MAJOR.MINOR.PATCH version"
-        write_version "$new_version" 1
+        write_version "$new_version" "$((current_build + 1))"
         ;;
     bump)
         segment="${positional_arguments[1]:-}"

@@ -64,6 +64,10 @@ TEAM_ID="45GJWJVQN2"
 APP_NAME="Yatu"
 OUTPUT_DIR="dist"
 NOTES_FILE="docs/release-notes/UNRELEASED.md"
+# The token that means "these notes have not been written". The guard below and
+# the template written after each release must agree on it, or the guard stops
+# guarding silently; bin/test-scripts.sh holds them together.
+NOTES_MARKER="UNWRITTEN"
 TAP_CLONE="${TAP_CLONE:-$HOME/dev/projects/homebrew-tap}"
 CASK_FILE="Casks/yatu.rb"
 
@@ -204,6 +208,17 @@ ok "built from $head_commit, which is HEAD"
 
 [[ -s "$NOTES_FILE" ]] \
     || die "$NOTES_FILE is missing or empty. Write the notes before releasing."
+# Non-empty was never enough: the template this script writes after each release
+# is itself non-empty, so an unwritten file would have been published verbatim as
+# the release body. The marker is an HTML comment, invisible once rendered, so it
+# cannot be mistaken for notes that someone meant to keep.
+# Spelled as an `if` rather than `grep ... && die`: the && form does not trip
+# set -e when grep finds nothing, but that is subtle enough to be worth not
+# relying on in the script that publishes releases.
+if grep -q "$NOTES_MARKER" "$NOTES_FILE"; then
+    die "$NOTES_FILE has not been written -- it still carries the $NOTES_MARKER marker.
+Write the notes for this release, or recover them from the commits since the last tag."
+fi
 notes_lines="$(wc -l < "$NOTES_FILE" | tr -d ' ')"
 notes_heading="$(head -1 "$NOTES_FILE")"
 # The first line becomes the tag message's subject and heads the release body,
@@ -301,7 +316,10 @@ step "Archiving the notes"
 mkdir -p "$(dirname "$NOTES_FILE")"
 git mv "$NOTES_FILE" "docs/release-notes/$version.md" 2>/dev/null \
     || mv "$NOTES_FILE" "docs/release-notes/$version.md"
-printf '%s\n' "# Unreleased" "" "Notes for the next release. Written as changes land, not at release time." \
+printf '%s\n' "# Unreleased" "" \
+    "<!-- $NOTES_MARKER: replace everything below the heading with the notes." \
+    "     bin/release.sh refuses to publish while this comment is here." \
+    "     Write notes as each change lands, not at release time -- see CLAUDE.md. -->" \
     > "$NOTES_FILE"
 git add -A docs/release-notes
 git commit -q -m "docs: archive the $version release notes" || true
