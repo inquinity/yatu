@@ -48,6 +48,26 @@ What "the current folder" means:
   everything you have selected. Nothing selected gives the editor the folder.
 - **Settings…**
 
+## Troubleshooting
+
+**Yatu is not in the Customize Toolbar palette.** Either step 1 has not been done — a registered but
+disabled extension does not appear there — or Finder has not picked up the extension yet. Finder
+loads extensions when it starts, so if it has been running a while:
+
+```bash
+killall Finder
+```
+
+Finder relaunches immediately; it only closes your Finder windows.
+
+**Resetting the Finder permission.** The first click asks for permission to control Finder. That is
+how Yatu learns which folder you are looking at; it is the app's only entitlement. To reset that
+answer later:
+
+```bash
+tccutil reset AppleEvents com.altmansoftwaredesign.yatu
+```
+
 ## Alternative Install: ⌘-drag
 ⌘-drag is supported, but not recommended. Really, it works, but you are stuck with a color icon that sticks out like a sore thumb. You might do this to avoid enabling the Finder extension (or just because you can); that's up to you.
 
