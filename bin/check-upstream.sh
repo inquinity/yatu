@@ -4,10 +4,19 @@
 # vendored copy records. Read-only: nothing is fetched into this repository and
 # no file is changed.
 #
-# Yatu was a fork of Ji4n1ng/OpenInTerminal until 2026-09-23 and tracked upstream
+# Yatu was a fork until 2026-09-23 and tracked upstream
 # with `git merge`. It no longer does. The only upstream code still compiled is
 # Sources/YatuUpstream/, and of that only the catalog changes in practice — so
-# this compares catalog entries rather than commits. Adopting a change is a
+# this compares catalog entries rather than commits.
+#
+# ## This repository never contacts upstream
+#
+# The comparison reads the CONTRIBUTION CLONE, which is where the upstream
+# remote legitimately lives. Nothing here holds an upstream URL, and no script
+# in this repository fetches from one. A tool here that names another project's
+# repository is a tool that can act on it by mistake -- not hypothetical:
+# `gh release create` resolved to upstream and tried to publish there, and only
+# --verify-tag stopped it. Adopting a change is a
 # judgement call: upstream's list is one project's opinion, not an authority
 # (docs/YATU-PLAN.md section 9.6).
 #
@@ -38,7 +47,6 @@ print_colored() {
 UPSTREAM_CLONE="${UPSTREAM_CLONE:-$HOME/dev/oss/openinterminal}"
 UPSTREAM_REF="${UPSTREAM_REF:-upstream/master}"
 UPSTREAM_PATH="OpenInTerminalCore/SupportedApps.swift"
-UPSTREAM_RAW="${UPSTREAM_RAW:-https://raw.githubusercontent.com/Ji4n1ng/OpenInTerminal/master/$UPSTREAM_PATH}"
 
 VENDORED="Sources/YatuUpstream/SupportedApps.swift"
 
@@ -55,7 +63,10 @@ Options:
 Environment:
   UPSTREAM_CLONE  Clone with an 'upstream' remote. Default: \$HOME/dev/oss/openinterminal
   UPSTREAM_REF    Ref to compare against. Default: upstream/master
-  UPSTREAM_RAW    Fallback URL used when that clone is absent."
+
+This repository holds no upstream URL and never fetches from one. The
+comparison reads the contribution clone, which is where the upstream remote
+lives."
 }
 
 die() {
@@ -104,11 +115,11 @@ if [[ -d "$UPSTREAM_CLONE/.git" ]]; then
         || die "could not read $UPSTREAM_PATH at $UPSTREAM_REF"
     upstream_commit="$(git -C "$UPSTREAM_CLONE" log -1 --format='%h (%cs)' "$UPSTREAM_REF" -- "$UPSTREAM_PATH")"
 else
-    print_colored "$COLOR_BRIGHTYELLOW" "No clone at $UPSTREAM_CLONE — fetching over HTTP instead."
-    command -v curl >/dev/null 2>&1 || die "curl is required when the clone is absent"
-    curl --fail --silent --show-error --location "$UPSTREAM_RAW" > "$upstream_source" \
-        || die "could not fetch $UPSTREAM_RAW"
-    origin="$UPSTREAM_RAW"
+    die "no clone at $UPSTREAM_CLONE.
+
+Upstream contact lives in the contribution clone, not in this repository, so
+there is no network fallback here by design. Clone it there and retry, or set
+UPSTREAM_CLONE to where it is."
 fi
 
 printf 'vendored: %s @ %s\n' "$VENDORED" "${recorded_commit:-no commit recorded}"

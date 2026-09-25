@@ -42,6 +42,14 @@ check-upstream *args:
 attack-matrix *args:
     bin/attack-matrix.sh {{ args }}
 
+# Check a release without publishing: artifacts, provenance, tag, tap. Changes nothing.
+release-check:
+    bin/release.sh
+
+# Publish the release. Irreversible. Build, notarize and package first.
+release-go:
+    bin/release.sh --go
+
 # Test the shell in bin/. Stubs its dependencies; changes nothing on this Mac.
 test-scripts:
     bin/test-scripts.sh
