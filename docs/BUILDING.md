@@ -55,6 +55,11 @@ approved an extension with the same identifier, a fresh build inherits that appr
 the identifier, the new one comes up registered but disabled even though the old one was enabled.
 Both states are normal and neither means the build is broken.
 
+**Swapping between your build and the signed release.** macOS ties both the Automation permission
+and the extension registration to the code signature. Replacing a build you compiled yourself with
+the signed cask (or the reverse) asks for the Finder permission again and needs the extension
+enabled again. That is expected.
+
 A built bundle identifies itself:
 
 ```bash
