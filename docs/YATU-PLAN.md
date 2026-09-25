@@ -294,6 +294,11 @@ before anything is published.
   shown with Reveal in Finder; the version, the upstream version it is based on, and a source link
   are pinned below the scrolling catalog. Every row is a catalog case, so there is nowhere to type
   a path. The window/tab control in §5 was dropped, with the reasoning recorded there.
+- **Release gates for 1.0.0, all closed 2026-09-24:** 92 unit tests, 4 shell tests, lint clean;
+  `bin/attack-matrix.sh --live` run by Robert against the installed build — **all hostile cases
+  passed**, no command execution and nothing selected was executed; the `yatu://` security review
+  (no High or Critical, L1 and F1 confirmed closed); and the Gatekeeper launch assessment in
+  `docs/LAUNCH-SECURITY.md`.
 - **M2d** tests: unit tests for rules 1–6 — **done 2026-09-18**, 30 tests; **92 tests and 4 shell
   checks as of 2026-09-23**, after three defects shipped past the first 65 (see the test commit).
   `docs/MANUAL-TEST-CHECKLIST.md` — **done 2026-09-23**, EXPECT / FAIL IF throughout, and its
@@ -365,52 +370,37 @@ Yatu simply no longer reads the old one.
   `ON-TOP-OF-UPSTREAM.md`, commits, and creates a **signed annotated tag** (§8 Q4). `just publish` is a dry run unless `--go`.
 - **Rollback:** delete the tag and release; the dry-run default is the guard.
 
-### M5 — Distribution (high: public) — **cask and packaging ready 2026-09-24; nothing published**
+### M5 — Distribution (high: public) — **released 2026-09-24, v1.0.0**
 
-> **Done, all local and reversible:**
-> `bin/package.sh` builds `dist/Yatu-<version>.dmg` from the signed, notarized app — staged so the
-> image holds exactly the app and an `/Applications` shortcut, signed, notarized and stapled in its
-> own right, with `dist/SHA256SUMS` written for the cask. Verified: the stapled ticket survives the
-> round trip, and the app mounted from the DMG is accepted by Gatekeeper.
->
-> The cask at `~/dev/projects/homebrew-tap/Casks/yatu.rb` is rewritten and committed **locally,
-> unpushed** (`a61ef50`). `brew audit --cask --strict` and `brew style` both pass. Its caveats now
-> lead with enabling the extension, name the symptom of skipping that, explain the Automation
-> prompt, warn that replacing a self-compiled build re-triggers both it and the extension
-> registration, and say OpenInTerminal-Lite may stay. Its `zap` covers the extension's container,
-> and `uninstall` quits the extension as well as the app.
->
-> **Not done, and deliberately not started — everything from here is public and irreversible:**
-> cutting the version and a signed tag, creating the GitHub release with the DMG, filling in the
-> real `version` and `sha256`, and pushing the tap. The sha256 must come from the artifact actually
-> released: re-notarizing changes the file.
+**<https://github.com/inquinity/yatu/releases/tag/v1.0.0>** — signed by the Developer ID for team
+45GJWJVQN2, notarized and stapled, app and disk image both. Cask live at
+`inquinity/tap/yatu`; `brew info --cask yatu` reports 1.0.0.
 
+How it was produced, and what was checked:
 
-> **The cask is already scaffolded** at `~/dev/projects/homebrew-tap/Casks/yatu.rb` (commit
-> `d72443c`, unpushed), marked "not yet installable" with `version "0.0.0"` and `sha256 :no_check`.
-> Nothing happens to it until there is a real 1.0.0 to point at. Note when that comes: it was
-> written **before** the extension was adopted (§9), so its `caveats` tell the user to add the
-> toolbar button but not to *enable the extension* first — which is now the step that decides
-> whether the button appears at all — and its `zap` covers the prefs plist and saved state but not
-> the extension's container. Both are listed in §9.3 under M5 changes.
+- `bin/build.sh --release` → `bin/notarize.sh` → `bin/package.sh`. The first DMG was **rebuilt**
+  because it had been made four commits earlier: a release artifact must match its tag, and the
+  rebuild changed the sha256 (`0f365b3a…` → `60a513b2…`). That is exactly the trap the cask header
+  warned about.
+- The cask's sha256 was taken from the asset **downloaded back from the release**, not from the
+  local build, and the downloaded image was confirmed accepted by Gatekeeper before the cask was
+  pushed.
+- `brew style`, `brew audit --cask --strict` and `brew audit --cask --online --strict` all pass;
+  the online audit fetches the image and verifies the hash.
+- Tag `v1.0.0` is annotated and SSH-signed; verified `Good "git" signature`.
 
-- New cask `yatu`: sha256-pinned, `depends_on macos:`, `uninstall quit:`, `zap` covering the prefs
-  plist and Saved Application State, `caveats` for the toolbar button and
-  `tccutil reset AppleEvents com.altmansoftwaredesign.yatu`, `livecheck` on our releases.
-- **Observed 2026-09-24:** replacing a local ad-hoc build with the Developer ID signed one
-  **re-triggers the Automation consent prompt**. TCC keys on the code signature, so a change of
-  signing identity makes it a different app as far as consent is concerned. Harmless, but it will
-  surprise anyone who has been running a local build, and it is worth a line in the caveats —
-  along with re-registering the extension, which also does not survive the replacement.
-- `openinterminal-lite-inquinity` **stays in the tap** (Q5, reversed 2026-09-24). It may still be
-  wanted for Macs older than Yatu's macOS 13 floor. Nothing is deleted, nothing is sequenced, and
-  the two coexist: different cask tokens, different bundle ids, different preference domains, and
-  Yatu's migration reads the old app's choice without modifying it (M3). The old cask's `url`,
-  `homepage` and README row keep naming `inquinity/OpenInTerminal`, because the
-  `v1.2.8-inquinity.1` release they resolve to lives in that repository. The `yatu` cask is a
-  separate file pointing at `inquinity/yatu` releases, added as a new row rather than replacing one.
-- Update the tap README, `bin/which-yatu.sh`, the daily upstream-watch task, and the project memory.
-- Migrate this Mac, then the second Mac. The icon-cache confusion disappears once the bundle id differs.
+**Caught during the release, worth remembering:** `gh release create` resolved the repository to
+**Ji4n1ng/OpenInTerminal** and tried to create the release there. The `upstream` remote had survived
+the fork cut — the tree and the merge workflow went, the remote did not — and with no default set,
+`gh` chose it. `--verify-tag` refused because the tag did not exist there. The remote is now
+removed from this clone, where §9.7 says it should never have remained; the contribution clone at
+`~/dev/oss/openinterminal` keeps its own.
+
+- `openinterminal-lite-inquinity` stays in the tap (Q5, reversed), listed in the tap README as
+  coexisting rather than superseded.
+
+**Still open:** `just release <seg>` and `just publish --go` to automate what was done by hand here,
+and release notes composed from `docs/release-notes/`.
 
 ### M6 — Upstream contribution track (outward-facing, each approved separately)
 | Item | Form |
