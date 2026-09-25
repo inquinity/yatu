@@ -119,7 +119,15 @@ public enum HandOff {
             guard paths.count <= maximumItems else { return nil }
             let selected = paths.map { URL(fileURLWithPath: $0) }
             let container = value("container").map { URL(fileURLWithPath: $0) }
-            guard !selected.isEmpty || container != nil else { return nil }
+            // Carrying neither is legitimate and means "I could not resolve
+            // anything — you ask Finder". This used to be refused, and the
+            // refusal was a bug: in an iCloud Drive window
+            // FIFinderSyncController.targetedURL() returns nil, so the
+            // extension had nothing to send, and the app rejected its own
+            // extension's request as unrecognised. The button did nothing.
+            //
+            // It is not a widening of what a caller can reach: a request that
+            // names no path is strictly less capable than one that names any.
             // An app may be named, but only one from this role's catalog. A URL
             // naming anything else is rejected outright rather than ignored.
             var app: SupportedApps?

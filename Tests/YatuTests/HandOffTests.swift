@@ -101,8 +101,15 @@ final class HandOffTests: XCTestCase {
         XCTAssertNil(parse("yatu://open?role=&item=/tmp"))
     }
 
-    func testOpenWithNothingToOpenIsRefused() {
-        XCTAssertNil(parse("yatu://open?role=terminal"))
+    func testOpenWithNoContextMeansAskFinder() {
+        // This used to be refused, and the refusal was a bug. In an iCloud
+        // Drive window FIFinderSyncController.targetedURL() returns nil, so the
+        // extension has nothing to report -- and the app rejected its own
+        // extension's request as unrecognised, leaving the button doing
+        // nothing. Carrying neither item nor container is a legitimate request
+        // meaning "I could not resolve anything, you ask Finder".
+        XCTAssertEqual(parse("yatu://open?role=terminal"),
+                       .open(role: .terminal, app: nil, items: [], container: nil))
     }
 
     /// Finding L1 at the URL boundary: a crafted URL may not name an arbitrary
@@ -157,8 +164,22 @@ extension HandOffTests {
         XCTAssertEqual(container?.path, "/tmp")
     }
 
-    func testEmptyItemAndNoContainerIsRefused() {
-        XCTAssertNil(parse("yatu://open?role=terminal&item="))
+    func testAnEmptyItemValueIsDroppedLeavingNoContext() {
+        // An empty value is still discarded -- it must never become file:///
+        // -- and what remains is the no-context request.
+        XCTAssertEqual(parse("yatu://open?role=terminal&item="),
+                       .open(role: .terminal, app: nil, items: [], container: nil))
+    }
+
+    func testNoContextStillRequiresAValidRole() {
+        // Widening the context did not widen anything else.
+        XCTAssertNil(parse("yatu://open"))
+        XCTAssertNil(parse("yatu://open?role=root"))
+    }
+
+    func testNoContextStillRefusesAnAppOutsideTheRolesCatalog() {
+        XCTAssertNil(parse("yatu://open?role=terminal&app=Emacs"))
+        XCTAssertNil(parse("yatu://open?role=terminal&app=/bin/sh"))
     }
 
     func testARepeatedRoleIsDeterministic() {

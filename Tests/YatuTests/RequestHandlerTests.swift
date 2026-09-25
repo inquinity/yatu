@@ -64,6 +64,47 @@ final class RequestHandlerTests: XCTestCase {
                        "several selected items mean the folder being viewed, not one of them")
     }
 
+    /// A stand-in for Finder, so the fallback can be tested without one.
+    private struct StubFinder: FinderQuerying {
+        let selection: [URL]
+        let window: URL?
+        func selectedItems() -> [URL] { selection }
+        func frontWindowTarget() -> URL? { window }
+    }
+
+    func testAnEmptyContextAsksFinderDirectly() throws {
+        // The iCloud Drive case. The extension reports nothing because
+        // FIFinderSyncController.targetedURL() answers nil there, and the app
+        // -- which can reach Finder over ScriptingBridge, as the Cmd-drag path
+        // always could -- asks for itself.
+        settings.setChosenApp(.iTerm, for: .terminal)
+        var asked = false
+        let outcome = RequestHandler.handle(
+            .open(role: .terminal, app: nil, items: [], container: nil),
+            settings: settings,
+            launch: { app, targets in self.launched.append((app, targets)) },
+            askFinder: {
+                asked = true
+                return StubFinder(selection: [], window: self.sandbox)
+            })
+        XCTAssertTrue(asked, "an empty context must fall back to asking Finder")
+        XCTAssertEqual(launched.first?.1.map(\.path), [sandbox.path])
+        if case .nothingToDo = outcome { XCTFail("should have launched") }
+    }
+
+    func testAReportedContextDoesNotAskFinder() {
+        // The common path must not pay for the fallback.
+        settings.setChosenApp(.iTerm, for: .terminal)
+        var asked = false
+        _ = RequestHandler.handle(
+            .open(role: .terminal, app: nil, items: [], container: sandbox),
+            settings: settings,
+            launch: { app, targets in self.launched.append((app, targets)) },
+            askFinder: { asked = true; return StubFinder(selection: [], window: nil) })
+        XCTAssertFalse(asked, "Finder was reported; there is nothing to ask")
+        XCTAssertEqual(launched.first?.1.map(\.path), [sandbox.path])
+    }
+
     func testOpenUsesTheStoredDefault() throws {
         settings.setChosenApp(.iTerm, for: .terminal)
         _ = handle(.open(role: .terminal, app: nil, items: [], container: sandbox))

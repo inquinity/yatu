@@ -38,7 +38,8 @@ public enum RequestHandler {
     @discardableResult
     public static func handle(_ request: HandOff.Request,
                               settings: Settings = Settings(),
-                              launch: (SupportedApps, [URL]) throws -> Void = Launcher.launch)
+                              launch: (SupportedApps, [URL]) throws -> Void = Launcher.launch,
+                              askFinder: () -> FinderQuerying = { FinderScriptingQuery() })
         -> Outcome
     {
         switch request {
@@ -52,7 +53,17 @@ public enum RequestHandler {
             // The per-role rule lives in FinderTarget and only there: the
             // terminal ignores a multiple selection in favour of the container,
             // the editor takes all of it.
-            let targets = FinderTarget.resolve(for: role, using: ReportedContext(items: items, container: container))
+            //
+            // When the extension reported nothing at all, ask Finder directly
+            // instead. The extension's view is narrower than AppleScript's: in
+            // an iCloud Drive window FIFinderSyncController.targetedURL()
+            // returns nil, while Finder answers the same question happily over
+            // ScriptingBridge — which is why the Cmd-drag path could always
+            // open iCloud Drive when the toolbar button could not.
+            let context: FinderQuerying = items.isEmpty && container == nil
+                ? askFinder()
+                : ReportedContext(items: items, container: container)
+            let targets = FinderTarget.resolve(for: role, using: context)
             do {
                 try launch(app, targets)
                 return .launched(app, targets)
