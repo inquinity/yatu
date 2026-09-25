@@ -48,6 +48,26 @@ What "the current folder" means:
   everything you have selected. Nothing selected gives the editor the folder.
 - **Settings…**
 
+## Supported terminals and editors
+
+Settings lists the ones you actually have. These are the 41 Yatu knows how to
+open — if yours is missing, that is why it does not appear.
+
+**Terminals (14)**
+
+Terminal, iTerm, Hyper, Alacritty, kitty, WezTerm, Tabby, Warp, cmux, GitHub Desktop, GitKraken, Fork, Ghostty, Kaku
+
+**Editors (27)**
+
+TextEdit, Xcode, Visual Studio Code, Atom, Sublime Text, VSCodium, BBEdit, Visual Studio Code - Insiders, TextMate, CotEditor, MacVim, Typora, Nova, Cursor, Neovim, Zed, Emacs, AppCode, CLion, Fleet, GoLand, IntelliJ IDEA, PhpStorm, PyCharm, RubyMine, WebStorm, Android Studio
+
+GitHub Desktop, GitKraken and Fork sit in the terminal list because that is how the catalog
+groups them: they open the folder as a repository rather than as a shell.
+
+The list comes from [OpenInTerminal](https://github.com/Ji4n1ng/OpenInTerminal) and is vendored,
+not fetched — see [docs/UPSTREAM.md](docs/UPSTREAM.md). Adding an entry means verifying its bundle
+identifier against the real application, because a catalog can carry a stale one.
+
 ## Troubleshooting
 
 **Yatu is not in the Customize Toolbar palette.** Either step 1 has not been done — a registered but
