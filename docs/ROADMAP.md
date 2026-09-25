@@ -1,7 +1,10 @@
 # Yatu — roadmap
 
 Status: **accepted 2026-09-18**, all questions in §8 answered.
-M0 is done; M1 is in progress.
+**Shipping. 1.0.2 released 2026-09-25**; M0–M5 are done or deliberately dropped. What remains is
+M6 (the upstream contribution track, not started), the app icon *format* in §9, the catalog
+question in §9.6, and a full pass of `docs/MANUAL-TEST-CHECKLIST.md` §4 — newly owed, because
+1.0.2 rewrote the launch path and the menu that §4 exists to exercise.
 Replaces the earlier `PRIVATE-LABEL-PLAN.md` draft.
 Inputs: the security review in `security-review/` (git-excluded), the Belvedere fork
 (`~/dev/oss/belvedere`) for fork conventions, and a GitHub survey of comparable apps.
@@ -186,7 +189,13 @@ The feature OITL doesn't have, and the main reason this is a product rather than
   so this is the discoverable route; first run still shows the picker. `yatu --settings` for
   scripting and for the cask caveat.
 - **Contents:**
-  - the terminal list, installed apps first with their real icons, the rest dimmed (the existing picker already does this);
+  - ~~the terminal list, installed apps first with their real icons, the rest dimmed (the existing
+    picker already does this);~~ **revised 2026-09-25 in 1.0.2.** The dimmed rows are gone. Copying
+    the existing picker was the whole justification, and it was a bad one: a dozen or more rows
+    that cannot be chosen, in the window whose only job is choosing. The list is now what is
+    installed; the catalog moved to the README's **Supported terminals and editors**, which the
+    window links to when something is missing. Nothing is lost — "why is my terminal not here" is
+    still answered, just not by spending the window on it;
   - the current choice, with an obvious way to change it;
   - ~~"open a new window" vs "new tab" where the terminal supports both~~ — **dropped 2026-09-19.**
     There are only two ways to do it. Upstream's is
@@ -294,6 +303,7 @@ before anything is published.
   shown with Reveal in Finder; the version, the upstream version it is based on, and a source link
   are pinned below the scrolling catalog. Every row is a catalog case, so there is nowhere to type
   a path. The window/tab control in §5 was dropped, with the reasoning recorded there.
+  The dimmed uninstalled rows described here shipped in 1.0.0 and were removed in 1.0.2; see §5.
 - **Release gates for 1.0.0, all closed 2026-09-24:** 92 unit tests, 4 shell tests, lint clean;
   `bin/attack-matrix.sh --live` run by Robert against the installed build — **all hostile cases
   passed**, no command execution and nothing selected was executed; the `yatu://` security review
@@ -339,7 +349,7 @@ they belong.
 apps coexist by having different bundle ids and preference domains, which was always the mechanism;
 Yatu simply no longer reads the old one.
 
-### M4 — Build and release pipeline (medium–high: signing) — **signing and notarization done 2026-09-24**
+### M4 — Build and release pipeline (medium–high: signing) — **done. Signing and notarisation 2026-09-24; release automation 2026-09-25**
 
 > **Done:** `bin/build.sh --release` signs with the Developer ID chosen *by team*, with the hardened
 > runtime and a secure timestamp, refuses a dirty or untracked tree, and then asserts what it
@@ -353,8 +363,11 @@ Yatu simply no longer reads the old one.
 > leaf — and the check rejected the signature for being *more* specific than expected, which is the
 > right direction for an assertion to fail in.
 >
-> **Still open:** `SHA256SUMS`, the dSYM kept privately, `just release <seg>` composing notes and
-> cutting a signed annotated tag, and `just publish --go`.
+> **Closed 2026-09-24/25, and M4 is done.** `SHA256SUMS` is written by `bin/package.sh` and
+> uploaded with the release. The dSYM was never a step to add: a SwiftPM release build leaves it in
+> `.build` and `strip -x` takes the local paths out of the shipped binary (finding L4, see M1).
+> Release composition and publication landed as `bin/release.sh` rather than as the two `just`
+> recipes planned below — see the note there.
 
 - `bin/build.sh`: `cd` to the repo root (S2), build into `.build/app`, universal (`arm64` + `x86_64`),
   assemble the bundle, `--release` refuses a dirty or untracked tree (S3).
@@ -366,11 +379,24 @@ Yatu simply no longer reads the old one.
   under `dist/`; staple; `spctl -a -t exec`.
 - Outputs: stripped binary, dSYM kept privately, `SHA256SUMS`, build date from the commit timestamp,
   `YatuBuildCommit` / `YatuBuildDate` in Info.plist.
-- `just release <seg>` bumps the version, composes notes from `docs/release-notes/UNRELEASED.md` +
-  `ON-TOP-OF-UPSTREAM.md`, commits, and creates a **signed annotated tag** (§8 Q4). `just publish` is a dry run unless `--go`.
+- ~~`just release <seg>` bumps the version, composes notes and creates a signed annotated tag;
+  `just publish` is a dry run unless `--go`.~~ **Landed differently, 2026-09-25.** One script,
+  `bin/release.sh`, dry by default and publishing only with `--go`, exposed as `just release-check`
+  and `just release-go`. Three differences from the plan, each deliberate:
+  - **Version bumping stayed out of it.** `bin/ver bump <seg>` is its own step, committed and
+    pushed before the release runs. The release script then *verifies* that the artifact was built
+    from the commit it is about to tag, which is a stronger guarantee than bumping and building in
+    one motion — and it is the check that caught a DMG built four commits stale in M5.
+  - **Notes are not composed.** `ON-TOP-OF-UPSTREAM.md` went with the fork. `UNRELEASED.md` alone
+    is the tag message and the release body; the script titles it with the version and refuses to
+    publish it empty (fixed 2026-09-25 — until then both were published under "# Unreleased").
+  - **It does more than publish.** It pins `origin`, requires a clean in-sync `main`, reads the
+    sha256 back from the *downloaded* asset rather than the local build, audits the cask before
+    pushing the tap, and archives the notes. The signed annotated tag (§8 Q4) is still there and
+    still verified before it is pushed.
 - **Rollback:** delete the tag and release; the dry-run default is the guard.
 
-### M5 — Distribution (high: public) — **released 2026-09-24, v1.0.0**
+### M5 — Distribution (high: public) — **done. 1.0.0 released 2026-09-24; current 1.0.2**
 
 **<https://github.com/inquinity/yatu/releases/tag/v1.0.0>** — signed by the Developer ID for team
 45GJWJVQN2, notarized and stapled, app and disk image both. Cask live at
@@ -399,10 +425,57 @@ removed from this clone, where §9.7 says it should never have remained; the con
 - `openinterminal-lite-inquinity` stays in the tap (Q5, reversed), listed in the tap README as
   coexisting rather than superseded.
 
-**Still open:** `just release <seg>` and `just publish --go` to automate what was done by hand here,
-and release notes composed from `docs/release-notes/`.
+**Closed 2026-09-25.** `bin/release.sh` automates what was done by hand here, and cut 1.0.2 as its
+first real use; see M4 for how it differs from the two `just` recipes originally planned.
 
-### M6 — Upstream contribution track (outward-facing, each approved separately)
+#### Releases since
+
+**1.0.1 — 2026-09-25.** The toolbar button did nothing in iCloud Drive and other File
+Provider-backed folders. `FIFinderSyncController.targetedURL()` answers nil there, so the extension
+sent a hand-off carrying nothing and the app rejected its own extension's request as unrecognised.
+⌘-drag and OpenInTerminal-Lite both worked in those folders, which is what localised it: they ask
+Finder over ScriptingBridge. A hand-off may now carry "I could not resolve anything" and the app
+asks Finder directly. Not a widening of reach — a request naming no path is strictly less capable
+than one naming any. Notes: `docs/release-notes/1.0.1.md`.
+
+**1.0.2 — 2026-09-25.** Two things, plus the About box.
+
+- **One delegate, one run loop.** `SettingsWindow.run` and `AboutWindow.run` each installed their
+  own `NSApplicationDelegate` and called `NSApplication.run()` a second time, re-entrantly, from
+  inside `application(_:open:)`. Three user-visible faults came out of that single cause: a window
+  that appeared only sometimes (built in an `applicationDidFinishLaunching` already delivered, so
+  it depended on Apple Event timing); a toolbar click answered by whichever window had displaced
+  the delegate, which raised itself and discarded the request — clicking for a terminal produced
+  the About box; and a declined request calling `exit(1)` with a window still on screen.
+  `LaunchCoordinator` is now the only delegate, `run()` is called once, the window hosts are
+  factories that touch `NSApp` nowhere, and the process lives exactly as long as a window is up.
+  `applicationShouldHandleReopen` is implemented, which nothing had been listening for.
+- **Settings lists only what is installed.** The greyed-out rows for uninstalled apps are gone —
+  a dozen unchoosable rows in the window whose only job is choosing. The full list moved to the
+  README under **Supported terminals and editors**, which Settings links to when something is
+  missing, and the window sizes itself to its content instead of to a height chosen for the long
+  list. This partly revises §5, which specified "the rest dimmed and unselectable".
+- **About**, reachable from the menu and as `yatu://about` — a new host on the public entry point,
+  parsed by the same strict rules as the rest (§4).
+
+Notes: `docs/release-notes/1.0.2.md`.
+
+**Tests as of 1.0.2: 111 unit, 7 shell.** The new ones are structural, because the 1.0.2 fault was
+not reachable from a running test — it existed only in a live app, depended on event timing, and
+presented as a dead menu item. `LaunchLifetimeTests` asserts against the *source* that there is one
+delegate, one `run()`, one `application(_:open:)`, one delegate assignment, and no `NSApp` in the
+window factories. `SupportedAppsDocTests` holds the README's app list to the catalog, since Settings
+now links to it. Both follow `BrandTests`' precedent: when the thing worth checking is not reachable
+from a test, check the source for the structure that permits the fault.
+
+### M6 — Upstream contribution track (outward-facing, each approved separately) — **not started**
+
+The only substantive milestone left. F1 is the one with a clock on it: it is slated for a *private
+vulnerability report* against a project that is still shipping, and it has been open since
+2026-09-18. `fix/sandbox-command-injection` exists as a branch on upstream, so check whether any of
+this is already in flight before drafting anything. Nothing here is ever cut from this repository —
+it is all `~/dev/oss/openinterminal` work (see `CLAUDE.md`).
+
 | Item | Form |
 |---|---|
 | F1 extension executes a selected file | Reproduce on an upstream build; if confirmed, **private vulnerability report**, then a `contrib/` PR |
