@@ -64,10 +64,10 @@ final class SupportedAppsDocTests: XCTestCase {
         XCTAssertEqual(claimed, catalog.count, "the count in the README heading is wrong")
     }
 
-    func testTheTotalSettingsQuotesMatchesTheCatalog() throws {
-        // Settings says "Yatu supports N terminals"; the README's preamble says
-        // N for both roles together. Neither is written by hand twice, but both
-        // are written by hand once.
+    func testTheReadmePreambleTotalMatchesTheCatalog() throws {
+        // The preamble states a total for both roles together, written by hand
+        // and nowhere derived. Settings quotes no number of its own -- it links
+        // here by name -- so this is the only place the total can go stale.
         let total = Catalog.apps(for: .terminal).count + Catalog.apps(for: .editor).count
         XCTAssertTrue(try readme.contains("These are the \(total) Yatu knows how to"),
                       "the README's total is not \(total)")

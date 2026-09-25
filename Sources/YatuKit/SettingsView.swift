@@ -56,10 +56,6 @@ final class SettingsViewModel: ObservableObject {
         chosen = app
     }
 
-    /// How many entries the catalog holds for this role, installed or not.
-    /// Shown as a count rather than as rows -- see SettingsView.supportedNote.
-    var catalogCount: Int { installed.count + missing.count }
-
     /// Kept for the chosen app that is no longer on disk: that one has to be
     /// nameable, or a stale preference would show as "nothing chosen yet".
     var chosenRow: CatalogRow? {
@@ -136,15 +132,18 @@ struct SettingsView: View {
     ///
     /// The uninstalled entries used to be a second section, greyed out: a dozen
     /// rows that cannot be chosen, in the one window whose entire job is
-    /// choosing. Saying how many are supported answers "where is my terminal"
-    /// without spending the window on it, and the README carries the names.
+    /// choosing. A link to the names answers "where is my terminal" without
+    /// spending the window on it.
+    ///
+    /// Shown only when something is in fact missing: on a Mac with all of them
+    /// installed it would point at a list already fully on screen.
     @ViewBuilder
     private var supportedNote: some View {
         if !model.missing.isEmpty {
             // One string literal, not a concatenation: Text parses markdown from
             // a LocalizedStringKey, and `+`-ing two Strings together produces a
             // plain String, which it renders verbatim -- brackets, URL and all.
-            Text("\(model.role.displayName) supports \(model.catalogCount) \(supportedNoun). [See which](https://github.com/inquinity/yatu#supported-terminals-and-editors)")
+            Text("[Supported \(supportedNoun)](https://github.com/inquinity/yatu#supported-terminals-and-editors)")
         }
     }
 
