@@ -4,7 +4,7 @@
 Bundle id `com.altmansoftwaredesign.yatu`, team `45GJWJVQN2`, distributed as the `yatu` cask in
 `inquinity/homebrew-tap`.
 
-Read **[docs/YATU-PLAN.md](docs/YATU-PLAN.md)** for what is being built and why, and
+Read **[docs/ROADMAP.md](docs/ROADMAP.md)** for what is being built and why, and
 **[docs/UPSTREAM.md](docs/UPSTREAM.md)** for the code that comes from OpenInTerminal.
 
 > ## ⚠️ This is no longer a fork — read before acting

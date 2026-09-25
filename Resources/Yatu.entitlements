@@ -3,7 +3,7 @@
 <!--
   One entitlement, the same one upstream's Lite app ships: Yatu asks Finder for
   the current folder and asks the chosen terminal to open it. Nothing else.
-  Adding to this file is a security decision — see docs/YATU-PLAN.md §3.
+  Adding to this file is a security decision — see docs/ROADMAP.md §3.
 -->
 <plist version="1.0">
 <dict>

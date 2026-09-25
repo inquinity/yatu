@@ -102,7 +102,7 @@ Apple's licence rather than Yatu's — see [UPSTREAM.md](UPSTREAM.md).
 
 `bin/build.sh` never signs with a real identity, and nothing in this repository produces a
 distributable build today — Developer ID signing and notarization arrive in M4 (see
-[YATU-PLAN.md](YATU-PLAN.md)).
+[ROADMAP.md](ROADMAP.md)).
 
 When they do, they will need an **Apple Developer account**, a Developer ID Application certificate
 and `notarytool` credentials stored in a keychain profile. Yatu's own releases are signed by team

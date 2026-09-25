@@ -1,4 +1,4 @@
-# Yatu — private-label plan
+# Yatu — roadmap
 
 Status: **accepted 2026-09-18**, all questions in §8 answered.
 M0 is done; M1 is in progress.

@@ -6,7 +6,7 @@
 //  a terminal; the button's menu carries Send to editor. There used to be a
 //  second executable, "Yatu Edit", for the editor role; it was retired on
 //  2026-09-23 when the Finder extension made it unnecessary (plan M6a).
-//  See docs/YATU-PLAN.md §4.1 and §9.
+//  See docs/ROADMAP.md §4.1 and §9.
 //
 
 import Foundation
