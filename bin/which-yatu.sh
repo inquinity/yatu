@@ -36,6 +36,7 @@ PREFERENCE_DOMAIN="com.altmansoftwaredesign.yatu"
 APP_NAME="Yatu"
 CASK_TOKEN="yatu"
 EXTENSION_ID="com.altmansoftwaredesign.yatu.findersync"
+EXTENSION_EXECUTABLE="YatuFinderSync"
 
 # The apps Yatu grew out of. These are NOT deprecated by it: the
 # openinterminal-lite-inquinity cask deliberately stays in the tap for Macs
@@ -158,7 +159,21 @@ report_finder_extension() {
     # `set -o pipefail` turns a successful match into a failed test. That bug
     # already cost this script once, in print_bundle_source.
     if [[ "$record" == "+"* ]]; then
-        print_colored "$COLOR_GREEN" "  state:    enabled"
+        # Enabled is not the same as loaded. Finder loads Finder Sync
+        # extensions when it starts, or when one registers while it is
+        # watching. Replace the .appex under a Finder that has been running for
+        # hours and it keeps serving the old registration -- pluginkit says
+        # "enabled", System Settings shows the switch on, and the button is
+        # simply absent from View > Customize Toolbar. That combination cost an
+        # hour once; it is worth one line here.
+        if pgrep -f "$EXTENSION_EXECUTABLE" >/dev/null 2>&1; then
+            print_colored "$COLOR_GREEN" "  state:    enabled and loaded by Finder"
+        else
+            print_colored "$COLOR_BRIGHTYELLOW" "  state:    enabled, but Finder has NOT loaded it"
+            print_colored "$COLOR_YELLOW" "  The toolbar button will be missing from View > Customize Toolbar
+  until Finder restarts:
+    killall Finder"
+        fi
     else
         print_colored "$COLOR_BRIGHTYELLOW" "  state:    registered but NOT enabled"
         print_colored "$COLOR_YELLOW" "  Enable it in System Settings > General > Login Items & Extensions,
