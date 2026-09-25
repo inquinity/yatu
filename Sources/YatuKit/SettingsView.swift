@@ -56,6 +56,12 @@ final class SettingsViewModel: ObservableObject {
         chosen = app
     }
 
+    /// How many entries the catalog holds for this role, installed or not.
+    /// Shown as a count rather than as rows -- see SettingsView.supportedNote.
+    var catalogCount: Int { installed.count + missing.count }
+
+    /// Kept for the chosen app that is no longer on disk: that one has to be
+    /// nameable, or a stale preference would show as "nothing chosen yet".
     var chosenRow: CatalogRow? {
         installed.first { $0.app == chosen } ?? missing.first { $0.app == chosen }
     }
@@ -81,7 +87,14 @@ struct SettingsView: View {
             Divider()
             footer
         }
-        .frame(width: 420, height: 520)
+        // Height follows the content, within bounds. It was a fixed 520, which
+        // was the right size for a window listing the whole catalog; with only
+        // the installed apps in it, a Mac with two terminals got a window that
+        // was two thirds empty. The floor keeps the footer off the list, and
+        // the ceiling keeps a fully-stocked Mac from filling the screen -- past
+        // that the Form scrolls, as it always did.
+        .frame(width: 420)
+        .frame(minHeight: 260, maxHeight: 620)
     }
 
     private var catalogForm: some View {
@@ -106,22 +119,37 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Installed") {
+            Section {
                 ForEach(model.installed) { row in
-                    rowView(row, enabled: true)
+                    rowView(row)
                 }
+            } header: {
+                Text("Installed")
+            } footer: {
+                supportedNote
             }
-
-            if !model.missing.isEmpty {
-                Section("Not installed") {
-                    ForEach(model.missing) { row in
-                        rowView(row, enabled: false)
-                    }
-                }
-            }
-
         }
         .formStyle(.grouped)
+    }
+
+    /// Why the list is shorter than the catalog.
+    ///
+    /// The uninstalled entries used to be a second section, greyed out: a dozen
+    /// rows that cannot be chosen, in the one window whose entire job is
+    /// choosing. Saying how many are supported answers "where is my terminal"
+    /// without spending the window on it, and the README carries the names.
+    @ViewBuilder
+    private var supportedNote: some View {
+        if !model.missing.isEmpty {
+            // One string literal, not a concatenation: Text parses markdown from
+            // a LocalizedStringKey, and `+`-ing two Strings together produces a
+            // plain String, which it renders verbatim -- brackets, URL and all.
+            Text("\(model.role.displayName) supports \(model.catalogCount) \(supportedNoun). [See which](https://github.com/inquinity/yatu#supported-terminals-and-editors)")
+        }
+    }
+
+    private var supportedNoun: String {
+        model.role == .terminal ? "terminals" : "editors"
     }
 
     private var footer: some View {
@@ -139,8 +167,7 @@ struct SettingsView: View {
         .padding(.vertical, 10)
     }
 
-    @ViewBuilder
-    private func rowView(_ row: CatalogRow, enabled: Bool) -> some View {
+    private func rowView(_ row: CatalogRow) -> some View {
         Button {
             model.choose(row.app)
         } label: {
@@ -161,8 +188,5 @@ struct SettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .disabled(!enabled)
-        .foregroundStyle(enabled ? .primary : .secondary)
-        .opacity(enabled ? 1 : 0.55)
     }
 }
