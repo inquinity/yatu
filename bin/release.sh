@@ -99,6 +99,27 @@ die() {
 step() { print_colored "$COLOR_CYAN" "$1"; }
 ok()   { print_colored "$COLOR_GREEN" "  $1"; }
 
+# Retitle the notes from "# Unreleased" to "# <version>".
+#
+# One file is both the working notes and the published release body, so its
+# heading is wrong in one of those two roles at any moment. It is archived as
+# <version>.md after the release, but nothing rewrote the heading -- so the tag
+# message and the GitHub release body both announced "Unreleased" unless someone
+# retitled it by hand first. 1.0.2 was retitled by hand.
+#
+# Called only on the publish path: a dry run changes nothing.
+retitle_notes() {
+    local heading="# $version"
+    [[ "$(head -1 "$NOTES_FILE")" == "$heading" ]] && return 0
+
+    local rewritten
+    rewritten="$(mktemp "${TMPDIR:-/tmp}/yatu-notes.XXXXXX")" || die "could not write the notes"
+    { printf '%s\n' "$heading"; tail -n +2 "$NOTES_FILE"; } > "$rewritten" \
+        || { rm -f "$rewritten"; die "could not retitle $NOTES_FILE"; }
+    mv "$rewritten" "$NOTES_FILE" || { rm -f "$rewritten"; die "could not replace $NOTES_FILE"; }
+    ok "retitled the notes '$heading'"
+}
+
 while (( $# )); do
     case "$1" in
         --go)      go=1 ;;
@@ -183,7 +204,17 @@ ok "built from $head_commit, which is HEAD"
 
 [[ -s "$NOTES_FILE" ]] \
     || die "$NOTES_FILE is missing or empty. Write the notes before releasing."
-ok "release notes present ($(wc -l < "$NOTES_FILE" | tr -d ' ') lines)"
+notes_lines="$(wc -l < "$NOTES_FILE" | tr -d ' ')"
+notes_heading="$(head -1 "$NOTES_FILE")"
+# The first line becomes the tag message's subject and heads the release body,
+# so it has to be a heading before either is written from it.
+[[ "$notes_heading" == "# "* ]] \
+    || die "$NOTES_FILE must start with a '# ...' heading; it is the release title"
+if [[ "$notes_heading" == "# $version" ]]; then
+    ok "release notes present ($notes_lines lines), titled '$notes_heading'"
+else
+    ok "release notes present ($notes_lines lines); '$notes_heading' will be retitled '# $version'"
+fi
 
 # MARK: - The tap
 
@@ -205,6 +236,9 @@ fi
 # MARK: - Publish
 
 printf '\n'
+step "Release notes"
+retitle_notes
+
 step "Tagging"
 git tag -s "$tag" -F "$NOTES_FILE" || die "could not create the tag"
 git tag -v "$tag" >/dev/null 2>&1 || die "$tag does not verify; refusing to push an unsigned tag"
@@ -263,7 +297,7 @@ git -C "$TAP_CLONE" commit -q -m "yatu $version" || die "could not commit the ca
 git -C "$TAP_CLONE" push origin HEAD || die "could not push the tap"
 ok "tap pushed"
 
-step "Release notes"
+step "Archiving the notes"
 mkdir -p "$(dirname "$NOTES_FILE")"
 git mv "$NOTES_FILE" "docs/release-notes/$version.md" 2>/dev/null \
     || mv "$NOTES_FILE" "docs/release-notes/$version.md"
