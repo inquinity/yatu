@@ -57,8 +57,10 @@ Read **[docs/ROADMAP.md](docs/ROADMAP.md)** for what is being built and why, and
 
 ```bash
 bin/build.sh                                # assemble Yatu.app into dist/
-swift test                                  # 92 tests
+swift test                                  # 111 tests
 bin/test-scripts.sh                         # shell tests (pluginkit is stubbed)
+bin/build.sh --release && bin/notarize.sh && bin/package.sh   # a shippable build
+bin/release.sh                              # check a release; --go publishes it
 bin/attack-matrix.sh --live                 # hostile input at an installed Yatu
 bin/which-yatu.sh                           # what is installed; is the extension enabled?
 bin/check-upstream.sh                       # has upstream's app catalog moved?
@@ -70,4 +72,16 @@ just --list                                 # every task
 `.appex` before the app, then asserts that the extension is sandboxed and the app is not — a
 failure there is a refusal to ship, not a warning.
 
-There is no Xcode project. Signing and notarisation return in M4.
+There is no Xcode project. Release builds are signed with the Developer ID for team
+`45GJWJVQN2`, notarised and stapled; `bin/release.sh` refuses to publish an artifact that was not
+built from the commit being tagged.
+
+## Release notes
+
+**Write them as the change lands.** A commit that changes what someone using Yatu sees or does
+updates `docs/release-notes/UNRELEASED.md` in the same commit.
+
+Notes reconstructed at release time are written from memory about work that has already shipped,
+which is how 1.0.0, 1.0.1 and 1.0.2 were all produced. `bin/release.sh` titles that file with the
+version and refuses to publish it empty — it cannot tell whether what is in it is true, or whether
+anything is missing from it.
