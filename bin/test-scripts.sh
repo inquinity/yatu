@@ -1,16 +1,22 @@
 #!/bin/bash
 #
-# Tests for the shell in bin/. There is exactly one thing here worth testing --
-# how bin/which-yatu.sh reads pluginkit -- and it is here because it got that
-# wrong in a way that mattered: when nothing matches, pluginkit prints
-# "  (no matches)", which is not empty, and the script reported an extension
-# macOS had never heard of as "registered but NOT enabled". README.md and
-# docs/BUILDING.md both point at that script when the toolbar button does not
-# appear, so a wrong answer there sends someone to System Settings to enable
-# something that is not listed.
+# Tests for the shell in bin/. Two things are worth testing here, and both
+# earned their place by producing confident wrong output.
+#
+# 1. How bin/which-yatu.sh reads pluginkit. When nothing matches, pluginkit
+#    prints "  (no matches)", which is not empty, and the script reported an
+#    extension macOS had never heard of as "registered but NOT enabled".
+#    README.md and docs/BUILDING.md both point at that script when the toolbar
+#    button does not appear, so a wrong answer sends someone to System Settings
+#    to enable something that is not listed.
+#
+# 2. How bin/release.sh titles the release notes. One file is both the working
+#    notes and the published release body, and nothing rewrote its heading -- so
+#    the tag message and the GitHub release body announced "Unreleased" unless
+#    someone retitled it by hand. Nobody sees that until it is published.
 #
 # pluginkit is stubbed on PATH, so these run without touching the real plug-in
-# registry and without needing Yatu installed.
+# registry and without needing Yatu installed. Nothing here publishes anything.
 #
 # The full colour palette is declared in every script by convention, so the set
 # is identical everywhere; not every script uses every colour.
@@ -110,6 +116,71 @@ expect "a record with a + is enabled" \
 
 expect "a record without a + is registered but not enabled" \
     "$(registered_record ' ')" "registered but NOT enabled" ""
+
+# MARK: - release.sh: titling the release notes
+
+# release.sh runs top to bottom, so retitle_notes is lifted out and exercised on
+# its own. Extracted from the real script rather than copied here: a copy would
+# keep passing while the shipped version rotted.
+retitle_source() {
+    sed -n '/^retitle_notes() {/,/^}/p' bin/release.sh
+}
+
+# $1 = case name, $2 = heading in, $3 = heading expected out
+expect_retitle() {
+    local name=$1 heading_in=$2 heading_out=$3
+    local notes_dir body_in body_out got
+    checks=$((checks + 1))
+
+    notes_dir="$(mktemp -d)"
+    printf '%s\n' "$heading_in" "" "First paragraph." "" "- a bullet" > "$notes_dir/NOTES.md"
+    body_in="$(tail -n +2 "$notes_dir/NOTES.md")"
+
+    (
+        set -euo pipefail
+        NOTES_FILE="$notes_dir/NOTES.md"
+        version="1.2.3"
+        # Both are called by the eval'd function, not from here.
+        # shellcheck disable=SC2329
+        die() { printf 'error: %s\n' "$*" >&2; exit 1; }
+        # shellcheck disable=SC2329
+        ok()  { :; }
+        eval "$(retitle_source)"
+        retitle_notes
+    ) || {
+        print_colored "$COLOR_RED" "FAIL  $name (retitle_notes exited non-zero)"
+        failures=$((failures + 1))
+        rm -rf "$notes_dir"
+        return
+    }
+
+    got="$(head -1 "$notes_dir/NOTES.md")"
+    body_out="$(tail -n +2 "$notes_dir/NOTES.md")"
+    rm -rf "$notes_dir"
+
+    if [[ "$got" != "$heading_out" ]]; then
+        print_colored "$COLOR_RED" "FAIL  $name"
+        printf '      expected heading: %s\n      got:              %s\n' "$heading_out" "$got"
+        failures=$((failures + 1))
+        return
+    fi
+    # The heading is one line; losing the notes under it would be far worse than
+    # mistitling them.
+    if [[ "$body_out" != "$body_in" ]]; then
+        print_colored "$COLOR_RED" "FAIL  $name (the body was altered)"
+        printf '      before:\n%s\n      after:\n%s\n' "$body_in" "$body_out"
+        failures=$((failures + 1))
+        return
+    fi
+    print_colored "$COLOR_GREEN" "ok    $name"
+}
+
+printf '\n'
+print_colored "$COLOR_CYAN" "release.sh: titling the release notes"
+
+expect_retitle "an Unreleased heading becomes the version" "# Unreleased" "# 1.2.3"
+expect_retitle "a heading already correct is left alone"   "# 1.2.3"      "# 1.2.3"
+expect_retitle "a stale version heading is corrected"      "# 1.0.2"      "# 1.2.3"
 
 printf '\n'
 if (( failures )); then
