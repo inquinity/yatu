@@ -182,6 +182,60 @@ expect_retitle "an Unreleased heading becomes the version" "# Unreleased" "# 1.2
 expect_retitle "a heading already correct is left alone"   "# 1.2.3"      "# 1.2.3"
 expect_retitle "a stale version heading is corrected"      "# 1.0.2"      "# 1.2.3"
 
+# MARK: - ver: the build number is monotonic
+
+# $1 = case name, $2 = command words, $3 = expected "version build" after
+expect_ver() {
+    local name=$1 command=$2 wanted=$3
+    local scratch got
+    checks=$((checks + 1))
+
+    scratch="$(mktemp -d)"
+    # Starts at build 7 on purpose: a reset-to-1 bug is invisible from build 1,
+    # which is how it survived three releases.
+    printf '%s\n%s\n' "1.0.2" "7" > "$scratch/VERSION"
+
+    # shellcheck disable=SC2086
+    VERSION_FILE="$scratch/VERSION" bin/ver $command >/dev/null 2>&1 || {
+        print_colored "$COLOR_RED" "FAIL  $name (bin/ver $command exited non-zero)"
+        failures=$((failures + 1)); rm -rf "$scratch"; return
+    }
+    got="$(tr '\n' ' ' < "$scratch/VERSION" | sed 's/ $//')"
+    rm -rf "$scratch"
+
+    if [[ "$got" != "$wanted" ]]; then
+        print_colored "$COLOR_RED" "FAIL  $name"
+        printf '      expected: %s\n      got:      %s\n' "$wanted" "$got"
+        failures=$((failures + 1))
+        return
+    fi
+    print_colored "$COLOR_GREEN" "ok    $name"
+}
+
+# The guard and the template it guards against live in the same script and must
+# agree on one token. If they drift the guard stops guarding, silently, and the
+# next release publishes its own boilerplate as the release body.
+checks=$((checks + 1))
+marker="$(sed -n 's/^NOTES_MARKER="\(.*\)"$/\1/p' bin/release.sh)"
+if [[ -n "$marker" ]] \
+    && grep -q "grep -q \"\$NOTES_MARKER\"" bin/release.sh \
+    && grep -q "\"<!-- \$NOTES_MARKER:" bin/release.sh; then
+    print_colored "$COLOR_GREEN" "ok    the unwritten-notes guard and its template share one marker"
+else
+    print_colored "$COLOR_RED" "FAIL  the unwritten-notes guard and its template have drifted"
+    printf '      marker read from NOTES_MARKER: %s\n' "${marker:-<none>}"
+    failures=$((failures + 1))
+fi
+
+printf '\n'
+print_colored "$COLOR_CYAN" "ver: the build number only goes up"
+
+expect_ver "bump patch carries the build up" "bump patch"  "1.0.3 8"
+expect_ver "bump minor carries the build up" "bump minor"  "1.1.0 8"
+expect_ver "bump major carries the build up" "bump major"  "2.0.0 8"
+expect_ver "set carries the build up"        "set 1.5.0"   "1.5.0 8"
+expect_ver "bump build leaves the version"   "bump build"  "1.0.2 8"
+
 printf '\n'
 if (( failures )); then
     print_colored "$COLOR_RED" "$failures of $checks checks failed"
