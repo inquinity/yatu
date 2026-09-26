@@ -7,9 +7,7 @@ Yatu is a Finder toolbar button that opens a terminal at the folder you are look
 
 Nothing here is scheduled; the order is a suggestion.
 
-1. **Choose the app icon format.** A flat `.icns` or an Icon Composer `.icon`. The old reason to
-   prefer `.icns` (art that varies by size) no longer applies, so decide on the format's own merits
-   (DESIGN §9.3, M1b).
+_Nothing is scheduled._
 
 ## Optional, unscheduled
 
