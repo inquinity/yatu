@@ -3,8 +3,9 @@
 Status: **accepted 2026-09-18**, all questions in §8 answered.
 **Shipping. 1.0.2 released 2026-09-25**; M0–M5 are done or deliberately dropped. What remains is
 M6 (the upstream contribution track, not started), the app icon *format* in §9, the catalog
-question in §9.6, and a full pass of `docs/MANUAL-TEST-CHECKLIST.md` §4 — newly owed, because
-1.0.2 rewrote the launch path and the menu that §4 exists to exercise.
+question in §9.6, the visible-change notification for `set-default` in §9.9, and a full pass of
+`docs/MANUAL-TEST-CHECKLIST.md` §4 — newly owed, because 1.0.2 rewrote the launch path and the
+menu that §4 exists to exercise. M7 is optional and unscheduled.
 Replaces the earlier `PRIVATE-LABEL-PLAN.md` draft.
 Inputs: the security review in `security-review/` (git-excluded), the Belvedere fork
 (`~/dev/oss/belvedere`) for fork conventions, and a GitHub survey of comparable apps.
@@ -74,6 +75,13 @@ Build and release findings (S1–S7) are addressed in M4. The unshipped full app
 
 A single Swift package. No Xcode project, no workspace, no SPM dependencies.
 
+> **Superseded in part, 2026-09-25.** This section is the original design and is kept as such.
+> Since it was written: the fork was cut (§9.7), so `Sources/YatuUpstream/` holds three *vendored*
+> files with provenance headers, not symlinks, and there is no `Sync:` merge; the editor executable
+> was retired (§4.1, M6a); and `Sources/YatuFinderSync/` (§9), `HandOff.swift`,
+> `CatalogCorrections.swift`, `LaunchCoordinator` and the About window were added. The tree below
+> omits them. Read the source tree for what exists now.
+
 ```
 yatu/                            (repo root)
 ├── Package.swift                library YatuKit + two executables, no dependencies
@@ -101,7 +109,7 @@ yatu/                            (repo root)
 **Upstream files compiled unchanged** (symlinked or path-referenced into `Sources/YatuUpstream`):
 `OpenInTerminalCore/SupportedApps.swift`, `ScriptingBridge/Finder.swift`,
 `ScriptingBridge/Terminal.swift`, and `App.swift` only if the spike shows its dependency
-chain can be cut. Upstream fixes to these arrive with a `Sync:` merge for free.
+chain can be cut. *(Superseded 2026-09-23: the files are vendored and upstream changes are noticed, not merged — §9.7.)*
 
 **Spike M2a — done 2026-09-18. Outcome: the second option.** `App.swift` cannot be compiled:
 its `Openable` extension reaches `FinderManager`, `DefaultsManager`, `ScriptManager`,
@@ -118,11 +126,15 @@ to carry. The two ScriptingBridge files join the target when the launcher needs 
 
 ### 4.1 The editor role
 
-Upstream ships two Lite apps — OpenInTerminal-Lite and OpenInEditor-Lite — because a Finder
-toolbar button does exactly one thing. Yatu keeps that shape: **one codebase, two executables**,
-differing only in which role they ask the shared code for.
+> **Superseded 2026-09-23 (§9, M6a).** There is one app and no editor executable or bundle; the
+> editor role is reached from the Finder extension's menu. The table's Editor column describes the
+> *role* as `YatuKit` still implements it, and `…yatu.editor` is a stable identity, not a bundle.
 
-| | Terminal (ships in 1.0) | Editor (built, not shipped) |
+Upstream ships two Lite apps — OpenInTerminal-Lite and OpenInEditor-Lite — because a Finder
+toolbar button does exactly one thing. Yatu originally planned the same shape: **one codebase, two
+executables**, differing only in which role they ask the shared code for.
+
+| | Terminal role | Editor role (no separate app) |
 |---|---|---|
 | Bundle id | `com.altmansoftwaredesign.yatu` | `com.altmansoftwaredesign.yatu.editor` |
 | App name | Yatu | Yatu (the same app, in its editor role) |
@@ -275,7 +287,8 @@ before anything is published.
   bundle** — that is what broke in 26.6); `NSAppleEventsUsageDescription` written for Yatu;
   copyright "© 2026 Altman Software Design, LLC — portions © 2019 Jianing Wang (MIT)";
   MIT license text shipped in the bundle (the license requires it).
-- **Verified on this Mac:** `bin/build.sh` produces `Yatu.app`, universal
+- **Verified on this Mac, 2026-09-18 (a snapshot — release builds have since been Developer ID
+  signed and notarized, M4, and the preferences domain now exists):** `bin/build.sh` produces `Yatu.app`, universal
   (`x86_64 arm64`), `minos 13.0` in both slices, ad-hoc signed with the single Apple Events
   entitlement and passing `codesign --verify --strict`. `plutil -p` shows the bundle id, name,
   `LSUIElement`, the dual copyright and the per-role usage string; `YatuBuildCommit`,
@@ -304,7 +317,8 @@ before anything is published.
   are pinned below the scrolling catalog. Every row is a catalog case, so there is nowhere to type
   a path. The window/tab control in §5 was dropped, with the reasoning recorded there.
   The dimmed uninstalled rows described here shipped in 1.0.0 and were removed in 1.0.2; see §5.
-- **Release gates for 1.0.0, all closed 2026-09-24:** 92 unit tests, 4 shell tests, lint clean;
+- **Release gates for 1.0.0, all closed 2026-09-24** (counts as of then; 111 unit and 7 shell as
+  of 1.0.2, see M5): 92 unit tests, 4 shell tests, lint clean;
   `bin/attack-matrix.sh --live` run by Robert against the installed build — **all hostile cases
   passed**, no command execution and nothing selected was executed; the `yatu://` security review
   (no High or Critical, L1 and F1 confirmed closed); and the Gatekeeper launch assessment in
@@ -497,7 +511,7 @@ editor rules, `MenuModel` and the settings window all use it, and the 60 tests p
 stable identity and the comment says so.
 
 ### M7 — Optional, after 1.0
-- App Sandbox spike on `fork/sandbox-spike`: `app-sandbox` plus temporary Apple Events exceptions for
+- App Sandbox spike on a topic branch (`sandbox-spike`): `app-sandbox` plus temporary Apple Events exceptions for
   `com.apple.finder` and the catalog's bundle ids. Ship only if launching a Finder-derived folder works
   without an `NSUserAppleScriptTask` helper, or if that one-time install step proves acceptable.
 - Optional extras only if wanted: multiple selected folders each in a tab; a Services entry;
@@ -522,9 +536,11 @@ stable identity and the comment says so.
    hand-rolled layout or AppKit and bought back only 2015-era hardware, which can still run
    upstream's 10.13-target build. Neither version receives Apple security updates as of 2026-09.
 
-3. **The rest of the upstream tree — settled: keep.** `OpenInTerminal/`, the Finder extension, the
-   helper and `OpenInEditor-Lite` stay in the repository, documented as unsupported and not built,
-   so syncs stay trivial.
+3. **The rest of the upstream tree — settled: keep. Reversed 2026-09-23: removed (§9.7).**
+   `OpenInTerminal/`, the Finder extension, the helper and `OpenInEditor-Lite` were to stay,
+   documented as unsupported, so syncs stayed trivial. Once the product compiled only three
+   upstream files, 289 unbuilt ones were cost without benefit; the reference copy lives in
+   `~/dev/oss/openinterminal`.
 
 4. **Signed tags — settled: yes.** SSH signing is set up (`~/.ssh/git-signing`, ed25519, passphrase
    in the vault; `commit.gpgsign` and `tag.gpgsign` on). `~/.ssh/allowed_signers` carries **two
@@ -542,8 +558,8 @@ stable identity and the comment says so.
    `openinterminal-lite-inquinity` remains in the tap, because it may still be wanted for older
    Macs that Yatu's macOS 13 floor excludes. That makes M5 simpler rather than harder — there is no
    removal to sequence, no window where an installed machine points at a deleted cask, and the two
-   can coexist. Yatu's migration reads the old app's preference without touching it (M3), so both
-   can be installed at once.
+   can coexist. They coexist by having different bundle ids and preference domains; the migration
+   that once read the old app's preference was dropped (M3).
 
 6. **Icon — settled: a folder with a prompt caret, "Violet Folder."** A board of seven concepts
    was drawn in `docs/icon-concepts/`; concept 7 (an aperture) was chosen on 2026-09-18 and then
@@ -599,6 +615,11 @@ stable identity and the comment says so.
    **The glyph has a stroke floor** of 1.8px. At 16px a proportional stroke is ~1.2px and the
    caret collapsed into two grey dots; the floor keeps it a caret. This was found by looking at the
    real pixels, not by reasoning.
+
+   **The next two paragraphs are historical (superseded 2026-09-23).** They describe the app icon
+   drawn in a ⌘-dragged toolbar item, which is now only the fallback path (§9.5). The extension's
+   button draws its own template symbol. The "still unchecked" items at the end of the second
+   paragraph were overtaken by the colour-at-every-size decision above and are no longer open.
 
    **The glyph cannot be tinted by the system, and does not need to be.** macOS does not tint an
    app icon the way it tints a real template image, so the ink is one mid grey. Observed on macOS
