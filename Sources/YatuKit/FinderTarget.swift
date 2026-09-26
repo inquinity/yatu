@@ -8,7 +8,7 @@
 //  running Finder: `FinderScriptingQuery` does the ScriptingBridge I/O, and the
 //  static members below decide what the answer means.
 //
-//  Rules 3 and 4 (docs/ROADMAP.md §4.1).
+//  Rules 3 and 4 (docs/DESIGN.md §4.1).
 //
 
 import Foundation

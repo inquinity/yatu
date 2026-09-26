@@ -86,11 +86,11 @@ header.
 Upstream's catalog is **not an authoritative source**. It is one project's list, and it has shipped
 stale identifiers (`com.apple.Xcode`, `com.sublimetext.3`) that survived only because the launcher
 falls back to a name search in `/Applications`. Verify a bundle identifier against the real
-application before trusting it. See [ROADMAP.md](ROADMAP.md) §9.6.
+application before trusting it. See [DESIGN.md](DESIGN.md) §9.6.
 
 ## Contributing back
 
-> **Not an active track.** Proactive reporting was dropped 2026-09-25 ([ROADMAP.md](ROADMAP.md) M6).
+> **Not an active track.** Proactive reporting was dropped 2026-09-25 ([DESIGN.md](DESIGN.md) M6).
 > What follows is how to do it if that ever changes; GH-287 remains open as it was.
 
 Fixes for upstream are developed in a **separate clone** — `inquinity/OpenInTerminal`, branch
@@ -131,11 +131,11 @@ public. Summary:
   signing that accepts a dirty tree and never verifies the result) are addressed by `bin/build.sh`.
 - **The parts upstream ships that Yatu never did carry more** — one High (upstream's Finder
   extension can hand a *file* to a terminal, which runs it) and four Medium. Yatu does not carry
-  them, and reporting them upstream was dropped on 2026-09-25 (ROADMAP.md M6).
+  them, and reporting them upstream was dropped on 2026-09-25 (DESIGN.md M6).
 
 Yatu's own new entry point, the `yatu://` URL scheme, is **public**: any application or web page can
 invoke it. It is parsed strictly in `Sources/YatuKit/HandOff.swift`, and it was reviewed on its own
-on **2026-09-24** (ROADMAP.md §9.4, notes in `security-review/`). No High or Critical. The two
+on **2026-09-24** (DESIGN.md §9.4, notes in `security-review/`). No High or Critical. The two
 findings inherited from upstream that this design exists to close — L1, preferences driving an
 arbitrary app launch, and F1, a file handed to a terminal which runs it — are **confirmed closed**,
 with the allowlist applied both on write and on parse and the terminal role able to receive only a
