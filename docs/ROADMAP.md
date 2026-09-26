@@ -27,7 +27,6 @@ Nothing is scheduled.
 
 - App Sandbox spike for the app itself. Ship only if launching a Finder-derived folder works without
   an `NSUserAppleScriptTask` helper.
-- Extras only if wanted: a Services entry.
 
 ## Shipped
 
