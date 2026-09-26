@@ -7,11 +7,7 @@ Yatu is a Finder toolbar button that opens a terminal at the folder you are look
 
 Nothing here is scheduled; the order is a suggestion.
 
-1. **Tell the user when the default changes.** `yatu://set-default` changes a stored preference on
-   behalf of a caller the app cannot identify. Gatekeeper keeps the worst case low (DESIGN §9.9), but
-   a default that changes silently is poor behaviour whoever changed it. Post a notification with an
-   undo, and write a log entry. Not a security control; ordinary work.
-2. **Choose the app icon format.** A flat `.icns` or an Icon Composer `.icon`. The old reason to
+1. **Choose the app icon format.** A flat `.icns` or an Icon Composer `.icon`. The old reason to
    prefer `.icns` (art that varies by size) no longer applies, so decide on the format's own merits
    (DESIGN §9.3, M1b).
 
