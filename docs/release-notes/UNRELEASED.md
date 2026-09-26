@@ -16,3 +16,8 @@ ask you to pick another the next time you click. Bundle identifiers were
 corrected for Sublime Text, VSCodium, Alacritty, CLion, WebStorm, Android Studio
 and Zed, so these are now found wherever they are installed and not only in
 `/Applications`.
+
+## The toolbar button's folder is more closed
+
+The bar under the folder's tab now reaches the walls, so the button reads as
+one shape at toolbar size instead of a floating line.

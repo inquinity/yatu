@@ -7,12 +7,7 @@ Yatu is a Finder toolbar button that opens a terminal at the folder you are look
 
 Nothing here is scheduled; the order is a suggestion.
 
-1. **Reconsider the caret in the toolbar symbol.** A chevron in a Finder toolbar item usually means
-   "this opens a menu". Yatu's ⌥-click menu is invisible, and a plain click opens the terminal, so a
-   chevron promises something the button does not do. Options: keep it, swap the `>` for a `>_`
-   prompt that reads as a shell and not a disclosure arrow, or drop it (DESIGN §9.3, M1b). Decide by
-   looking at the real toolbar at 16–32pt, as the caret placement was decided.
-2. **Choose the app icon format.** A flat `.icns` or an Icon Composer `.icon`. The old reason to
+1. **Choose the app icon format.** A flat `.icns` or an Icon Composer `.icon`. The old reason to
    prefer `.icns` (art that varies by size) no longer applies, so decide on the format's own merits
    (DESIGN §9.3, M1b).
 
