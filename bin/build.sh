@@ -256,7 +256,7 @@ write_info_plist() {
     local version build_number build_commit build_date
 
     version="$(bin/ver short)"
-    build_number="$(bin/ver build)"
+    build_number="$BUILD_NUMBER"
     build_commit="$(git rev-parse --short HEAD 2>/dev/null || printf 'unknown')"
     # Build date comes from the commit, not the clock, so a rebuild of the same
     # commit produces the same plist (S-series finding in the build review).
@@ -445,6 +445,18 @@ esac
 if [[ "$DRY_RUN" != true ]]; then
     rm -rf "${PWD:?}/$OUTPUT_DIR"
     mkdir -p "$OUTPUT_DIR"
+fi
+
+# One number for every bundle in this run. A release carries the plain number
+# from VERSION, which release.sh and the tag rely on. Anything else gets a
+# dotted one that counts up with each build (bin/ver dev-build), so a test build
+# is never mistaken for the release it was built on.
+if [[ "$RELEASE" == true ]]; then
+    BUILD_NUMBER="$(bin/ver build)"
+elif [[ "$DRY_RUN" == true ]]; then
+    BUILD_NUMBER="$(bin/ver dev-build --dry-run)"
+else
+    BUILD_NUMBER="$(bin/ver dev-build)"
 fi
 
 print_colored "$COLOR_CYAN" "Assembling"

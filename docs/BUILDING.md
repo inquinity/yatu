@@ -63,9 +63,13 @@ enabled again. That is expected.
 A built bundle identifies itself:
 
 ```bash
-/Applications/Yatu.app/Contents/MacOS/Yatu --version    # 1.0.0 build 1
+/Applications/Yatu.app/Contents/MacOS/Yatu --version    # 1.0.2 build 1.7 (a test build)
 /Applications/Yatu.app/Contents/MacOS/Yatu --identity   # bundle id, team, commit, build date
 bin/ver --help                                          # read or bump VERSION
+
+A release carries the plain build number from `VERSION`; every other build counts up from it, so
+`1.0.2 build 1.7` is the seventh test build made on this Mac since build 1. It sorts after the
+release it was built on and before the next one, and the counter (`.build/build-counter`) is not in git.
 ```
 
 ## Regenerating the toolbar symbol
