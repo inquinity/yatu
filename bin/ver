@@ -14,6 +14,13 @@
 # bundle by it, and a local build was indistinguishable from the release it was
 # built on top of. A single monotonic integer is the whole point of the field.
 #
+# Builds that are not releases get a dotted build, "<build>.<n>", where n counts
+# up with every build on this machine (`bin/ver dev-build`). It sorts after the
+# release it was built on and before the next one, so it can never collide with
+# a real build number, and two test builds of the same commit are told apart.
+# The counter lives in .build/, outside git, and restarts when the release
+# build number changes. Releases use the plain number from VERSION.
+#
 # bin/build.sh reads these and stamps them into Info.plist. This replaces the
 # Version.xcconfig an Xcode project would carry (docs/DESIGN.md, M1).
 #
@@ -46,6 +53,7 @@ print_colored() {
 # rather than the repo's own VERSION. Give it an absolute path: this script has
 # already cd'd to the repo root by the time it is read.
 VERSION_FILE="${VERSION_FILE:-VERSION}"
+COUNTER_FILE="${COUNTER_FILE:-.build/build-counter}"
 DRY_RUN=false
 
 usage() {
@@ -55,6 +63,8 @@ Commands:
   (none)            Print the version and build, e.g. \"1.0.0 build 1\"
   short             Print the marketing version only, e.g. \"1.0.0\"
   build             Print the build number only, e.g. \"1\"
+  dev-build         Count up and print the build number for a non-release
+                    build, e.g. \"1.7\". Writes .build/build-counter, not VERSION
   set <version>     Set the marketing version; the build number goes up with it
   bump major|minor|patch
                     Increment that segment; the build number goes up with it
@@ -118,6 +128,28 @@ bump_segment() {
     esac
 }
 
+# Count one more non-release build and print its number, "<build>.<n>". The
+# counter restarts at 1 when the release build number moves on, so it never
+# shows a stale count against a new release line.
+next_dev_build() {
+    local stored_build=0 stored_count=0 count
+    if [[ -f "$COUNTER_FILE" ]]; then
+        IFS=. read -r stored_build stored_count < "$COUNTER_FILE" || true
+        [[ "$stored_build" =~ ^[0-9]+$ && "$stored_count" =~ ^[0-9]+$ ]] \
+            || { stored_build=0; stored_count=0; }
+    fi
+    if [[ "$stored_build" == "$current_build" ]]; then
+        count=$((stored_count + 1))
+    else
+        count=1
+    fi
+    if [[ "$DRY_RUN" != true ]]; then
+        mkdir -p "$(dirname "$COUNTER_FILE")"
+        printf '%s.%s\n' "$current_build" "$count" > "$COUNTER_FILE"
+    fi
+    printf '%s.%s\n' "$current_build" "$count"
+}
+
 # Collect options first so they may appear before or after the command.
 positional_arguments=()
 while [[ $# -gt 0 ]]; do
@@ -135,6 +167,7 @@ case "${positional_arguments[0]:-}" in
     "")      printf '%s build %s\n' "$current_version" "$current_build" ;;
     short)   printf '%s\n' "$current_version" ;;
     build)   printf '%s\n' "$current_build" ;;
+    dev-build) next_dev_build ;;
     set)
         new_version="${positional_arguments[1]:-}"
         [[ -n "$new_version" ]] || die "set requires a version, e.g. 'bin/ver set 1.1.0'"
