@@ -5,15 +5,29 @@ Yatu is a Finder toolbar button that opens a terminal at the folder you are look
 
 ## Next
 
-Nothing here is scheduled; the order is a suggestion.
+Nothing is scheduled.
 
-_Nothing is scheduled._
+## For consideration
+
+- **Open a "working group": one terminal window per selected folder.** Select folders at different
+  levels, click, and each opens at its own folder. Passing several folders to the terminal as
+  `open` arguments works with no new permissions and no shell string, but it gives **windows, not
+  tabs**: tested 2026-09-26, three folders opened three windows with one tab each in both
+  Terminal.app and iTerm, the only catalog terminals installed here. So this is windows only.
+  - Changes DESIGN §4.1 rule 3, which sends several selected items to the viewed folder. It would
+    become: every selected *folder* opens; files in the selection are ignored; a selection with no
+    folder falls back to the viewed folder as now.
+  - Needs a cap of about 8, because `yatu://` is public and a hostile URL must not be able to open
+    dozens of windows; the hand-off already carries a bounded list.
+  - Tabs would need a per-terminal scripting path (iTerm's scripting creates a tab at a working
+    directory without a shell string, Terminal.app's does not) and a new Automation prompt, which is
+    a security review, not a feature. Not proposed.
 
 ## Optional, unscheduled
 
 - App Sandbox spike for the app itself. Ship only if launching a Finder-derived folder works without
   an `NSUserAppleScriptTask` helper.
-- Extras only if wanted: several selected folders each in a tab; a Services entry.
+- Extras only if wanted: a Services entry.
 
 ## Shipped
 
