@@ -27,3 +27,9 @@ one shape at toolbar size instead of a floating line.
 A build made from source now reports a dotted build number such as `1.7`, so a
 test build can no longer be mistaken for the release it was built on. Releases
 are unchanged.
+
+## The app icon follows the system icon style
+
+Yatu's icon is now an Icon Composer icon, so in the Dock, Get Info and Spotlight
+it follows System Settings → Appearance → Icon & widget style (Default, Dark,
+Clear, Tinted) like other apps. It looks the same in the default style.

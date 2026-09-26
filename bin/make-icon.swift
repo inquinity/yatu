@@ -30,14 +30,21 @@
 //  tells them to expect. `--glyph` still draws the old one-ink form if a
 //  monochrome asset is ever wanted.
 //
-//  A flat .icns, written from PNGs via iconutil — the only format that allows
-//  different artwork by size. It is NOT Apple's documented implementation for
-//  macOS 26 and later, which is an Icon Composer (.icon) document; see
-//  docs/FINDER-TOOLBAR-ICONS.md. (An earlier version of this comment said Icon
-//  Composer "stopped rendering" on 26.6. That was wrong: the GH-283 fix removed
-//  duplicate icon sources, not the format.)
+//  The shipped app icon is an Icon Composer document, Apple's documented format
+//  for macOS 26 and later: `--composer=Resources/AppIcon.icon` (`just icon`)
+//  writes a gradient fill and the mark as two transparent layers, and
+//  bin/build.sh compiles it with actool into Assets.car plus a generated
+//  AppIcon.icns for earlier systems. That lets the system restyle the icon —
+//  dark, clear, tinted — which a flat .icns cannot offer. See docs/DESIGN.md
+//  §9.3 and docs/FINDER-TOOLBAR-ICONS.md.
 //
-//  Usage: bin/make-icon.swift [output.icns] [--glyph|--monochrome|--colour|--by-size]
+//  The .icns writer below is kept for the size-split experiments (`--by-size`,
+//  `--glyph`, `--monochrome`); nothing ships from it. (An earlier version of
+//  this comment said Icon Composer "stopped rendering" on 26.6. That was
+//  wrong: the GH-283 fix removed duplicate icon sources, not the format.)
+//
+//  Usage: bin/make-icon.swift --composer=<dir.icon>
+//         bin/make-icon.swift [output.icns] [--glyph|--monochrome|--colour|--by-size]
 //
 
 import AppKit
@@ -74,6 +81,8 @@ enum InkPolicy {
 }
 
 var outputPath = "Resources/AppIcon.icns"
+/// Set by --composer=<dir>: write an Icon Composer document there instead.
+var composerPath: String?
 /// Colour at every size: the app icon is no longer drawn in any toolbar except
 /// by ⌘-drag, so it should look like every other application's icon.
 var inkPolicy = InkPolicy.always(.colour)
@@ -88,6 +97,8 @@ for argument in CommandLine.arguments.dropFirst() {
         inkPolicy = .always(.colour)
     case "--by-size":
         inkPolicy = .bySize
+    case _ where argument.hasPrefix("--composer="):
+        composerPath = String(argument.dropFirst("--composer=".count))
     default:
         if argument.hasPrefix("-") {
             FileHandle.standardError.write(Data("unknown option: \(argument)\n".utf8))
@@ -153,8 +164,11 @@ func folderOutline(_ z: CGFloat) -> NSBezierPath {
 /// The caret is set low and left in the folder's body, not centred in it. The
 /// stroke width is given in canvas units, so a caller that scales the mark down
 /// must pass a proportionally heavier line to keep the same optical weight.
+enum MarkParts { case all, folderOnly, caretOnly }
+
 func drawFolderMark(z: CGFloat, scale: CGFloat, lineWidth: CGFloat,
-                    outline: NSColor, inside: NSColor?, caret: NSColor) {
+                    outline: NSColor, inside: NSColor?, caret: NSColor,
+                    parts: MarkParts = .all) {
     NSGraphicsContext.current?.saveGraphicsState()
     defer { NSGraphicsContext.current?.restoreGraphicsState() }
 
@@ -165,16 +179,19 @@ func drawFolderMark(z: CGFloat, scale: CGFloat, lineWidth: CGFloat,
     transform.translateX(by: -centre, yBy: -centre)
     transform.concat()
 
-    let folder = folderOutline(z)
-    if let inside {
-        inside.setFill()
-        folder.fill()
+    if parts != .caretOnly {
+        let folder = folderOutline(z)
+        if let inside {
+            inside.setFill()
+            folder.fill()
+        }
+        folder.lineWidth = lineWidth
+        folder.lineJoinStyle = .round
+        folder.lineCapStyle = .round
+        outline.setStroke()
+        folder.stroke()
     }
-    folder.lineWidth = lineWidth
-    folder.lineJoinStyle = .round
-    folder.lineCapStyle = .round
-    outline.setStroke()
-    folder.stroke()
+    guard parts != .folderOnly else { return }
 
     let mark = NSBezierPath()
     mark.lineWidth = lineWidth
@@ -249,6 +266,69 @@ func writePNG(_ image: NSImage, pixels: Int, to url: URL) throws {
                       userInfo: [NSLocalizedDescriptionKey: "cannot encode PNG"])
     }
     try data.write(to: url)
+}
+
+// MARK: - Icon Composer
+
+/// Write an Icon Composer document: a gradient fill for the background and the
+/// mark as two transparent layers, so the system can restyle them — glass,
+/// dark, clear and tinted — which a flat .icns cannot offer.
+///
+/// The canvas is the whole icon. The system masks it to the rounded shape, so
+/// nothing here draws a tile or an inset. `drawTile` scaled the mark to 0.66 of
+/// an icon that was 0.83 tile, so the mark is 0.66 / 0.83 of the canvas here,
+/// keeping the same proportion of the tile.
+func writeComposerDocument(to path: String) throws {
+    let root = URL(fileURLWithPath: path)
+    let assets = root.appendingPathComponent("Assets")
+    try? FileManager.default.removeItem(at: root)
+    try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
+
+    let canvas = 1024
+    let tileShare: CGFloat = 1 - 0.085 * 2
+    let scale: CGFloat = 0.66 / tileShare
+    let lineWidth = CGFloat(canvas) * 0.06 / tileShare / scale
+    for (name, parts) in [("folder", MarkParts.folderOnly), ("caret", .caretOnly)] {
+        let image = NSImage(size: NSSize(width: canvas, height: canvas))
+        image.lockFocus()
+        drawFolderMark(z: CGFloat(canvas), scale: scale, lineWidth: lineWidth,
+                       outline: colourPalette.outline, inside: colourPalette.inside,
+                       caret: colourPalette.caret, parts: parts)
+        image.unlockFocus()
+        try writePNG(image, pixels: canvas, to: assets.appendingPathComponent("\(name).png"))
+    }
+
+    func srgb(_ colour: NSColor) -> String {
+        let c = colour.usingColorSpace(.sRGB) ?? colour
+        return String(format: "srgb:%.5f,%.5f,%.5f,1.00000", c.redComponent, c.greenComponent, c.blueComponent)
+    }
+    let document: [String: Any] = [
+        "fill": [
+            "linear-gradient": [srgb(colourPalette.backgroundTop), srgb(colourPalette.backgroundBottom)],
+            "orientation": ["start": ["x": 0.5, "y": 0], "stop": ["x": 0.5, "y": 1]],
+        ],
+        "groups": [[
+            "name": "mark",
+            "layers": [
+                ["name": "caret", "image-name": "caret.png",
+                 "position": ["scale": 1, "translation-in-points": [0, 0]]],
+                ["name": "folder", "image-name": "folder.png",
+                 "position": ["scale": 1, "translation-in-points": [0, 0]]],
+            ],
+            "shadow": ["kind": "neutral", "opacity": 0.5],
+            "translucency": ["enabled": false, "value": 0],
+        ]],
+        "supported-platforms": ["squares": "shared"],
+    ]
+    let json = try JSONSerialization.data(withJSONObject: document,
+                                          options: [.prettyPrinted, .sortedKeys])
+    try json.write(to: root.appendingPathComponent("icon.json"))
+    print("wrote \(path) — gradient fill, folder and caret layers")
+}
+
+if let composerPath {
+    try writeComposerDocument(to: composerPath)
+    exit(0)
 }
 
 let iconsetURL = URL(fileURLWithPath: NSTemporaryDirectory())
