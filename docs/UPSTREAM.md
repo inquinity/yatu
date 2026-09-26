@@ -90,6 +90,9 @@ application before trusting it. See [ROADMAP.md](ROADMAP.md) §9.6.
 
 ## Contributing back
 
+> **Not an active track.** Proactive reporting was dropped 2026-09-25 ([ROADMAP.md](ROADMAP.md) M6).
+> What follows is how to do it if that ever changes; GH-287 remains open as it was.
+
 Fixes for upstream are developed in a **separate clone** — `inquinity/OpenInTerminal`, branch
 `master`, at `~/dev/oss/openinterminal` — on a `contrib/<topic>` branch cut from `upstream/master`,
 carrying only the fix being offered. **No contribution branch is ever cut in this repository**, and
@@ -127,8 +130,8 @@ public. Summary:
 - **Build and release gaps** (unpinned dependency, `rm -rf export` from the caller's directory,
   signing that accepts a dirty tree and never verifies the result) are addressed by `bin/build.sh`.
 - **The parts upstream ships that Yatu never did carry more** — one High (upstream's Finder
-  extension can hand a *file* to a terminal, which runs it) and four Medium. Those go upstream
-  through the contribution track, with the High reported privately first.
+  extension can hand a *file* to a terminal, which runs it) and four Medium. Yatu does not carry
+  them, and reporting them upstream was dropped on 2026-09-25 (ROADMAP.md M6).
 
 Yatu's own new entry point, the `yatu://` URL scheme, is **public**: any application or web page can
 invoke it. It is parsed strictly in `Sources/YatuKit/HandOff.swift`, and it was reviewed on its own
