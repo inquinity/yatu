@@ -309,5 +309,7 @@ claiming the identifier), and it cannot work in a development build. Set against
 payoff Gatekeeper already denies, it is not worth the code. Moving the hand-off to XPC would give an
 audit token, but reopens the app-group decision in §9.1.
 
-What remains worth doing is behaviour, not security: a notification with an undo and a durable log
-entry, so a default never changes unseen. Tracked in [ROADMAP.md](ROADMAP.md).
+A notification with an undo, and a durable log entry, when a default changes were considered and
+**declined 2026-09-25**: the risk is a hostile process quietly repointing the button at another
+installed catalog app, which is astonishingly unlikely, and the cost is annoying the user every time
+*they* change their own setting. The finding stays Low and accepted.
