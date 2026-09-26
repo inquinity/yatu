@@ -1,8 +1,8 @@
 # Yatu — roadmap
 
 Status: **accepted 2026-09-18**, all questions in §8 answered.
-**Shipping. 1.0.2 released 2026-09-25**; M0–M5 are done or deliberately dropped. What remains is
-M6 (the upstream contribution track, not started), the app icon *format* in §9, the catalog
+**Shipping. 1.0.2 released 2026-09-25**; M0–M5 are done; M3, M6 and M6a were deliberately dropped. What remains is
+the app icon *format* in §9, the catalog
 question in §9.6, the visible-change notification for `set-default` in §9.9, and a full pass of
 `docs/MANUAL-TEST-CHECKLIST.md` §4 — newly owed, because 1.0.2 rewrote the launch path and the
 menu that §4 exists to exercise. M7 is optional and unscheduled.
@@ -69,7 +69,7 @@ launches; selected `.command`/executables/`.app` never executed; hardened runtim
 validation, one entitlement, no network.
 
 Build and release findings (S1–S7) are addressed in M4. The unshipped full app's findings
-(F1 High, F2–F5 Medium) go upstream in M6 and are not fork work.
+(F1 High, F2–F5 Medium) are upstream's, not Yatu's; the plan to report them was dropped (M6).
 
 ## 4. Architecture
 
@@ -501,22 +501,28 @@ window factories. `SupportedAppsDocTests` holds the README's app list to the cat
 now links to it. Both follow `BrandTests`' precedent: when the thing worth checking is not reachable
 from a test, check the source for the structure that permits the fault.
 
-### M6 — Upstream contribution track (outward-facing, each approved separately) — **not started**
+### ~~M6 — Upstream contribution track~~ — **dropped 2026-09-25**
 
-The only substantive milestone left. F1 is the one with a clock on it: it is slated for a *private
-vulnerability report* against a project that is still shipping, and it has been open since
-2026-09-18. `fix/sandbox-command-injection` exists as a branch on upstream, so check whether any of
-this is already in flight before drafting anything. Nothing here is ever cut from this repository —
-it is all `~/dev/oss/openinterminal` work (see `CLAUDE.md`).
+Yatu is an independent project. What OpenInTerminal does — its bugs, its releases, its licence —
+is not Yatu's concern, and reporting or fixing them is work for the benefit of a project Yatu no
+longer depends on. Recording why, because the track looked like an obligation and is not one.
 
-| Item | Form |
-|---|---|
-| F1 extension executes a selected file | Reproduce on an upstream build; if confirmed, **private vulnerability report**, then a `contrib/` PR |
-| F2 distributed-notification confused deputy | Issue → PR removing the observers |
-| F4/F6 copy-path quoting | PR: single-quote quoting instead of the denylist |
-| L1 prefs-driven launch, L2 world-readable path log | Public issue with patch; low severity |
-| Dead AppleScript helpers, `.travis.yml`, stray entitlements | Cleanup PR |
-| GH-287 (icon), GH-288 (Xcode 27) | Already open; the watch task tracks them |
+- **Yatu is not exposed to what it would have reported.** F1 (upstream's Finder extension can hand a
+  selected *file* to a terminal when a sandboxed stat fails) is closed in Yatu by construction: the
+  extension resolves and executes nothing, and the app validates every path (§9.1). F2–F6 concern
+  code Yatu does not contain. A static read on 2026-09-25 found F1's code path still present on
+  upstream's `master`; it was not reproduced at runtime and will not be.
+- **Nothing was in flight to collide with.** `fix/sandbox-command-injection` is `dad7749`, already
+  merged into upstream's `master`; it fixes shell-string injection, not F1.
+- **A licence change upstream would not reach Yatu.** The three vendored files are MIT as of the
+  commits named in their provenance headers. What remains an obligation is the MIT notice and the
+  README credit (`docs/UPSTREAM.md`).
+- **What is kept:** [PR GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287) stays open as
+  it is and needs nothing from us; `bin/check-upstream.sh` still notices catalog changes worth
+  adopting by hand (§9.6). The `~/dev/oss/openinterminal` clone remains for GH-287 and as a
+  reference copy of the upstream tree.
+- **Revisit only if** Yatu comes to depend on more of upstream, or a defect is found in a vendored
+  file that Yatu ships.
 
 ### ~~M6a — Ship the editor app~~ — **dropped 2026-09-23**
 Superseded by §9. The extension's menu carries a **Send to editor** section, so the editor role is
