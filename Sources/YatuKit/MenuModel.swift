@@ -10,7 +10,7 @@
 //
 //  The menu deliberately cannot show which app is currently chosen: a sandboxed
 //  extension cannot read the app's preferences, and Yatu does not use an app
-//  group (docs/YATU-PLAN.md §9.1). The wording carries what a checkmark would —
+//  group (docs/ROADMAP.md §9.1). The wording carries what a checkmark would —
 //  "Set default terminal program" says these items set something, they do not
 //  open anything.
 //
