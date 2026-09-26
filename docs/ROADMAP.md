@@ -9,8 +9,8 @@ Nothing is scheduled.
 
 ## For consideration
 
-- **The Mac App Store.** It requires the App Sandbox for the app, not just the extension. Looked
-  into 2026-09-26, with a throwaway sandboxed test app; the app cannot do this as it works today:
+- **The Mac App Store — tabled 2026-09-26; not a big enough need.** It requires the App Sandbox for
+  the app, not just the extension. Looked into 2026-09-26, with a throwaway sandboxed test app; the app cannot do this as it works today:
   - **No Apple Events.** A sandboxed app cannot script Finder or Terminal, and Apple's own guidance
     (QA1888) says a temporary exception for either is likely to be rejected. So the direct-open
     path and the 1.0.1 fix for iCloud Drive and other File Provider folders, which both ask Finder,
@@ -27,6 +27,9 @@ Nothing is scheduled.
     Alacritty, Tabby), and how App Review treats an app whose job is launching other apps.
   - **Cost:** a second, sandboxed build and entitlement set, the grant flow, loss of the two
     fallbacks above, App Store review, and 30% if the app is ever priced. Not started.
+  - **Go2Shell** is still listed on the store, with Yosemite-era screenshots ("Ready for OS X
+    Yosemite", version 1.2.2). That shows an app of this kind was once accepted; it says little about
+    what review would accept today, since a listing can stay long after it was reviewed.
 
 - **Open a "working group": one terminal window per selected folder.** Select folders at different
   levels, click, and each opens at its own folder. Passing several folders to the terminal as
