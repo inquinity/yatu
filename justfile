@@ -22,9 +22,9 @@ test *args:
 ver *args:
     bin/ver {{ args }}
 
-# Regenerate Resources/AppIcon.icns (currently a placeholder; see the plan, 8.6).
+# Regenerate the Icon Composer document the app icon is built from.
 icon:
-    bin/make-icon.swift Resources/AppIcon.icns
+    bin/make-icon.swift --composer=Resources/AppIcon.icon
 
 # Re-render the icon concept board for review. Changes nothing the app uses.
 icon-concepts:
