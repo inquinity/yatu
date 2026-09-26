@@ -18,20 +18,23 @@ localized READMEs — none of which were built, shipped, or supported. By then Y
 implementation with upstream: it has its own Finder Sync extension, its own launch path, its own
 settings, its own build. Carrying 289 files to keep three in sync by symlink was the wrong trade.
 
-The three files are now vendored, each with a provenance header naming the upstream path and the
-commit it was taken at. The licence and attribution obligations did not change and are not affected
+The three files were vendored, each with a provenance header naming the upstream path and the
+commit it was taken at. On **2026-09-25** the catalog stopped being one of them: it moved to
+`Sources/YatuKit/SupportedApps.swift` and is Yatu's own list. The licence and attribution obligations did not change and are not affected
 by the cut.
 
 ## What is used
 
-Everything in [`Sources/YatuUpstream/`](../Sources/YatuUpstream/):
+Vendored, in [`Sources/YatuUpstream/`](../Sources/YatuUpstream/):
 
 | File | Origin | Taken at |
 |---|---|---|
-| `SupportedApps.swift` | `OpenInTerminalCore/SupportedApps.swift` — the catalog of terminals and editors, with their bundle identifiers | `81a6775` (2026-07-13) |
 | `Finder.swift` | `OpenInTerminalCore/ScriptingBridge/Finder.swift` | `eaa3bd5` (2019-04-17) |
 | `Terminal.swift` | `OpenInTerminalCore/ScriptingBridge/Terminal.swift` | `eaa3bd5` (2019-04-17) |
-| `Model.swift` | ours — the dependency-free `App`/`AppType` declarations lifted from upstream's `App.swift`, so the catalog compiles without the rest of the framework | — |
+| `Model.swift` | ours — the dependency-free `App`/`AppType` declarations lifted from upstream's `App.swift` | — |
+
+Originated upstream, now ours: `Sources/YatuKit/SupportedApps.swift`, the catalog of terminals and
+editors, from `OpenInTerminalCore/SupportedApps.swift` at `81a6775` (2026-07-13). Its header says so.
 
 The two ScriptingBridge files are generated interfaces that have not changed upstream since 2019
 and are regenerable from Apple's `sdef`. Nothing else from OpenInTerminal is compiled, and nothing
@@ -66,27 +69,17 @@ legal advice — read Apple's SF Symbols licence before a public release.
 
 - **The MIT licence stays.** `LICENSE` is upstream's and is shipped unchanged.
 - **Attribution stays.** Credit is given at the end of `README.md`, in `Sources/YatuUpstream/README.md`,
-  and in the provenance header of every vendored file.
+  in the provenance header of every vendored file and in the header of `SupportedApps.swift`.
 - **"Uses code from", not "fork of".** Yatu is a derivative work that vendors a few files; it is not
   a variant of upstream's app and must not be described as one.
 
-## Noticing upstream changes
+## Upstream changes
 
-`git merge upstream/master` is gone. In its place:
-
-```bash
-bin/check-upstream.sh          # has the app catalog moved since we vendored it?
-```
-
-It compares catalog entries — not commits — against upstream's current copy, preferring the
-contribution clone at `~/dev/oss/openinterminal` and falling back to fetching the file over HTTP.
-Adopting a change means editing the vendored file by hand and updating the commit in its provenance
-header.
-
-Upstream's catalog is **not an authoritative source**. It is one project's list, and it has shipped
-stale identifiers (`com.apple.Xcode`, `com.sublimetext.3`) that survived only because the launcher
-falls back to a name search in `/Applications`. Verify a bundle identifier against the real
-application before trusting it. See [DESIGN.md](DESIGN.md) §9.6.
+Nobody is watching upstream, on purpose. The catalog is Yatu's own list: add an app when we want it,
+drop one that is dead or on life support (Atom, AppCode, Fleet, TextMate and Hyper went on
+2026-09-25), and check an identifier against the real application when convenient. Homebrew Cask's
+`uninstall` and `zap` entries are a useful hint for a bundle identifier, not proof. A wrong one costs
+little — the launcher falls back to `/Applications/<name>.app`. See [DESIGN.md](DESIGN.md) §9.6.
 
 ## Contributing back
 

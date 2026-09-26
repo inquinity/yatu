@@ -61,11 +61,11 @@ Sources/YatuKit/              everything the app owns
   FinderTarget.swift            Finder query; always resolves to a directory
   Launcher.swift                NSWorkspace launch; compiled-in argument templates
   Settings.swift  Role.swift    allowlisted choice per role
-  Catalog.swift  CatalogCorrections.swift   the app list, and verified fixes to it
+  SupportedApps.swift  Catalog.swift         the app list (ours since 2026-09-25), and its role filter
   MenuModel.swift  MenuBuilder.swift        the extension's menu, testable without Finder
   SettingsWindow/View.swift  AboutWindow/View.swift  the two windows
   Brand.swift  Version.swift  Log.swift
-Sources/YatuUpstream/         three vendored upstream files plus Model.swift (App/AppType, no behaviour)
+Sources/YatuUpstream/         two vendored ScriptingBridge files plus Model.swift (App/AppType, no behaviour)
 Tests/YatuTests/              rules, hand-off, catalog, menu, request handler, launch lifetime, brand
 Resources/                    Info plists, entitlements, icon, the toolbar symbol
 bin/  docs/  justfile         build, notarize, package, release, attack matrix; docs
@@ -175,8 +175,8 @@ extension handing a *file* to a terminal when a sandboxed stat fails, is closed 
 construction, §9.1). A static read found the code path still present upstream; it was not
 reproduced. `fix/sandbox-command-injection` was already merged and fixed a different class. A
 licence change upstream would not reach the vendored files, which are MIT at the commits in their
-headers. Kept: PR GH-287 as it stands, and `bin/check-upstream.sh`. Revisit only if Yatu comes to
-depend on more of upstream or a defect turns up in a vendored file.
+headers. Kept: PR GH-287 as it stands, and nothing else. Revisit only if Yatu comes to
+depend on more of upstream or a defect turns up in a vendored file (the ScriptingBridge interfaces).
 
 **M6a — A separate editor app: dropped 2026-09-23** in favour of the extension's menu (§9).
 `Role.editor` stays; `Role.editor.bundleIdentifier` names a bundle that does not exist and is kept
@@ -270,15 +270,21 @@ Terminal.app's `open`.
 Dragging the app into the toolbar still works as a fallback. The settings window is unchanged.
 Upstream's own extension is not Yatu's; Yatu's is new code.
 
-### 9.6 The catalog deserves no special reverence
+### 9.6 The catalog is ours — 2026-09-25
 
-`SupportedApps.swift` is one maintainer's list, changed 21 times in three years, almost always to
-add an app someone asked for. It is partly wrong (`com.apple.Xcode`, `com.sublimetext.3`), and
-Yatu survives that only because `Launcher` falls back to an explicit `/Applications` path. The set
-of popular terminals changes slowly, so owning it is a few edits a year. It was vendored verbatim
-with the cut, because changing code and its content in one move makes neither reviewable.
-`bin/check-upstream.sh` diffs catalog *entries* against upstream's copy, so adopting a change is
-already a hand edit, and a judgement call verified against the real app.
+`SupportedApps.swift` began as one maintainer's list, changed 21 times in three years, almost always
+to add an app someone asked for, and it carried stale identifiers (`com.apple.Xcode`,
+`com.sublimetext.3`). No authoritative source exists: endoflife.date covers no Mac terminals or
+editors, and the community bundle-id lists are tiny and hand-kept. Homebrew Cask is the best
+cross-check — its `uninstall` and `zap` entries name bundle identifiers, and its `deprecated` and
+`disabled` flags mark dead apps — but it is a hint, not a source.
+
+So Yatu took the list over: moved into `YatuKit`, edited directly, no longer compared with upstream.
+Atom, AppCode, Fleet, TextMate and Hyper were dropped as dead or on life support, and identifiers were
+corrected from Homebrew's data (Sublime Text, VSCodium, Alacritty, CLion, WebStorm, Android Studio,
+Zed, Xcode, Warp). Those not checked against an installed copy are marked `unverified` in the file.
+The bar is deliberately low: a wrong identifier only sends resolution to an explicit
+`/Applications/<name>.app` (§4.1 rule 2), and adding an app when we want it is a one-line edit.
 
 ### 9.7 Cutting the fork relationship — 2026-09-23
 
@@ -286,7 +292,7 @@ The product compiled **three** upstream files — the catalog and two ScriptingB
 unchanged since 2019 — yet the repository carried **289 unbuilt files**. They were vendored, each
 with a provenance header naming the upstream path and commit, and the tree, both Xcode projects and
 the root build scripts were deleted (293 files, ~20,300 lines). `bin/check-upstream.sh` was
-rewritten to compare catalog entries. The MIT notice and credit are unchanged.
+rewritten to compare catalog entries (and retired 2026-09-25, §9.6). The MIT notice and credit are unchanged.
 
 ### 9.9 `set-default` over an unauthenticated channel — Low
 

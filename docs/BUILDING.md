@@ -111,7 +111,7 @@ build is fine for personal use and for working on the code.
 
 ## Working on the code
 
-- **Never edit anything in `Sources/YatuUpstream/`.** Those files come from OpenInTerminal and are
+- **Never edit anything in `Sources/YatuUpstream/`.** The ScriptingBridge interfaces come from OpenInTerminal and are
   compiled unchanged, each carrying a provenance header. Behaviour that has to differ goes in
   `Sources/YatuKit/` and calls into that target. See [UPSTREAM.md](UPSTREAM.md).
 - **`yatu://` is a public entry point.** Any application or web page can invoke it. It is parsed

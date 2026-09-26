@@ -15,9 +15,9 @@ Read **[docs/ROADMAP.md](docs/ROADMAP.md)** for what is being built next,
 > merge workflow are gone from this repository.
 >
 > - **It uses code from OpenInTerminal; it is not a fork of it.** Say it that way in commits, docs
->   and anything public. Three files are vendored in `Sources/YatuUpstream/` — the app catalog and
->   two ScriptingBridge interfaces — each with a provenance header naming the upstream path and
->   commit. **Never edit a vendored file to make Yatu's code work**; new behaviour goes in
+>   and anything public. Two files are vendored in `Sources/YatuUpstream/` — the two ScriptingBridge
+>   interfaces — each with a provenance header naming the upstream path and commit. **Never edit a
+>   vendored file to make Yatu's code work**; new behaviour goes in
 >   `Sources/YatuKit/` and calls into that target. The MIT licence and the attribution in
 >   `README.md` are obligations, not decoration.
 > - **We ship one app, which contains one extension.** Yatu's Finder Sync extension
@@ -35,10 +35,10 @@ Read **[docs/ROADMAP.md](docs/ROADMAP.md)** for what is being built next,
 > - **Never rebase `main`** — it is published. Work on a branch and merge. `git rerere` is on.
 >   The old `Fork:` / `Sync:` merge prefixes are retired along with the fork; merge commits follow
 >   Conventional Commits like everything else.
-> - **Upstream changes are noticed, not merged.** `bin/check-upstream.sh` diffs the app catalog
->   against upstream's current copy. Adopting an entry is a hand edit plus a provenance-header
->   update, and a judgement call: upstream's catalog is one project's list, not an authority, and it
->   has shipped stale bundle identifiers. Verify against the real application.
+> - **The app catalog is ours.** `Sources/YatuKit/SupportedApps.swift` began as OpenInTerminal's and
+>   was taken over on 2026-09-25; edit it directly. Add an app when we want it, drop one that is dead
+>   or on life support, and prefer an identifier checked against the real application. Nothing
+>   compares it with upstream any more.
 > - **This repository is public.** Refer to upstream issues by full URL or `GH-287` — never a bare
 >   `#287` or `Ji4n1ng/OpenInTerminal#287`, which auto-links into upstream's timeline permanently.
 > - **Security-review anything touching the launch path** with the `security-oss-app-reviewer`
@@ -58,13 +58,12 @@ Read **[docs/ROADMAP.md](docs/ROADMAP.md)** for what is being built next,
 
 ```bash
 bin/build.sh                                # assemble Yatu.app into dist/
-swift test                                  # 111 tests
+swift test                                  # 106 tests
 bin/test-scripts.sh                         # shell tests (pluginkit is stubbed)
 bin/build.sh --release && bin/notarize.sh && bin/package.sh   # a shippable build
 bin/release.sh                              # check a release; --go publishes it
 bin/attack-matrix.sh --live                 # hostile input at an installed Yatu
 bin/which-yatu.sh                           # what is installed; is the extension enabled?
-bin/check-upstream.sh                       # has upstream's app catalog moved?
 just lint                                   # shellcheck every script
 just --list                                 # every task
 ```
