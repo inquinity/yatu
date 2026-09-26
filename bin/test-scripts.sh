@@ -236,6 +236,39 @@ expect_ver "bump major carries the build up" "bump major"  "2.0.0 8"
 expect_ver "set carries the build up"        "set 1.5.0"   "1.5.0 8"
 expect_ver "bump build leaves the version"   "bump build"  "1.0.2 8"
 
+# $1 = case name, $2 = counter file contents ("" for none), $3 = expected number,
+# $4 = build number in VERSION. dev-build must count up on this machine, restart
+# when the release build moves on, and never touch VERSION.
+expect_dev_build() {
+    local name=$1 stored=$2 wanted=$3 build=${4:-7}
+    local scratch got version_after
+    checks=$((checks + 1))
+
+    scratch="$(mktemp -d)"
+    printf '%s\n%s\n' "1.0.2" "$build" > "$scratch/VERSION"
+    [[ -z "$stored" ]] || printf '%s\n' "$stored" > "$scratch/counter"
+
+    got="$(VERSION_FILE="$scratch/VERSION" COUNTER_FILE="$scratch/counter" bin/ver dev-build 2>&1)"
+    version_after="$(tr '\n' ' ' < "$scratch/VERSION")"
+    rm -rf "$scratch"
+
+    if [[ "$got" != "$wanted" ]]; then
+        print_colored "$COLOR_RED" "FAIL  $name"
+        printf '      expected: %s\n      got:      %s\n' "$wanted" "$got"
+        failures=$((failures + 1))
+    elif [[ "$version_after" != "1.0.2 $build " ]]; then
+        print_colored "$COLOR_RED" "FAIL  $name (VERSION changed to: $version_after)"
+        failures=$((failures + 1))
+    else
+        print_colored "$COLOR_GREEN" "ok    $name"
+    fi
+}
+
+expect_dev_build "the first test build is .1"                 ""    "7.1"
+expect_dev_build "each test build counts up"                  "7.4" "7.5"
+expect_dev_build "a new release build restarts the count"     "6.9" "7.1"
+expect_dev_build "a damaged counter restarts rather than fails" "junk" "7.1"
+
 printf '\n'
 if (( failures )); then
     print_colored "$COLOR_RED" "$failures of $checks checks failed"

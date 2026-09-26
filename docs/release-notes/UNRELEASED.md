@@ -21,3 +21,9 @@ and Zed, so these are now found wherever they are installed and not only in
 
 The bar under the folder's tab now reaches the walls, so the button reads as
 one shape at toolbar size instead of a floating line.
+
+## Test builds are numbered
+
+A build made from source now reports a dotted build number such as `1.7`, so a
+test build can no longer be mistaken for the release it was built on. Releases
+are unchanged.

@@ -164,7 +164,8 @@ asserts what it produced (strict verification, exact designated requirement, har
 `get-task-allow`). `bin/notarize.sh` requires `Accepted`. `bin/release.sh` is dry by default,
 verifies the artifact was built from the commit being tagged, reads the sha256 back from the
 *downloaded* asset, audits the cask and verifies the signed tag. Version bumping stays a separate
-step (`bin/ver`).
+step (`bin/ver`). Test builds get a dotted number, `<build>.<n>`, counted per machine outside
+git (2026-09-26), so no two builds of the same release read alike; releases keep the plain one.
 
 **M5 — Distribution.** Caught while releasing: `gh release create` resolved the repository to
 upstream because an `upstream` remote survived the fork cut. It is removed from this clone.
