@@ -75,38 +75,57 @@ Build and release findings (S1–S7) are addressed in M4. The unshipped full app
 
 A single Swift package. No Xcode project, no workspace, no SPM dependencies.
 
-> **Superseded in part, 2026-09-25.** This section is the original design and is kept as such.
-> Since it was written: the fork was cut (§9.7), so `Sources/YatuUpstream/` holds three *vendored*
-> files with provenance headers, not symlinks, and there is no `Sync:` merge; the editor executable
-> was retired (§4.1, M6a); and `Sources/YatuFinderSync/` (§9), `HandOff.swift`,
-> `CatalogCorrections.swift`, `LaunchCoordinator` and the About window were added. The tree below
-> omits them. Read the source tree for what exists now.
+> **Redrawn 2026-09-25** from the source tree. The design this section first described is in git
+> history; what changed is in §4.1 (no editor executable), §9 (the extension) and §9.7 (vendored
+> files, no `Sync:` merge).
 
 ```
 yatu/                            (repo root)
-├── Package.swift                library YatuKit + two executables, no dependencies
-├── Sources/YatuKit/             everything below except the entry points
+├── Package.swift                YatuKit + YatuUpstream libraries, two executables, no dependencies
 ├── Sources/YatuTerminal/
 │   └── main.swift               entry: ⌥ → settings, else open the terminal
-│   (Sources/YatuEditor was retired 2026-09-23; the editor role is reached from
-│    the Finder button's menu — M6a)
-│   (in YatuKit:)
+├── Sources/YatuFinderSync/      the Finder toolbar button (§9); sandboxed, executes nothing
+│   ├── main.swift               menu, click handler, hand-off over a yatu:// URL
+│   ├── InstalledApps.swift      which catalog apps to offer, cached
+│   └── ToolbarGlyph.swift       the template symbol, rasterised
+├── Sources/YatuKit/             everything the app owns
+│   ├── Yatu.swift               run loop, LaunchCoordinator — the one NSApplicationDelegate
+│   ├── HandOff.swift            strict parser/builder for the public yatu:// scheme
+│   ├── RequestHandler.swift     applies a hand-off's request; treats it as untrusted
 │   ├── FinderTarget.swift       Finder query; no force-casts; always resolves to a directory
 │   ├── Launcher.swift           NSWorkspace launch; compiled-in argument templates
-│   ├── Settings.swift           allowlisted app choice, per role; one-time migration from OITL
-│   ├── SettingsWindow.swift     the new GUI (§5)
-│   ├── AppCatalog.swift         thin wrapper over upstream's SupportedApps, filtered by role
+│   ├── Settings.swift           allowlisted app choice, per role
+│   ├── Role.swift               terminal | editor
+│   ├── Catalog.swift            SupportedApps, filtered by role
+│   ├── CatalogCorrections.swift verified fixes to stale upstream identifiers (§4 rule 1)
+│   ├── MenuModel.swift          the extension's menu as descriptors, testable without Finder
+│   ├── MenuBuilder.swift        the AppKit wiring for that menu, and the rules it encodes
+│   ├── SettingsWindow.swift     the settings window host (§5)
+│   ├── SettingsView.swift       its SwiftUI content
+│   ├── AboutWindow.swift        the About window host
+│   ├── AboutView.swift          its SwiftUI content
+│   ├── Brand.swift              the palette, held to bin/make-icon.swift by BrandTests
+│   ├── Version.swift            version and build, read from Info.plist
 │   └── Log.swift                os.Logger; paths marked .private
-├── Sources/YatuUpstream/        vendored OpenInTerminal files, compiled UNCHANGED (see below)
-├── Tests/YatuTests/             path resolution, validation, migration, catalog
-├── Resources/                   Info.plist, entitlements, icon, terminal icons, strings
-├── bin/                         build.sh, publish-release.sh, check-upstream.sh,
-│                                attack-matrix.sh, make-icon.swift
-├── docs/                        UPSTREAM.md, this plan, MANUAL-TEST-CHECKLIST.md, release-notes/
-└── justfile                     just build | test | release <seg> | publish --go
+├── Sources/YatuUpstream/        vendored from OpenInTerminal, each with a provenance header
+│   ├── SupportedApps.swift      the app catalog, unchanged
+│   ├── Finder.swift             ScriptingBridge interface, unchanged
+│   ├── Terminal.swift           ScriptingBridge interface, unchanged
+│   ├── Model.swift              App/AppType, lifted from upstream's App.swift (no behaviour)
+│   └── README.md                why Model.swift lives here
+├── Tests/YatuTests/             11 files: launch rules, target rules, hand-off, catalog,
+│                                menu, request handler, launch lifetime, brand, README/catalog
+├── Resources/                   Info.plist.in, Extension-Info.plist.in, two entitlements files,
+│                                AppIcon.icns, YatuFinderSync.xcassets (the toolbar symbol)
+├── bin/                         build.sh, notarize.sh, package.sh, release.sh, ver,
+│                                check-upstream.sh, attack-matrix.sh, which-yatu.sh,
+│                                test-scripts.sh, make-icon.swift, make-symbol.swift
+├── docs/                        this plan, UPSTREAM.md, BUILDING.md, LAUNCH-SECURITY.md,
+│                                FINDER-TOOLBAR-ICONS.md, MANUAL-TEST-CHECKLIST.md, release-notes/
+├── VERSION, justfile, LICENSE, README.md, CLAUDE.md
 ```
 
-**Upstream files compiled unchanged** (symlinked or path-referenced into `Sources/YatuUpstream`):
+**Upstream files compiled unchanged** (originally symlinked into `Sources/YatuUpstream`; vendored since 2026-09-23):
 `OpenInTerminalCore/SupportedApps.swift`, `ScriptingBridge/Finder.swift`,
 `ScriptingBridge/Terminal.swift`, and `App.swift` only if the spike shows its dependency
 chain can be cut. *(Superseded 2026-09-23: the files are vendored and upstream changes are noticed, not merged — §9.7.)*
@@ -117,8 +136,8 @@ its `Openable` extension reaches `FinderManager`, `DefaultsManager`, `ScriptMana
 replaces by design (L1, L2, L3). But `SupportedApps.swift` refers to `App` and `AppType` by name,
 so those types must exist in the same module.
 
-The compile set is therefore **`SupportedApps.swift` alone**, symlinked into
-`Sources/YatuUpstream/` and compiled unchanged, beside our own `Model.swift` carrying the
+The compile set is therefore **`SupportedApps.swift` alone**, placed in
+`Sources/YatuUpstream/` (as a symlink then, vendored now) and compiled unchanged, beside our own `Model.swift` carrying the
 dependency-free `App`/`AppType` declarations lifted from upstream's file with provenance in the
 header. SwiftPM resolves the symlink, so upstream catalog additions arrive on merge with no diff
 to carry. The two ScriptingBridge files join the target when the launcher needs them in M2b.
