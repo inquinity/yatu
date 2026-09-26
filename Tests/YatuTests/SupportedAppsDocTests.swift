@@ -9,8 +9,7 @@
 //
 //  Which makes the README load-bearing. A name the catalog gained and the README
 //  did not is now a link that answers the user's question wrongly, and nothing
-//  else would notice: bin/check-upstream.sh compares the catalog to upstream's,
-//  not to our documentation.
+//  else would notice.
 //
 
 import XCTest

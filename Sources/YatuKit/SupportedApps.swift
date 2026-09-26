@@ -1,29 +1,33 @@
 //
-//  Vendored from OpenInTerminal by Jianing Wang, MIT licensed.
-//  https://github.com/Ji4n1ng/OpenInTerminal — OpenInTerminalCore/SupportedApps.swift
-//  as of upstream commit 81a6775 (2026-07-13). Copied verbatim below this
-//  header; see LICENSE and docs/UPSTREAM.md.
-//
-//  Do not edit to make Yatu's code work. Behaviour that has to change goes in
-//  Sources/YatuKit/ and calls into this target, never the other way around.
-//  `bin/check-upstream.sh` reports when upstream's copy has moved.
-//
-//
 //  SupportedApps.swift
-//  OpenInTerminalCore
+//  YatuKit
 //
-//  Created by Jianing Wang on 2020/12/5.
-//  Copyright © 2020 Jianing Wang. All rights reserved.
+//  The terminals and editors Yatu can open, and the bundle identifier each is
+//  found by. This list is Yatu's own.
+//
+//  It began as OpenInTerminal's OpenInTerminalCore/SupportedApps.swift (Jianing
+//  Wang, MIT licensed, https://github.com/Ji4n1ng/OpenInTerminal) at upstream
+//  commit 81a6775 (2026-07-13), and was taken over on 2026-09-25: edited
+//  directly, no longer compared with upstream. The MIT notice in LICENSE and
+//  the credit in README.md stay. See docs/UPSTREAM.md.
+//
+//  ## Keeping it
+//
+//  Add an app when we want it; drop one when it is dead or on life support.
+//  Identifiers that were not checked against an installed copy are marked
+//  `unverified` below; Homebrew Cask's uninstall and zap entries were the source.
+//  A wrong identifier costs little: resolution falls back to an explicit
+//  `/Applications/<name>.app` (docs/DESIGN.md §4.1, rule 2).
 //
 
 import Foundation
+import YatuUpstream
 
 public enum SupportedApps: String, CaseIterable {
     
     // MARK: - Terminals
     case terminal = "Terminal"
     case iTerm = "iTerm"
-    case hyper = "Hyper"
     case alacritty = "Alacritty"
     case kitty = "kitty"
     case wezterm = "WezTerm"
@@ -40,12 +44,10 @@ public enum SupportedApps: String, CaseIterable {
     case textEdit = "TextEdit"
     case xcode = "Xcode"
     case vscode = "Visual Studio Code"
-    case atom = "Atom"
     case sublime = "Sublime Text"
     case vscodium = "VSCodium"
     case bbedit = "BBEdit"
     case vscodeInsiders = "Visual Studio Code - Insiders"
-    case textMate = "TextMate"
     case cotEditor = "CotEditor"
     case macVim = "MacVim"
     case typora = "Typora"
@@ -55,9 +57,7 @@ public enum SupportedApps: String, CaseIterable {
     case zed = "Zed"
     case emacs = "Emacs"
     // JetBrains
-    case appCode = "AppCode"
     case cLion = "CLion"
-    case fleet = "Fleet"
     case goLand = "GoLand"
     case intelliJIDEA = "IntelliJ IDEA"
     case phpStorm = "PhpStorm"
@@ -84,7 +84,7 @@ public enum SupportedApps: String, CaseIterable {
     
     public var type: AppType {
         switch self {
-        case .terminal, .iTerm, .hyper, .alacritty, .kitty, .wezterm, .tabby, .warp, .cmux, .githubDesktop, .fork, .ghostty, .gitKraken, .kaku:
+        case .terminal, .iTerm, .alacritty, .kitty, .wezterm, .tabby, .warp, .cmux, .githubDesktop, .fork, .ghostty, .gitKraken, .kaku:
             return .terminal
         default:
             return .editor
@@ -123,12 +123,11 @@ public enum SupportedApps: String, CaseIterable {
         // Terminals
         case .terminal: return "com.apple.Terminal"
         case .iTerm: return "com.googlecode.iterm2"
-        case .hyper: return "co.zeit.hyper"
-        case .alacritty: return "io.alacritty"
+        case .alacritty: return "org.alacritty"  // unverified
         case .kitty: return "net.kovidgoyal.kitty"
         case .wezterm: return "com.github.wez.wezterm"
         case .tabby: return "org.tabby"
-        case .warp: return "dev.warp"
+        case .warp: return "dev.warp.Warp-Stable"
         case .cmux: return "com.cmuxterm.app"
         case .githubDesktop: return ""
         case .gitKraken: return "com.axosoft.gitkraken"
@@ -137,31 +136,27 @@ public enum SupportedApps: String, CaseIterable {
         case .kaku: return "fun.tw93.kaku"
         // Editors
         case .textEdit: return "com.apple.TextEdit"
-        case .xcode: return "com.apple.Xcode"
+        case .xcode: return "com.apple.dt.Xcode"
         case .vscode: return "com.microsoft.VSCode"
-        case .atom: return "com.github.atom"
-        case .sublime: return "com.sublimetext.3"
-        case .vscodium: return "com.visualstudio.code.oss"
+        case .sublime: return "com.sublimetext.4"
+        case .vscodium: return "com.vscodium"  // unverified
         case .bbedit: return "com.barebones.bbedit"
         case .vscodeInsiders: return "com.microsoft.VSCodeInsiders"
-        case .textMate: return "com.macromates.TextMate"
         case .cotEditor: return ""
         case .macVim: return "org.vim.MacVim"
         case .typora: return "abnerworks.Typora"
         case .nova: return "com.panic.Nova"
         case .cursor: return "com.todesktop.230313mzl4w4u92"
-        case .appCode: return "com.jetbrains.appcode"
-        case .cLion: return "com.jetbrains.clion"
-        case .fleet: return "com.jetbrains.fleet"
+        case .cLion: return "com.jetbrains.CLion"  // unverified
         case .goLand: return "com.jetbrains.goland"
         case .intelliJIDEA: return "com.jetbrains.intellij"
         case .phpStorm: return "com.jetbrains.PhpStorm"
         case .pyCharm: return "com.jetbrains.pycharm"
         case .rubyMine: return "com.jetbrains.rubymine"
-        case .webStorm: return "com.jetbrains.webstorm"
-        case .androidstudio: return ""
+        case .webStorm: return "com.jetbrains.WebStorm"  // unverified
+        case .androidstudio: return "com.google.android.studio"  // unverified
         case .neovim: return ""
-        case .zed: return ""
+        case .zed: return "dev.zed.Zed"
         case .emacs: return "org.gnu.Emacs"
         }
     }

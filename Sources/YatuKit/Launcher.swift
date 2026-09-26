@@ -76,7 +76,7 @@ public enum Launcher {
                                       fileManager: FileManager = .default) -> URL? {
         // Corrected where the vendored catalog is known to be wrong, which is
         // why this asks Catalog rather than reading app.bundleId directly.
-        let bundleIdentifier = Catalog.bundleIdentifier(for: app)
+        let bundleIdentifier = app.bundleId
         if !bundleIdentifier.isEmpty,
            let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) {
             return url

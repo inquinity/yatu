@@ -34,10 +34,6 @@ icon-concepts:
 which:
     bin/which-yatu.sh
 
-# Read-only: has OpenInTerminal's app catalog moved since we vendored it?
-check-upstream *args:
-    bin/check-upstream.sh {{ args }}
-
 # Fire hostile input at an INSTALLED Yatu. Scratch only; prefs restored. See --help.
 attack-matrix *args:
     bin/attack-matrix.sh {{ args }}

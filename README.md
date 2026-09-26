@@ -50,23 +50,23 @@ What "the current folder" means:
 
 ## Supported terminals and editors
 
-Settings lists the ones you actually have. These are the 41 Yatu knows how to
+Settings lists the ones you actually have. These are the 36 Yatu knows how to
 open — if yours is missing, that is why it does not appear.
 
-**Terminals (14)**
+**Terminals (13)**
 
-Terminal, iTerm, Hyper, Alacritty, kitty, WezTerm, Tabby, Warp, cmux, GitHub Desktop, GitKraken, Fork, Ghostty, Kaku
+Terminal, iTerm, Alacritty, kitty, WezTerm, Tabby, Warp, cmux, GitHub Desktop, GitKraken, Fork, Ghostty, Kaku
 
-**Editors (27)**
+**Editors (23)**
 
-TextEdit, Xcode, Visual Studio Code, Atom, Sublime Text, VSCodium, BBEdit, Visual Studio Code - Insiders, TextMate, CotEditor, MacVim, Typora, Nova, Cursor, Neovim, Zed, Emacs, AppCode, CLion, Fleet, GoLand, IntelliJ IDEA, PhpStorm, PyCharm, RubyMine, WebStorm, Android Studio
+TextEdit, Xcode, Visual Studio Code, Sublime Text, VSCodium, BBEdit, Visual Studio Code - Insiders, CotEditor, MacVim, Typora, Nova, Cursor, Neovim, Zed, Emacs, CLion, GoLand, IntelliJ IDEA, PhpStorm, PyCharm, RubyMine, WebStorm, Android Studio
 
 GitHub Desktop, GitKraken and Fork sit in the terminal list because that is how the catalog
 groups them: they open the folder as a repository rather than as a shell.
 
-The list comes from [OpenInTerminal](https://github.com/Ji4n1ng/OpenInTerminal) and is vendored,
-not fetched — see [docs/UPSTREAM.md](docs/UPSTREAM.md). Adding an entry means verifying its bundle
-identifier against the real application, because a catalog can carry a stale one.
+The list is Yatu's own. It began as [OpenInTerminal](https://github.com/Ji4n1ng/OpenInTerminal)'s
+catalog — see [docs/UPSTREAM.md](docs/UPSTREAM.md) — and apps that are dead or on life support are
+dropped. If one you want is missing, open an issue.
 
 ## Troubleshooting
 

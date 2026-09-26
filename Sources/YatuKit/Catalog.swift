@@ -2,16 +2,14 @@
 //  Catalog.swift
 //  YatuKit
 //
-//  A thin, role-filtered view of upstream's SupportedApps. Upstream owns the
-//  list; we only decide which half of it a given executable may offer.
+//  A role-filtered view of `SupportedApps`, the list of apps Yatu can open.
 //
 
 import Foundation
-import YatuUpstream
 
 public enum Catalog {
 
-    /// Every app upstream knows about for this role, in catalog order.
+    /// Every app we support for this role, in catalog order.
     public static func apps(for role: Role) -> [SupportedApps] {
         switch role {
         case .terminal: return SupportedApps.terminals
