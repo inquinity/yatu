@@ -2,7 +2,7 @@
 //  TargetRulesTests.swift
 //  YatuTests
 //
-//  The behavioural rules from docs/ROADMAP.md §4.1, one test each.
+//  The behavioural rules from docs/DESIGN.md §4.1, one test each.
 //
 
 import XCTest

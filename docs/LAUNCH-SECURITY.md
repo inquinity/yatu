@@ -97,7 +97,7 @@ pending a human either way — but it is recorded rather than glossed over.
 
 ### Incidental findings
 
-- **A bundle identifier is not a trust signal.** Rule 1 in [the roadmap](ROADMAP.md) justifies resolving by bundle id
+- **A bundle identifier is not a trust signal.** Rule 1 in [the roadmap](DESIGN.md) justifies resolving by bundle id
   rather than by name on the grounds that *"a name is a string a user can control, a bundle id is
   what LaunchServices indexes."* Test A disproves the implied guarantee: LaunchServices resolved a
   planted identifier straight to `~/Downloads`. Bundle-id resolution is still preferable, but the

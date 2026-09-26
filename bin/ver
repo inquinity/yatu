@@ -15,7 +15,7 @@
 # built on top of. A single monotonic integer is the whole point of the field.
 #
 # bin/build.sh reads these and stamps them into Info.plist. This replaces the
-# Version.xcconfig an Xcode project would carry (docs/ROADMAP.md, M1).
+# Version.xcconfig an Xcode project would carry (docs/DESIGN.md, M1).
 #
 # The full colour palette is declared in every script by convention, so
 # the set is identical everywhere; not every script uses every colour.

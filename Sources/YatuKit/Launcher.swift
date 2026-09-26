@@ -4,7 +4,7 @@
 //
 //  Opens the resolved target in the chosen application.
 //
-//  Rules 1, 2, 5 and 7 (docs/ROADMAP.md §4.1).
+//  Rules 1, 2, 5 and 7 (docs/DESIGN.md §4.1).
 //
 
 import AppKit

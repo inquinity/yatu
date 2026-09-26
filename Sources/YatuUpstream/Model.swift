@@ -12,7 +12,7 @@
 //  its `Openable` extension reaches FinderManager, DefaultsManager,
 //  ScriptManager, Constants, OITError and logw — that is, the whole of
 //  OpenInTerminalCore, including the three pieces Yatu exists to replace
-//  (findings L1, L2 and L3 in docs/ROADMAP.md §3).
+//  (findings L1, L2 and L3 in docs/DESIGN.md §3).
 //
 //  Keep this file in step with upstream's declarations on sync. It deliberately
 //  carries no behaviour; launching lives in YatuKit.
