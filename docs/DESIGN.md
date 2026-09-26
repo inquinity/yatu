@@ -249,7 +249,17 @@ why the menu cannot mark the current default.
 - **M1b — icons.** The toolbar symbol is `yatu.folder.caret`, a custom SF Symbol derived from
   Apple's exported `folder` template (`bin/make-symbol.swift`) and compiled by `actool`. Caret on the
   folder face beat caret as a corner badge, which collapses to a blob under 24pt. It is Apple-derived
-  artwork under Apple's licence. **Open:** the app-icon *format*, `.icns` or Icon Composer `.icon`,
+  artwork under Apple's licence. **Refined 2026-09-26:** the bar under the folder's tab is lengthened
+  4 units at each end so it meets the walls, added as a separate bar and never by editing Apple's
+  outline. The down chevron seen beside the button is **Finder's** menu indicator, drawn for any
+  extension item that offers a menu (ours does, on ⌥-click); it cannot be replaced or hidden from
+  the extension, and removing it would mean removing the menu. A `>_` prompt and an option-key ⌥
+  were drawn and rejected: `>_` crowds the interior at 16px, and ⌥ is illegible at small sizes and
+  drops the "terminal" cue. The tooltip already says "⌥ for options". One trap found while trying:
+  a symbol's three weights are interpolated, so any added shape must have the same outline structure
+  at every weight; the CoreGraphics stroker does not guarantee that for overlapping strokes, and
+  `actool` then emits a symbol that will not load, silently, and the button falls back to Apple's
+  plain `folder`. **Open:** the app-icon *format*, `.icns` or Icon Composer `.icon`,
   to be decided on the format's merits now that nothing needs art to vary by size.
 - **Build:** `bin/build.sh` assembles and signs the `.appex` before the app with its own
   entitlements, and asserts the extension is sandboxed and the app is not.
