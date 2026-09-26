@@ -9,6 +9,25 @@ Nothing is scheduled.
 
 ## For consideration
 
+- **The Mac App Store.** It requires the App Sandbox for the app, not just the extension. Looked
+  into 2026-09-26, with a throwaway sandboxed test app; the app cannot do this as it works today:
+  - **No Apple Events.** A sandboxed app cannot script Finder or Terminal, and Apple's own guidance
+    (QA1888) says a temporary exception for either is likely to be rejected. So the direct-open
+    path and the 1.0.1 fix for iCloud Drive and other File Provider folders, which both ask Finder,
+    would go, and the extension becomes the only way in: the ⌘-drag fallback would stop working.
+  - **No opening a folder you cannot read.** `NSWorkspace.open` of an arbitrary folder in Terminal
+    or iTerm failed with "a miscellaneous error"; the same call worked for the app's own container
+    and, with read access added, for a granted folder, and still failed for one outside it.
+    Sandboxed `fileExists` on the folder did succeed, so rule 3's check is not what breaks.
+  - **The way through:** the extension already supplies the folder, so the app needs no Finder query;
+    what it lacks is *access*. A one-time prompt asking the user to grant a broad root (their home
+    folder, and any other volume they use) with a security-scoped bookmark would let it open anything
+    beneath. That is a normal, reviewable request, but it is a setup step every user sees.
+  - **Untested:** whether a sandboxed app can launch terminals that take arguments (kitty, WezTerm,
+    Alacritty, Tabby), and how App Review treats an app whose job is launching other apps.
+  - **Cost:** a second, sandboxed build and entitlement set, the grant flow, loss of the two
+    fallbacks above, App Store review, and 30% if the app is ever priced. Not started.
+
 - **Open a "working group": one terminal window per selected folder.** Select folders at different
   levels, click, and each opens at its own folder. Passing several folders to the terminal as
   `open` arguments works with no new permissions and no shell string, but it gives **windows, not
@@ -22,11 +41,6 @@ Nothing is scheduled.
   - Tabs would need a per-terminal scripting path (iTerm's scripting creates a tab at a working
     directory without a shell string, Terminal.app's does not) and a new Automation prompt, which is
     a security review, not a feature. Not proposed.
-
-## Optional, unscheduled
-
-- App Sandbox spike for the app itself. Ship only if launching a Finder-derived folder works without
-  an `NSUserAppleScriptTask` helper.
 
 ## Shipped
 
