@@ -1,11 +1,11 @@
 # Yatu — roadmap
 
 Status: **accepted 2026-09-18**, all questions in §8 answered.
-**Shipping. 1.0.2 released 2026-09-25**; M0–M5 are done; M3, M6 and M6a were deliberately dropped. What remains is
-the app icon *format* in §9, the catalog
-question in §9.6, the visible-change notification for `set-default` in §9.9, and a full pass of
-`docs/MANUAL-TEST-CHECKLIST.md` §4 — newly owed, because 1.0.2 rewrote the launch path and the
-menu that §4 exists to exercise. M7 is optional and unscheduled.
+**Shipping. 1.0.2 released 2026-09-25**; M0–M5 are done; M3, M6 and M6a were deliberately dropped.
+What remains is the app icon *format* in §9, the catalog question in §9.6, and the visible-change
+notification for `set-default` in §9.9. M7 is optional and unscheduled. The manual pass of
+`docs/MANUAL-TEST-CHECKLIST.md` §4 that 1.0.2's launch-path rewrite made owed was run by Robert
+against the installed 1.0.2 (build 1) on 2026-09-25 and **passed**.
 Replaces the earlier `PRIVATE-LABEL-PLAN.md` draft.
 Inputs: the security review in `security-review/` (git-excluded), the Belvedere fork
 (`~/dev/oss/belvedere`) for fork conventions, and a GitHub survey of comparable apps.
