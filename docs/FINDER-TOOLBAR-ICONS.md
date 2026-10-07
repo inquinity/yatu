@@ -285,7 +285,7 @@ here).
   both named `AppIcon`, with `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`.
 
 **What the fork's fix did** (PR [GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287),
-commits `96acd51`, `b338bff` in this repository):
+commits `96acd51`, `b338bff` in [inquinity/OpenInTerminal](https://github.com/inquinity/OpenInTerminal)):
 
 - Full app: removed `AppIcon.icon` from Core, the Finder extension and the Helper; **kept it in the
   app target**. The full app still ships an Icon Composer icon, with `ISAppearanceTintable`
