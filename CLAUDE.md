@@ -34,7 +34,14 @@ Read **[docs/ROADMAP.md](docs/ROADMAP.md)** for what is being built next,
 >   [PR GH-287](https://github.com/Ji4n1ng/OpenInTerminal/pull/287) is open from that repository.
 > - **Never rebase `main`** — it is published. Work on a branch and merge. `git rerere` is on.
 >   The old `Fork:` / `Sync:` merge prefixes are retired along with the fork; merge commits follow
->   Conventional Commits like everything else.
+>   Conventional Commits like everything else. The one exception, the 2026-10-07 squash of
+>   OpenInTerminal's history into a single import commit, is recorded in DESIGN §7.
+> - **Every commit and every tag is signed.** Signing is SSH, from the maintainer's global git
+>   config, and GitHub shows each one as Verified; since the squash the whole history is signed, so
+>   keep it that way. Anything that recreates commits (`filter-branch`, `commit-tree`, rebasing a
+>   branch) drops signatures unless told not to: pass `-S`, then check that
+>   `git log --format=%G?` shows only `G`. Tags are annotated and signed (`git tag -s`), and
+>   `bin/release.sh` refuses to push one that fails `git tag -v`.
 > - **The app catalog is ours.** `Sources/YatuKit/SupportedApps.swift` began as OpenInTerminal's and
 >   was taken over on 2026-09-25; edit it directly. Add an app when we want it, drop one that is dead
 >   or on life support, and prefer an identifier checked against the real application. Nothing
