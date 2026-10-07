@@ -8,6 +8,22 @@ changes which terminal that is, or sends the selection to an editor instead.
 - **macOS 13.0 or later**
 - No background process, no login item, no menu-bar icon
 
+## Why Yatu
+
+Opening a terminal from Finder is an old idea — Go2Shell, cdto, TermHere and OpenInTerminal have
+all done it. Yatu is a small, careful take on it:
+
+- **It is not running until you click.** The button is a Finder extension; the app starts, opens
+  your terminal, and quits.
+- **One permission, no network.** The app's only entitlement is asking Finder which folder you are
+  looking at. It makes no network connections and collects nothing.
+- **Nothing you select is ever executed.** The extension is sandboxed and only reports where you
+  are. The app opens only apps from its built-in list, with their arguments built in; a selected
+  script, `.command` file or `.app` is never run. Whether Yatu could be used to launch a malicious
+  app was tested rather than assumed: [docs/LAUNCH-SECURITY.md](docs/LAUNCH-SECURITY.md).
+- **Your terminal, not ours.** 13 terminals and 23 editors, switched from the ⌥ menu.
+- **Signed and notarized**, and every release is built from the commit it is tagged at.
+
 ---
 
 ## Install
