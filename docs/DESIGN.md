@@ -186,6 +186,16 @@ as the role's stable identity.
 **M7 — optional:** an App Sandbox spike for the app itself; several folders each in a tab; a
 Services entry. See [ROADMAP.md](ROADMAP.md).
 
+**History squash, 2026-10-07.** The repository carried OpenInTerminal's history from 2019 — 353
+commits by more than 40 authors — so GitHub listed Jianing Wang as its main contributor and it read
+as a fork. Everything before Yatu's first commit was replaced by one import commit, `f0e8a0e`,
+whose tree is upstream `537ac2a` plus the two icon fixes in
+[FINDER-TOOLBAR-ICONS.md](FINDER-TOOLBAR-ICONS.md); its message credits upstream and links to the
+full history. Every later commit kept its tree, author, dates and message and was re-signed, so the
+whole history is signed. The release tags were re-signed on the new commits; the releases, DMGs
+and cask did not change. The 1.0.0–1.0.2 DMGs name pre-squash commits as their build commit, and
+those are no longer in this repository. This is the one exception to "never rebase `main`".
+
 ## 8. Questions
 
 **8.2 Minimum macOS — 13.0 (Ventura).** Xcode 27's SDK floor is 12.0, so this is a product
